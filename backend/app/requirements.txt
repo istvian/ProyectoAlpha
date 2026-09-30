@@ -1,0 +1,6 @@
+fastapi[standard]
+email-validator
+tortoise-orm[accel]
+tortoise-orm[asyncpg]
+bcrypt
+pyjwt

@@ -1,0 +1,39 @@
+En esta ruta va el ambiente virtual (venv) de python
+
+Para crearlo sigue los siguientes pasos:
+
+1) Abrir una terminal en este directorio
+2) escribir python3 -m venv .venv
+3) Activar el ambiente
+
+Windows: venv\Scripts\activate
+Linux: source venv/bin/activate
+
+4) Una vez activado ir a la carpeta backend/app 
+
+cd /backend/app
+
+5) Instalar las dependencias con este comando
+
+pip install -r requirements.txt
+
+6) Abrir el proyecto con vscode 
+
+code .
+
+7) Ejecutar el proyecto (asegurate de estar dentro de la carpeta /backend/app y dentro del venv)
+
+fastapi dev
+
+=======================================================
+
+
+Para abrir el proyecto de frontend navega a la carpeta /frontend
+
+1) Abre una terminal y ejecuta:
+
+npm install 
+
+npm run dev
+
+
