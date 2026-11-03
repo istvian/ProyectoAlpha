@@ -15,7 +15,7 @@ app = FastAPI(title="API Proyecto Alpha")
 
 register_tortoise(
     app,
-    db_url="postgresql://postgres:xSK4B8q8BboKy95X@db.ckwvsfebfuskjsaxycaw.supabase.co:5432/postgres",
+    db_url="sqlite://db.sqlite3",
     modules={"models": ["models.user", "models.rol"]},
     generate_schemas=True,
     add_exception_handlers=True,
@@ -23,7 +23,7 @@ register_tortoise(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
