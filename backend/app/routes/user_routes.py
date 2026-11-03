@@ -92,6 +92,7 @@ async def user_data(request: Request, response: Response):
                 "mensaje": "Información de usuario",
                 "correo": user.correo,
                 "rol": Roles(user.rol.id).name,
+                "nombre": user.nombre,
             }
     except Exception as error:
         print(error)

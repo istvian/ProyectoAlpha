@@ -10,10 +10,10 @@
   color-scheme: light dark;
   color: var(--text-color);
   --animation-time: 0.2s;
-  --bg-color: #fff;
+  --bg-color: #eee;
   --white-color: #fff;
   --red-color: #ff7e7e;
-  --box-color: #eeeeee;
+  --box-color: #fff;
   --text-color: #000007;
   --btn-color: #000000;
   --nav-color: #383870;

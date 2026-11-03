@@ -1,0 +1,50 @@
+.info {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: flex-start;
+  justify-content: center;
+}
+.info > p {
+  margin: 0;
+  padding: 0;
+}
+.actions {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: space-evenly;
+}
+.actions > button {
+  margin: 0.5rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 450px));
+  grid-auto-rows: minmax(150px, auto);
+  gap: 1rem;
+  margin-top: 1rem;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: center;
+}
+.cardTitle {
+  text-align: center;
+  width: 100%;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+.cardNumber {
+  font-size: 2rem;
+  font-weight: bold;
+  width: 100%;
+  text-align: center;
+  margin: 0;
+}
+.cardPorcent {
+  font-size: 1rem;
+  width: 100%;
+  text-align: center;
+  background-color: aquamarine;
+  border-radius: 8px;
+  padding: 0.5rem;
+}

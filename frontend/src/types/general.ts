@@ -17,4 +17,5 @@ export interface Response {
 export interface UserData {
   correo: string;
   rol: string;
+  nombre: string;
 }

@@ -15,7 +15,7 @@ export function Nav() {
   useEffect(() => {
     GetUserData().then((res) => {
       if (res) {
-        setUser({ correo: res?.correo, rol: res?.rol });
+        setUser(res as UserData);
       }
     });
   }, []);
