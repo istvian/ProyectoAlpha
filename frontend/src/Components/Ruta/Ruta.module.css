@@ -1,0 +1,15 @@
+.ruta {
+  color: #fff;
+  background-color: var(--ruta-color);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  margin: 0 0.5rem;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  &:hover {
+    opacity: 0.9;
+  }
+  &:active {
+    transform: scale(0.95);
+  }
+}

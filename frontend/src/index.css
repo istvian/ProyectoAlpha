@@ -1,19 +1,33 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap");
 :root {
-  font-family: "Poppins", sans-serif;
+  /* font-family: "Poppins", sans-serif; */
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
   font-size: 16px;
   color-scheme: light dark;
   color: var(--text-color);
-  background-color: var(--bg-color);
   --animation-time: 0.2s;
   --bg-color: #fff;
-  --box-color: #e5e5e5;
+  --white-color: #fff;
+  --red-color: #ff7e7e;
+  --box-color: #eeeeee;
+  --text-color: #000007;
+  --btn-color: #000000;
+  --nav-color: #383870;
+  --info-color: #141b2b;
+  --ruta-color: #00b0ea;
+  --brand2-color: #00b4e7;
+  --shadow-color: #00000051;
+  --transparent-color: #00000064;
+  /* --bg-color: #fff;
+  --box-color: #eaeaea;
   --text-color: #000;
   --primary-color: #4d27d7;
   --transparent-color: #00000050;
-  --red-color: #f42020;
+  --red-color: #f42020; */
   transition: all 0.4s;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -27,13 +41,13 @@
   --primary-color: #4d27d7;
   --transparent-color: #00000050;
 }
-[data-theme="dark"] {
+/* [data-theme="dark"] {
   --bg-color: #000;
   --box-color: #2a2a2a;
   --text-color: #fff;
   --primary-color: #4d27d7;
   --transparent-color: #00000050;
-}
+} */
 
 * {
   box-sizing: border-box;
@@ -92,4 +106,10 @@ html {
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+hr {
+  border: none;
+  border-top: 1px solid #000;
+  height: 1px;
+  width: 100%;
 }
