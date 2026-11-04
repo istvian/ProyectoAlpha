@@ -8,6 +8,7 @@
   flex-flow: row wrap;
   align-items: center;
   justify-content: space-between;
+  box-shadow: var(--shadow-color) 0 0 8px;
 }
 .empresa {
   display: flex;
@@ -34,4 +35,7 @@
   flex-flow: row wrap;
   align-items: center;
   justify-content: center;
+}
+.links > * {
+  margin: 0.5rem;
 }

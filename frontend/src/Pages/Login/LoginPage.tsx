@@ -40,7 +40,7 @@ export function LoginPage() {
             e.preventDefault();
             HandleSubmit();
           }}
-          className={css.box}
+          className={css.form}
         >
           <InputText
             label="Correo"
@@ -78,9 +78,6 @@ export function LoginPage() {
             Iniciar sesión
           </Btn>
         </form>
-        <Link className={css.link} to={"/register"}>
-          O quizás quieras crear una cuenta
-        </Link>
       </div>
     </Frame>
   );

@@ -1,0 +1,21 @@
+.cardTitle {
+  text-align: center;
+  width: 100%;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+.cardNumber {
+  font-size: 2rem;
+  font-weight: bold;
+  width: 100%;
+  text-align: center;
+  margin: 0;
+}
+.cardPorcent {
+  font-size: 1rem;
+  width: 100%;
+  text-align: center;
+  background-color: aquamarine;
+  border-radius: 8px;
+  padding: 0.5rem;
+}

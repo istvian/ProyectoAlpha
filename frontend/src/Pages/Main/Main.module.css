@@ -2,7 +2,7 @@
   display: flex;
   flex-flow: column nowrap;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: flex-start;
 }
 .info > p {
   margin: 0;
@@ -12,7 +12,7 @@
   display: flex;
   flex-flow: row wrap;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: flex-end;
 }
 .actions > button {
   margin: 0.5rem;
@@ -26,25 +26,4 @@
   width: 100%;
   align-items: flex-start;
   justify-content: center;
-}
-.cardTitle {
-  text-align: center;
-  width: 100%;
-  font-weight: bold;
-  font-size: 1.25rem;
-}
-.cardNumber {
-  font-size: 2rem;
-  font-weight: bold;
-  width: 100%;
-  text-align: center;
-  margin: 0;
-}
-.cardPorcent {
-  font-size: 1rem;
-  width: 100%;
-  text-align: center;
-  background-color: aquamarine;
-  border-radius: 8px;
-  padding: 0.5rem;
 }

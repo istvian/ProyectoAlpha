@@ -1,0 +1,17 @@
+.footer {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 2rem;
+  background-color: var(--box-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-color) 0 0 8px;
+  margin-top: auto;
+  align-self: flex-end;
+  justify-self: flex-end;
+}
+.footer > p {
+  font-weight: bold;
+}

@@ -11,6 +11,7 @@
   color: var(--text-color);
   --animation-time: 0.2s;
   --bg-color: #eee;
+  --input-color: #eee;
   --white-color: #fff;
   --red-color: #ff7e7e;
   --box-color: #fff;

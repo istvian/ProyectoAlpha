@@ -29,27 +29,31 @@ export function Nav() {
       }
     });
   }
-  return (
-    <nav className={css.nav}>
-      <div className={css.empresa}>
-        <img src="/logo.png" alt="Logo de empresa FYAG" className={css.logo} />
-        <div className={css.userInfo}>
-          <p>{user?.correo}</p>
-          <p style={{ textTransform: "capitalize" }}>{user?.rol}</p>
+  if (window.location.pathname != "/login")
+    return (
+      <nav className={css.nav}>
+        <div className={css.empresa}>
+          <img
+            src="/logo.png"
+            alt="Logo de empresa FYAG"
+            className={css.logo}
+          />
+          <div className={css.userInfo}>
+            <p>{user?.correo}</p>
+            <p style={{ textTransform: "capitalize" }}>{user?.rol}</p>
+          </div>
         </div>
-      </div>
-      <div className={css.links}>
-        <Ruta nombre="Dashboard" ruta="/dashboard" />
-        <Ruta nombre="Inventario y artículos" ruta="/inventario" />
-        <Ruta nombre="Operaciones de bodega" ruta="/bodega" />
-        <Ruta nombre="Compras y facturación" ruta="/finanzas" />
-        <Ruta nombre="Consultas y Cardex" ruta="/cardex" />
-        <Ruta nombre="Panel Admin" ruta="/admin" />
-      </div>
-      <Btn onClick={HandleLogOut} warning>
-        Cerrar sesión
-        <i className="fa-solid fa-arrow-right-from-bracket"></i>
-      </Btn>
-    </nav>
-  );
+        <div className={css.links}>
+          <Ruta nombre="Dashboard" ruta="/" />
+          <Ruta nombre="Inventario y artículos" ruta="/inventario" />
+          <Ruta nombre="Operaciones de bodega" ruta="/bodega" />
+          <Ruta nombre="Compras y facturación" ruta="/finanzas" />
+          <Ruta nombre="Consultas y Cardex" ruta="/cardex" />
+          <Ruta nombre="Panel Admin" ruta="/admin" />
+          <Btn onClick={HandleLogOut} warning>
+            <i className="fa-solid fa-arrow-right-from-bracket"></i>
+          </Btn>
+        </div>
+      </nav>
+    );
 }

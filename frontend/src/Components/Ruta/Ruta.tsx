@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import css from "./Ruta.module.css";
 
 interface RutaProps {
@@ -8,8 +8,11 @@ interface RutaProps {
 
 export function Ruta({ nombre, ruta }: RutaProps) {
   return (
-    <Link to={ruta} className={css.ruta}>
+    <NavLink
+      to={ruta}
+      className={({ isActive }) => (isActive ? css.rutaActive : css.ruta)}
+    >
       {nombre}
-    </Link>
+    </NavLink>
   );
 }

@@ -7,6 +7,7 @@ class User(Model):
     nombre = fields.CharField(max_length=100, unique=True)
     correo = fields.CharField(max_length=100)
     password = fields.CharField(max_length=100)
+    enabled = fields.BooleanField()
     created = fields.DatetimeField(auto_now_add=True)
     rol = fields.ForeignKeyField(
         "models.Rol", related_name="roles"

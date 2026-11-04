@@ -4,6 +4,17 @@
   align-items: center;
   justify-content: center;
   min-width: 300px;
+  background-color: var(--box-color);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: var(--shadow-color) 0 0 8px;
+}
+.form {
+  width: 100%;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: center;
 }
 .msg {
   font-size: 0.9rem;

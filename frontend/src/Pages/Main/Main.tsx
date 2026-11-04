@@ -9,6 +9,8 @@ import css from "./Main.module.css";
 import { GetUserData } from "../../Helpers/APIConnector";
 import type { UserData } from "../../types/general";
 import { Btn } from "../../Components/Btn/Btn";
+import { Footer } from "../../Components/Footer/Footer";
+import { Card } from "../../Components/Card/Card";
 
 export function Main() {
   const status = useIsLogin();
@@ -23,11 +25,11 @@ export function Main() {
       setUser(res as UserData);
     });
   }, []);
-  if (status === "checking") return <Spinner />;
-  if (status !== "authorized") return;
+  // if (status === "checking") return <Spinner />;
+  // if (status !== "authorized") return;
   return (
     <Frame>
-      <Nav />
+      {status === "checking" ? <Spinner /> : ""}
       <Box style={{ alignItems: "center" }}>
         <p>
           ¡Buenos días {user.nombre}! Aquí tienes el resumen del inventario de
@@ -54,41 +56,21 @@ export function Main() {
         </div>
       </Box>
       <div className={css.grid}>
-        <Box>
-          <p className={css.cardTitle}>Total de productos</p>
-          <p className={css.cardNumber}>265</p>
-          <p className={css.cardPorcent}>+13%</p>
-        </Box>
-        <Box>
-          <p className={css.cardTitle}>Total de productos</p>
-          <p className={css.cardNumber}>265</p>
-          <p className={css.cardPorcent}>+13%</p>
-        </Box>
-        <Box>
-          <p className={css.cardTitle}>Total de productos</p>
-          <p className={css.cardNumber}>265</p>
-          <p className={css.cardPorcent}>+13%</p>
-        </Box>
-        <Box>
-          <p className={css.cardTitle}>Total de productos</p>
-          <p className={css.cardNumber}>265</p>
-          <p className={css.cardPorcent}>+13%</p>
-        </Box>
-        <Box>
-          <p className={css.cardTitle}>Total de productos</p>
-          <p className={css.cardNumber}>265</p>
-          <p className={css.cardPorcent}>+13%</p>
-        </Box>
-        <Box>
-          <p className={css.cardTitle}>Total de productos</p>
-          <p className={css.cardNumber}>265</p>
-          <p className={css.cardPorcent}>+13%</p>
-        </Box>
-        <Box>
-          <p className={css.cardTitle}>Total de productos</p>
-          <p className={css.cardNumber}>265</p>
-          <p className={css.cardPorcent}>+13%</p>
-        </Box>
+        <Card
+          title="Total de productos"
+          footer={"+13 artículos"}
+          content={"265"}
+        />
+        <Card
+          title="Valor total en almacén"
+          footer={"+13 artículos"}
+          content={"265"}
+        />
+        <Card
+          title="Stock crítico"
+          footer={"4 arítuclos por agotarse"}
+          content={"265"}
+        />
       </div>
     </Frame>
   );
