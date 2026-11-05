@@ -1,3 +1,8 @@
+requisitos a tener en cuenta 
+tener instalado:
+ nodejs.org la version LTS
+ 
+
 En esta ruta va el ambiente virtual (venv) de python
 
 Para crearlo sigue los siguientes pasos:
@@ -8,16 +13,17 @@ Para crearlo sigue los siguientes pasos:
 
 Windows: venv\Scripts\activate
 
-SEGUNDA OPCION Windows: si tienes problemas de politica de ejecucion
-   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-   .\.venv\Scripts\Activate.ps1
+SEGUNDA OPCION WINDOWS: si tienes problemas de politica de ejecucion
+
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\.venv\Scripts\Activate.ps1
 
 Linux: source venv/bin/activate
 
 4) Una vez activado ir a la carpeta backend/app 
 
-cd /backend/app
-cd backend\app
+linux: cd /backend/app
+Windiows: cd backend\app
 
 5) Instalar las dependencias con este comando
 
@@ -31,6 +37,7 @@ code .
 
 fastapi dev
 
+ctr + c para detener
 =======================================================
 
 
