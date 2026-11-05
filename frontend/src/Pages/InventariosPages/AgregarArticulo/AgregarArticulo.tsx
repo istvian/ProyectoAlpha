@@ -1,10 +1,10 @@
-import { Box } from "../../Components/Box/Box";
-import { Btn } from "../../Components/Btn/Btn";
-import { Frame } from "../../Components/Frame/Frame";
-import { InputText } from "../../Components/InputText/InputText";
-import { Spinner } from "../../Components/Spinner/Spinner";
-import { Title } from "../../Components/Title/Title";
-import useIsLogin from "../../Hooks/useIsLogin";
+import { Box } from "../../../Components/Box/Box";
+import { Btn } from "../../../Components/Btn/Btn";
+import { Frame } from "../../../Components/Frame/Frame";
+import { InputText } from "../../../Components/InputText/InputText";
+import { Spinner } from "../../../Components/Spinner/Spinner";
+import { Title } from "../../../Components/Title/Title";
+import useIsLogin from "../../../Hooks/useIsLogin";
 import css from "./AgregarArticulo.module.css";
 
 export function AgregarArticulo() {
