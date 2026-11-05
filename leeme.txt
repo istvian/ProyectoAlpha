@@ -7,11 +7,17 @@ Para crearlo sigue los siguientes pasos:
 3) Activar el ambiente
 
 Windows: venv\Scripts\activate
+
+SEGUNDA OPCION Windows: si tienes problemas de politica de ejecucion
+   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+   .\.venv\Scripts\Activate.ps1
+
 Linux: source venv/bin/activate
 
 4) Una vez activado ir a la carpeta backend/app 
 
 cd /backend/app
+cd backend\app
 
 5) Instalar las dependencias con este comando
 

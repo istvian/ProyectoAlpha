@@ -4,3 +4,4 @@ tortoise-orm[accel]
 tortoise-orm[asyncpg]
 bcrypt
 pyjwt
+tzdata
