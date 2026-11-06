@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface SessionState {
-  expiresAt: number;
+  expiresAt: number | null;
   setExpiresAt: (ts: number) => void;
   clear: () => void;
 }
@@ -10,9 +10,9 @@ interface SessionState {
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
-      expiresAt: 15 * 1000 * 60,
+      expiresAt: null,
       setExpiresAt: (ts) => set({ expiresAt: ts }),
-      clear: () => set({ expiresAt: 15 * 1000 * 60 }),
+      clear: () => set({ expiresAt: null }),
     }),
     { name: "session" },
   ),
