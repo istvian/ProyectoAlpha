@@ -14,6 +14,7 @@ export function Main() {
     correo: "",
     rol: "",
     nombre: "",
+    rolID: 0,
   });
 
   useEffect(() => {

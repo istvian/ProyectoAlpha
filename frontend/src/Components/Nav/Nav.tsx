@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { GetUserData, LogOut } from "../../Helpers/APIConnector";
 import useIsLogin from "../../Hooks/useIsLogin";
 import { Btn } from "../Btn/Btn";
@@ -32,7 +32,7 @@ export function Nav() {
   if (window.location.pathname != "/login")
     return (
       <nav className={css.nav}>
-        <div className={css.empresa}>
+        <Link to="/" className={css.empresa}>
           <img
             src="/logo.png"
             alt="Logo de empresa FYAG"
@@ -42,7 +42,7 @@ export function Nav() {
             <p>{user?.correo}</p>
             <p style={{ textTransform: "capitalize" }}>{user?.rol}</p>
           </div>
-        </div>
+        </Link>
         <div className={css.links}>
           <Ruta nombre="Dashboard" ruta="/" />
           <Ruta nombre="Inventario y artículos" ruta="/inventario" />

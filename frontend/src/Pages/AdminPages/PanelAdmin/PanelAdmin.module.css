@@ -1,0 +1,19 @@
+.actions {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
+.actions > button {
+  margin: 0.5rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 450px));
+  grid-auto-rows: minmax(150px, auto);
+  gap: 1rem;
+  margin-top: 1rem;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: center;
+}

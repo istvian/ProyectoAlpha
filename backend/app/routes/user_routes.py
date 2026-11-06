@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException, Request, Response, status
+import time
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr
 from tortoise.exceptions import IntegrityError
 from db import db
 from models.rol import Rol
 from models.user import User
 from middlewares.bcript_helper import validar_contraseña
-from middlewares.jwt_helper import generate_jwt, validar_rol, decode_jwt
+from middlewares.jwt_helper import check_user, generate_jwt, validar_rol, decode_jwt
 from schemas.roles import Roles
 
 router = APIRouter()
@@ -22,27 +24,23 @@ class UsuarioLogin(BaseModel):
     password: str
 
 
-@router.get("/renew")
+@router.get("/renew", dependencies=[Depends(check_user(Roles.cualquiera))])
 def renew(request: Request, response: Response):
     try:
         token = request.cookies.get("token")
-        if not validar_rol(token, Roles.cualquiera):
-            response.delete_cookie(key="token")
-            return {"error": True, "mensaje": "Token no válido"}
-        else:
-            payload = decode_jwt(token)
-            if not payload:
-                return {"error": True, "mensaje": "Error refrescando token"}
-            token = generate_jwt(payload["correo"], payload["rol"], 15)
-            response.set_cookie(
-                key="token",
-                value=token,
-                max_age=15 * 60,
-                httponly=True,
-                secure=False,  # Cambiar para producción
-                samesite="lax",
-            )
-            return {"error": False, "mensaje": "Token refrescado"}
+        payload = decode_jwt(token)
+        if not payload:
+            return {"error": True, "mensaje": "Error refrescando token"}
+        token = generate_jwt(payload["correo"], payload["rol"], 15)
+        response.set_cookie(
+            key="token",
+            value=token,
+            max_age=15 * 60,
+            httponly=True,
+            secure=False,  # Cambiar para producción
+            samesite="lax",
+        )
+        return {"error": False, "mensaje": "Token refrescado"}
     except Exception as error:
         print(error)
         return {"error": True, "mensaje": str(error)}
@@ -72,28 +70,28 @@ def check_auth(request: Request, response: Response):
         return {"error": True, "mensaje": str(error)}
 
 
-@router.get("/userdata")
-async def user_data(request: Request, response: Response):
+@router.get("/userdata", dependencies=[Depends(check_user(Roles.cualquiera))])
+async def user_data(
+    request: Request,
+    response: Response,
+):
     try:
         token = request.cookies.get("token")
-        if not validar_rol(token, Roles.cualquiera):
-            response.delete_cookie(key="token")
+        data = decode_jwt(token)
+        if not data:
             return {"error": True, "mensaje": "Token no válido"}
-        else:
-            data = decode_jwt(token)
-            if not data:
-                return {"error": True, "mensaje": "Token no válido"}
-            correo = data.get("correo", "")
-            user = await User.get_or_none(correo=correo).select_related("rol")
-            if not user:
-                return {"error": True, "mensaje": "No existe el usuario"}
-            return {
-                "error": False,
-                "mensaje": "Información de usuario",
-                "correo": user.correo,
-                "rol": Roles(user.rol.id).name,
-                "nombre": user.nombre,
-            }
+        correo = data.get("correo", "")
+        user = await User.get_or_none(correo=correo).select_related("rol")
+        if not user:
+            return {"error": True, "mensaje": "No existe el usuario"}
+        return {
+            "error": False,
+            "mensaje": "Información de usuario",
+            "correo": user.correo,
+            "rol": Roles(user.rol.id).name,
+            "rolID": Roles(user.rol.id),
+            "nombre": user.nombre,
+        }
     except Exception as error:
         print(error)
         return {"error": True, "mensaje": str(error)}
@@ -112,10 +110,11 @@ async def login_user(body: UsuarioLogin, response: Response):
                 "mensaje": "Cuenta deshabilitada hable con un administrador",
             }
         token = generate_jwt(user.correo, user.rol.id, 15)
+        expires_in = 15 * 60
         response.set_cookie(
             key="token",
             value=token,
-            max_age=15 * 60,
+            max_age=expires_in,
             httponly=True,
             secure=False,  # Cambiar para producción
             samesite="lax",
@@ -124,6 +123,7 @@ async def login_user(body: UsuarioLogin, response: Response):
             "error": False,
             "mensaje": "Inicio de sesión exitoso",
             "user_id": user.id,
+            "expires": int(time.time() * 1000) + expires_in * 1000,
         }
     except Exception as error:
         print(error)

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 
-from fastapi import HTTPException, Request, Response, status
+from fastapi import Cookie, HTTPException, Header, Request, Response, status
 
 from models.user import User
 from schemas.roles import Roles
@@ -56,3 +56,34 @@ def validar_rol(token, rol: Roles):
     except Exception as e:
         print(f"Token inválido")
         return False
+
+
+def check_user(rol: Roles):
+    def dependency(token: str | None = Cookie(default=None)):
+        if not token:
+            raise HTTPException(
+                status_code=401,
+                detail={"error": True, "mensaje": "Token no válido"},
+            )
+        try:
+            payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
+            jwt_rol = payload.get("rol", -1)
+            if not (
+                jwt_rol == rol.value
+                or jwt_rol == Roles.admin.value
+                or rol.value == Roles.cualquiera.value
+            ):
+                raise HTTPException(
+                    403, detail={"error": True, "mensaje": "Sin permisos"}
+                )
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                401, detail={"error": True, "mensaje": "Token expirado"}
+            )
+        except jwt.InvalidTokenError:
+            raise HTTPException(
+                401, detail={"error": True, "mensaje": "Token invalido"}
+            )
+
+    return dependency
