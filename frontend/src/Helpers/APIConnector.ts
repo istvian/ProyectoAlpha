@@ -2,9 +2,11 @@ import axios from "axios";
 import type {
   LoginData,
   RegisterData,
+  LoginResponse,
   Response,
   UserData,
 } from "../types/general";
+import { useSessionStore } from "../Stores/session";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const API_VERSION = "/api/v1";
@@ -23,9 +25,11 @@ export async function Login(
   try {
     const url = "/users/login";
     console.log("Petición POST:" + BASE_URL + API_VERSION + url);
-    const response = await api.post(url, formData);
-    console.log(response.data);
-    onEnd(response.data);
+    const response: LoginResponse & Response = (await api.post(url, formData))
+      .data;
+    console.log(response);
+    useSessionStore.getState().setExpiresAt(response.expires);
+    onEnd(response);
   } catch (e) {
     console.error(e);
   }

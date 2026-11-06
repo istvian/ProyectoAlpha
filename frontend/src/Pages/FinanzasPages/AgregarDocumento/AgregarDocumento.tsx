@@ -8,7 +8,11 @@ import { Title } from "../../../Components/Title/Title";
 import css from "./AgregarDocumento.module.css";
 import type { DocumentoTributario, Producto } from "../../../types/general";
 
-export function AgregarDocumento() {
+interface AgregarDocumentoProps {
+  onEnd: () => void;
+}
+
+export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
   const PRODUCTO_INICIAL: Producto = {
     stock: 0,
     stockMinimo: 0,
@@ -510,7 +514,13 @@ export function AgregarDocumento() {
             <b>${Number(formulario.total).toLocaleString("es-CL")}</b>
           </p>
         </div>
-        <Btn onClick={() => {}}>Registrar y actualizar existencias</Btn>
+        <Btn
+          onClick={() => {
+            onEnd();
+          }}
+        >
+          Registrar y actualizar existencias
+        </Btn>
       </Box>
     </div>
   );

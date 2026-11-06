@@ -10,7 +10,7 @@ http:
     type: json
     data: |-
       {
-        "correo":"e.r94@outlook.cl",
+        "correo":"admin@mail.cl",
         "password":"Qwerty1234!"
       }
   auth: inherit

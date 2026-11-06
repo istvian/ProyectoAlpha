@@ -47,4 +47,4 @@ class DetalleEgreso(models.Model):
         table = "detalle_egreso"
 
     def __str__(self):
-        return f"Detalle {self.id}: {self.cantidad} unidades del artículo ID {self.articulo_id}"
+        return f"Detalle {self.id}: {self.cantidad} unidades del artículo ID {self.articulo}"

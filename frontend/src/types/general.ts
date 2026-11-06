@@ -9,6 +9,10 @@ export interface RegisterData {
   nombre: string;
 }
 
+export interface LoginResponse {
+  user_id: number;
+  expires: number;
+}
 export interface Response {
   mensaje: string;
   error: boolean;
@@ -17,6 +21,7 @@ export interface Response {
 export interface UserData {
   correo: string;
   rol: string;
+  rolID: number;
   nombre: string;
 }
 
@@ -59,3 +64,11 @@ export interface Producto {
   costoNeto: number;
   netoFinal: number;
 }
+export const Rol = {
+  cualquiera: 0,
+  admin: 1,
+  bodega: 2,
+  finanzas: 3,
+  supervisor: 4,
+} as const;
+export type Rol = (typeof Rol)[keyof typeof Rol];
