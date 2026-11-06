@@ -1,20 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import useIsLogin from "../../../Hooks/useIsLogin";
 import css from "./Bodega.module.css";
 import { Frame } from "../../../Components/Frame/Frame";
 import { Box } from "../../../Components/Box/Box";
-import { Spinner } from "../../../Components/Spinner/Spinner";
 import { Title } from "../../../Components/Title/Title";
 import { Btn } from "../../../Components/Btn/Btn";
 
 export function Bodega() {
-  const status = useIsLogin();
   const nav = useNavigate();
-  //   if (status === "checking") return <Spinner />;
-  //   if (status !== "authorized") return;
   return (
     <Frame>
-      {status === "checking" ? <Spinner /> : ""}
       <Box
         style={{
           flexFlow: "row nowrap",

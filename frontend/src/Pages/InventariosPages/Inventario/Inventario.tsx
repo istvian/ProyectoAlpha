@@ -3,20 +3,13 @@ import { Box } from "../../../Components/Box/Box";
 import { Btn } from "../../../Components/Btn/Btn";
 import { Card } from "../../../Components/Card/Card";
 import { Frame } from "../../../Components/Frame/Frame";
-import { Nav } from "../../../Components/Nav/Nav";
-import { Spinner } from "../../../Components/Spinner/Spinner";
 import { Title } from "../../../Components/Title/Title";
-import useIsLogin from "../../../Hooks/useIsLogin";
 import css from "./Inventario.module.css";
 
 export function Inventario() {
-  const status = useIsLogin();
   const nav = useNavigate();
-  //   if (status === "checking") return <Spinner />;
-  //   if (status !== "authorized") return;
   return (
     <Frame>
-      {status === "checking" ? <Spinner /> : ""}
       <Box
         style={{
           flexFlow: "row nowrap",
