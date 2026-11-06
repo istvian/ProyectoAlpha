@@ -12,8 +12,12 @@ SECRET = "abcd1234"
 ALGORITHM = "HS256"
 
 
-def generate_jwt(correo, rol, minutos_exp):
-    expiracion = datetime.now(timezone.utc) + timedelta(minutes=minutos_exp)
+def generate_jwt(correo, rol, minutos_exp: int = 120):
+    # Nos aseguramos de que si minutos_exp viene nulo o extraño, tome 120 minutos por defecto
+    if not minutos_exp or not isinstance(minutos_exp, (int, float)):
+        minutos_exp = 120
+        
+    expiracion = datetime.now(timezone.utc) + timedelta(minutes=float(minutos_exp))
 
     payload = {"correo": correo, "rol": rol, "exp": expiracion}
     encoded_jwt = jwt.encode(
@@ -22,7 +26,6 @@ def generate_jwt(correo, rol, minutos_exp):
         algorithm=ALGORITHM,
     )
     return encoded_jwt
-
 
 def decode_jwt(token):
     try:
