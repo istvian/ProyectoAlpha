@@ -1,0 +1,123 @@
+.main {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-auto-rows: minmax(150px, auto);
+  gap: 1rem;
+  margin-top: 1rem;
+  width: 100%;
+}
+@media (max-width: 1024px) {
+  .main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.form {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: flex-start;
+  justify-items: flex-start;
+  width: 100%;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-auto-rows: minmax(0px, auto);
+  gap: 1rem;
+  margin-top: 1rem;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.row {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  margin: 2rem 0;
+  border-collapse: collapse;
+}
+th {
+  padding: 1rem 0.5rem;
+  text-align: start;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: var(--input-color);
+}
+td {
+  text-align: start;
+  padding: 0.5rem 0.25rem;
+  background-color: var(--box-color);
+  border-bottom: 1px solid #e0e0e0;
+}
+.infotext {
+  color: #595959;
+  font-size: 0.8rem;
+}
+.aviso {
+  background-color: rgb(216, 255, 255);
+  padding: 1rem;
+  border-radius: 8px;
+  width: 100%;
+}
+.descuento {
+  /* background-color: var(--input-color); */
+  box-shadow: var(--shadow-color) 0 0 4px;
+  margin: 1rem 0;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+}
+.row > p {
+  margin: 0;
+  padding: 0;
+}
+.popup {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0px;
+}
+.bg {
+  background-color: var(--transparent-color);
+  width: 100vw;
+  height: 100vh;
+  inset: 0;
+  backdrop-filter: blur(2px);
+}
+.content {
+  position: absolute;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: center;
+  min-width: 300px;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: var(--box-color);
+}
+.delete {
+  background-color: var(--red-color);
+  text-align: center;
+  color: var(--white-color);
+  font-size: 0.8rem;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.8;
+  }
+  &:active {
+    transform: scale(0.9);
+  }
+}

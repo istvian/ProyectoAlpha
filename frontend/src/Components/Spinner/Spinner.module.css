@@ -7,7 +7,7 @@
   flex-flow: column nowrap;
   align-items: center;
   justify-content: center;
-  background-color: #0000005b;
+  background-color: var(--transparent-color);
   backdrop-filter: blur(4px);
 }
 .box {
