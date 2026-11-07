@@ -26,6 +26,7 @@ import { PanelAdmin } from "./Pages/AdminPages/PanelAdmin/PanelAdmin";
 import { useSessionStore } from "./Stores/session";
 import { useEffect } from "react";
 import { RenewToken } from "./Helpers/APIConnector";
+import { SalidaMateriales } from "./Pages/BodegaPages/SalidaMateriales/SalidaMateriales";
 
 function ProtectedRoute() {
   const status = useIsLogin();
@@ -95,6 +96,10 @@ function App() {
                 <Route element={<CardexMain />} path="/cardex" />
                 <Route element={<PanelAdmin />} path="/admin" />
                 <Route element={<Bodega />} path="/bodega" />
+                <Route
+                  element={<SalidaMateriales />}
+                  path="/bodega/salida"
+                />
                 <Route
                   element={<AgregarArticulo />}
                   path="/inventario/agregar"

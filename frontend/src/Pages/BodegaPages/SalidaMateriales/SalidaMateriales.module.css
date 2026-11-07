@@ -1,0 +1,56 @@
+.header {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.header p {
+  margin: 0.4rem 0 0;
+}
+
+.form {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 1rem;
+  width: 100%;
+}
+
+.section {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--input-color);
+  border-radius: 8px;
+}
+
+.sectionTitle {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.actions {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 0.75rem;
+  }
+
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+}

@@ -29,7 +29,7 @@ export function Bodega() {
           <div className={css.actions}>
             <Btn
               onClick={() => {
-                nav("/inventario/agregar");
+                nav("/bodega/salida");
               }}
             >
               Registrar salida
