@@ -1,52 +1,155 @@
-requisitos a tener en cuenta 
-tener instalado:
- nodejs.org la version LTS
- 
+=======================================================
+       INSTRUCCIONES DE INSTALACIÓN Y EJECUCIÓN
+=======================================================
 
-En esta ruta va el ambiente virtual (venv) de python
+1. REQUISITOS PREVIOS
 
-Para crearlo sigue los siguientes pasos:
+Antes de comenzar, asegúrate de tener instalado:
 
-1) Abrir una terminal en este directorio
-2) escribir python3 -m venv .venv
-3) Activar el ambiente
+- Python.
+- Node.js (versión LTS): https://nodejs.org/
+- Visual Studio Code.
 
-Windows: venv\Scripts\activate
+=======================================================
+2. CONFIGURACIÓN DEL BACKEND
+=======================================================
 
-SEGUNDA OPCION WINDOWS: si tienes problemas de politica de ejecucion
+PASO 1. Crear el ambiente virtual
 
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+Abre una terminal en la carpeta principal del proyecto (donde se encuentra la carpeta backend) y ejecuta:
+
+python -m venv .venv
+
+PASO 2. Activar el ambiente virtual
+
+WINDOWS (PowerShell):
+
 .\.venv\Scripts\Activate.ps1
 
-Linux: source venv/bin/activate
+Si tienes problemas con la política de ejecución, ejecuta primero:
 
-4) Una vez activado ir a la carpeta backend/app 
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-linux: cd /backend/app
-Windiows: cd backend\app
+Después, vuelve a activar el ambiente:
 
-5) Instalar las dependencias con este comando
+.\.venv\Scripts\Activate.ps1
+
+LINUX:
+
+source .venv/bin/activate
+
+Cuando esté activado, aparecerá (.venv) al inicio de la terminal.
+
+PASO 3. Ingresar a la carpeta del Backend
+
+WINDOWS:
+
+cd backend\app
+
+LINUX:
+
+cd backend/app
+
+PASO 4. Instalar las dependencias
+
+Ejecuta:
 
 pip install -r requirements.txt
 
-6) Abrir el proyecto con vscode 
+PASO 5. Ejecutar el Backend
 
-code .
+Asegúrate de estar dentro de backend/app y tener activado el ambiente virtual.
 
-7) Ejecutar el proyecto (asegurate de estar dentro de la carpeta /backend/app y dentro del venv)
+Ejecuta:
 
 fastapi dev
 
-ctr + c para detener
+El Backend quedará ejecutándose.
+
+IMPORTANTE:
+NO cierres esta terminal mientras estés utilizando el proyecto.
+Para detener el Backend, presiona CTRL + C.
+
+=======================================================
+3. CONFIGURACIÓN DEL FRONTEND
 =======================================================
 
+IMPORTANTE:
+Para ejecutar el Frontend debes abrir UNA SEGUNDA TERMINAL.
+No debes cerrar la terminal donde está funcionando el Backend.
 
-Para abrir el proyecto de frontend navega a la carpeta /frontend
+PASO 1. Ingresar a la carpeta del Frontend
 
-1) Abre una terminal y ejecuta:
+Desde la carpeta principal del proyecto, ejecuta:
 
-npm install 
+cd frontend
+
+PASO 2. Instalar las dependencias
+
+Ejecuta:
+
+npm install
+
+NOTA: Este comando normalmente solo se ejecuta la primera vez o cuando cambian las dependencias.
+
+PASO 3. Ejecutar el Frontend
+
+Ejecuta:
 
 npm run dev
 
+El Frontend quedará ejecutándose. La terminal mostrará la dirección local para abrir la aplicación en el navegador.
 
+IMPORTANTE:
+NO cierres esta segunda terminal mientras estés utilizando el proyecto.
+Para detener el Frontend, presiona CTRL + C.
+
+=======================================================
+4. EJECUCIÓN COMPLETA DEL PROYECTO
+=======================================================
+
+Para que la aplicación funcione correctamente, el Backend y el Frontend deben estar ejecutándose AL MISMO TIEMPO.
+
+Debes utilizar DOS TERMINALES DIFERENTES:
+
+TERMINAL 1 - BACKEND
+Ubicación: backend/app
+Comando: fastapi dev
+
+TERMINAL 2 - FRONTEND
+Ubicación: frontend
+Comando: npm run dev
+
+ORDEN DE EJECUCIÓN:
+
+1. Abrir la primera terminal.
+2. Activar el ambiente virtual de Python.
+3. Ingresar a backend/app.
+4. Instalar las dependencias si todavía no están instaladas.
+5. Ejecutar fastapi dev.
+6. Sin cerrar la primera terminal, abrir una segunda terminal.
+7. Ingresar a la carpeta frontend.
+8. Instalar las dependencias si todavía no están instaladas.
+9. Ejecutar npm run dev.
+10. Abrir en el navegador la dirección local que aparece en la terminal del Frontend.
+
+RECUERDA:
+- El Backend funciona en la primera terminal.
+- El Frontend funciona en la segunda terminal.
+- AMBAS TERMINALES DEBEN PERMANECER ABIERTAS.
+- Si cierras una de las terminales, el servicio correspondiente dejará de funcionar.
+
+=======================================================
+5. DETENER EL PROYECTO
+=======================================================
+
+Para detener el proyecto:
+
+1. En la terminal del Frontend, presiona CTRL + C.
+2. En la terminal del Backend, presiona CTRL + C.
+
+Con esto, ambos servicios quedarán detenidos correctamente.
+
+=======================================================
+                 FIN DE LAS INSTRUCCIONES
+=======================================================
