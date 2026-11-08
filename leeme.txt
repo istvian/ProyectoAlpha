@@ -1,6 +1,4 @@
-=======================================================
-       INSTRUCCIONES DE INSTALACIÓN Y EJECUCIÓN
-=======================================================
+INSTRUCCIONES DE INSTALACIÓN Y EJECUCIÓN
 
 1. REQUISITOS PREVIOS
 
@@ -10,9 +8,7 @@ Antes de comenzar, asegúrate de tener instalado:
 - Node.js (versión LTS): https://nodejs.org/
 - Visual Studio Code.
 
-=======================================================
 2. CONFIGURACIÓN DEL BACKEND
-=======================================================
 
 PASO 1. Crear el ambiente virtual
 
@@ -70,9 +66,7 @@ IMPORTANTE:
 NO cierres esta terminal mientras estés utilizando el proyecto.
 Para detener el Backend, presiona CTRL + C.
 
-=======================================================
 3. CONFIGURACIÓN DEL FRONTEND
-=======================================================
 
 IMPORTANTE:
 Para ejecutar el Frontend debes abrir UNA SEGUNDA TERMINAL.
@@ -104,9 +98,7 @@ IMPORTANTE:
 NO cierres esta segunda terminal mientras estés utilizando el proyecto.
 Para detener el Frontend, presiona CTRL + C.
 
-=======================================================
 4. EJECUCIÓN COMPLETA DEL PROYECTO
-=======================================================
 
 Para que la aplicación funcione correctamente, el Backend y el Frontend deben estar ejecutándose AL MISMO TIEMPO.
 
@@ -139,9 +131,7 @@ RECUERDA:
 - AMBAS TERMINALES DEBEN PERMANECER ABIERTAS.
 - Si cierras una de las terminales, el servicio correspondiente dejará de funcionar.
 
-=======================================================
 5. DETENER EL PROYECTO
-=======================================================
 
 Para detener el proyecto:
 
@@ -150,6 +140,4 @@ Para detener el proyecto:
 
 Con esto, ambos servicios quedarán detenidos correctamente.
 
-=======================================================
-                 FIN DE LAS INSTRUCCIONES
-=======================================================
+FIN DE LAS INSTRUCCIONES
