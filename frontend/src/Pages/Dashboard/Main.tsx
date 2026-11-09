@@ -8,6 +8,7 @@ import type { UserData } from "../../types/general";
 import { Btn } from "../../Components/Btn/Btn";
 import { Footer } from "../../Components/Footer/Footer";
 import { Card } from "../../Components/Card/Card";
+import { CardContainer } from "../../Components/CardContainer/CardContainer";
 
 export function Main() {
   const [user, setUser] = useState<UserData>({
@@ -37,7 +38,7 @@ export function Main() {
           justifyContent: "space-between",
         }}
       >
-        <div className={css.info}>
+        <div className={css.welcome}>
           <Title>Acciones rápidas</Title>
           <p>Gestione trámites cotidianos de administrador con un solo click</p>
         </div>
@@ -49,23 +50,50 @@ export function Main() {
           <Btn onClick={() => {}}>Ajustar stock</Btn>
         </div>
       </Box>
-      <div className={css.grid}>
-        <Card
-          title="Total de productos"
-          footer={"+13 artículos"}
-          content={"265"}
-        />
+      <CardContainer>
+        <Card title="Total de productos" content="265" footer="+13 artículos" />
         <Card
           title="Valor total en almacén"
-          footer={"+13 artículos"}
-          content={"265"}
+          content="$15.249.040"
+          footer="+4.2% que el mes anterior"
         />
         <Card
           title="Stock crítico"
-          footer={"4 arítuclos por agotarse"}
-          content={"265"}
+          content="4 artículos por agotarse"
+          footer="Ver artículos"
         />
-      </div>
+        <Card
+          title="Movimientos de hoy"
+          content="7 registros"
+          footer="2 entradas - 5 salidas"
+        />
+        <Card
+          title="Usuarios"
+          content="7 usuarios"
+          footer="+ 2 que el mes anterior"
+        />
+        <Card
+          title="Roles"
+          customContent={
+            <div className={css.roles}>
+              <p>2 administradores</p>
+              <p>1 finanzas</p>
+              <p>1 bodeguero</p>
+              <p>3 supervisores</p>
+            </div>
+          }
+        />
+        <Card
+          title="Merma"
+          content="15 productos"
+          footer="+ 2% que el mes anterior"
+        />
+        <Card
+          title="Proveedores"
+          content="30 proveedores"
+          footer="+ 2% que el mes anterior"
+        />
+      </CardContainer>
     </Frame>
   );
 }

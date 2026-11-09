@@ -72,3 +72,13 @@ export const Rol = {
   supervisor: 4,
 } as const;
 export type Rol = (typeof Rol)[keyof typeof Rol];
+
+export interface Articulo {
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  categoria: string;
+  stock: number;
+  stockMinimo: number;
+  ubicacion: string;
+}

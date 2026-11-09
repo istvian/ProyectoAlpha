@@ -7,13 +7,105 @@
 .actions > button {
   margin: 0.5rem;
 }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 450px));
-  grid-auto-rows: minmax(150px, auto);
-  gap: 1rem;
-  margin-top: 1rem;
+.row {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
+  margin: 0;
+}
+
+.infoBar {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: stretch;
+  justify-content: space-evenly;
+  gap: 1rem;
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.resumen {
+  color: var(--grey-color);
+  font-size: 0.8rem;
+  margin: 0.5rem;
+}
+.historial {
+  display: flex;
+  flex-flow: column;
+  justify-content: flex-start;
   align-items: flex-start;
+  width: 100%;
+  padding: 1rem 2rem;
+  background-color: var(--box-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-color) 0 0 8px;
+}
+.filters {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.filters > * {
+  margin: 0.5rem;
+  align-self: flex-end;
+}
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+  font-size: 0.8rem;
+}
+table {
+  width: 100%;
+  margin: 2rem 0;
+  border-collapse: collapse;
+}
+th {
+  padding: 1rem 0.5rem;
+  text-align: start;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: var(--input-color);
+}
+td {
+  text-align: start;
+  padding: 0.5rem 0.25rem;
+  background-color: var(--box-color);
+  border-bottom: 1px solid #e0e0e0;
+}
+.navegacion {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
   justify-content: center;
+}
+.btn {
+  border: var(--transparent-color) solid 1px;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  margin: 0.25rem;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.8;
+  }
+  &:active {
+    transform: scale(0.9);
+  }
+}
+.btnActive {
+  border: var(--transparent-color) solid 1px;
+  background-color: var(--btn-color);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  margin: 0.25rem;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.8;
+  }
+  &:active {
+    transform: scale(0.9);
+  }
 }

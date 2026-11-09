@@ -1,24 +1,27 @@
 .main {
-  display: flex;
   flex-flow: column nowrap;
   width: 100%;
+  flex: 1;
   align-items: flex-start;
   justify-content: flex-start;
   margin: 0.5rem 0;
+  min-width: 250px;
 }
 .select {
   /* all: unset; */
   box-sizing: border-box;
-  border: solid 1px black;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: none;
   background-color: var(--input-color);
-  margin-bottom: 0.5rem;
-  color: var(--text-color);
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
   width: 100%;
   font-size: 1rem;
-  text-transform: capitalize;
+  color: var(--text-color);
+  transition: all var(--animation-time);
+  &:disabled {
+    filter: brightness(0.9);
+    opacity: 0.5;
+  }
 }
 .label {
   margin: 0rem 0;

@@ -377,6 +377,7 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
           </p>
           <InputText
             value={formulario.observaciones}
+            isArea
             onChange={(text) => {
               setFormulario((prev) => ({ ...prev, observaciones: text }));
             }}

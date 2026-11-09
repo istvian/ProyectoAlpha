@@ -1,19 +1,30 @@
 import type { ReactNode } from "react";
-import { Box } from "../Box/Box";
 import css from "./Card.module.css";
 
 interface CardProps {
   title: string;
-  content: ReactNode;
-  footer: ReactNode;
+  content?: string;
+  customContent?: ReactNode;
+  icon?: string;
+  footer?: string;
 }
 
-export function Card({ content, footer, title }: CardProps) {
+export function Card({
+  content,
+  footer,
+  title,
+  icon,
+  customContent,
+}: CardProps) {
   return (
-    <Box>
-      <p className={css.cardTitle}>{title}</p>
-      <p className={css.cardNumber}>{content}</p>
-      <p className={css.cardPorcent}>{footer}</p>
-    </Box>
+    <div className={css.card}>
+      <div className={css.row}>
+        <p className={css.title}>{title}</p>
+        <i className={icon}></i>
+      </div>
+      {content ? <p className={css.content}>{content}</p> : ""}
+      {customContent ? customContent : ""}
+      <p className={css.mini}>{footer}</p>
+    </div>
   );
 }
