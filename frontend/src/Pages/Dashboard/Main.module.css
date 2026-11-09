@@ -1,10 +1,10 @@
-.info {
+.welcome {
   display: flex;
   flex-flow: column nowrap;
   align-items: flex-start;
   justify-content: flex-start;
 }
-.info > p {
+.welcome > p {
   margin: 0;
   padding: 0;
 }
@@ -17,13 +17,15 @@
 .actions > button {
   margin: 0.5rem;
 }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 450px));
-  grid-auto-rows: minmax(150px, auto);
-  gap: 1rem;
-  margin-top: 1rem;
-  width: 100%;
+.roles {
+  display: flex;
+  flex-flow: column wrap;
   align-items: flex-start;
   justify-content: center;
+  height: 100%;
+}
+.roles > p {
+  margin: 0;
+  padding: 0;
+  font-size: 0.8rem;
 }
