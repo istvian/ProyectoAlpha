@@ -8,10 +8,12 @@ from tortoise import run_async
 from routes.api import api_router
 from db.db import CloseDB, SetupDB
 from tortoise.contrib.fastapi import register_tortoise
+from middlewares.logger import Logger
 
 run_async(SetupDB())
 
 app = FastAPI(title="API Proyecto Alpha")
+
 
 register_tortoise(
     app,
@@ -31,7 +33,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.add_middleware(Logger)
 app.include_router(api_router, prefix="/api/v1")
 
 PUBLIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "public"))

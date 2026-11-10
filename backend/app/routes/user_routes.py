@@ -1,16 +1,15 @@
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, EmailStr
-from tortoise.exceptions import IntegrityError
-from db import db
-from models.rol import Rol
 from models.user import User
 from middlewares.bcript_helper import validar_contraseña
 from middlewares.jwt_helper import check_user, generate_jwt, validar_rol, decode_jwt
 from schemas.roles import Roles
+from db.nosql import get_db
 
 router = APIRouter()
+db = get_db()
 
 
 class UsuarioRegister(BaseModel):
@@ -40,6 +39,7 @@ def renew(request: Request, response: Response):
             secure=False,  # Cambiar para producción
             samesite="lax",
         )
+
         return {"error": False, "mensaje": "Token refrescado"}
     except Exception as error:
         print(error)

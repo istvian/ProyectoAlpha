@@ -5,3 +5,4 @@ tortoise-orm[asyncpg]
 bcrypt
 pyjwt
 tzdata
+pymongo
