@@ -10,14 +10,13 @@ import { Rol } from "../../../types/general";
 import { useState } from "react";
 import { AgregarArticulo } from "../AgregarArticulo/AgregarArticulo";
 import { InputText } from "../../../Components/InputText/InputText";
-import { InputDate } from "../../../Components/InputDate/InputDate";
 import { Selector } from "../../../Components/Selector/Selector";
 import { CardContainer } from "../../../Components/CardContainer/CardContainer";
+import { Spinner } from "../../../Components/Spinner/Spinner";
 
 export function Inventario() {
   const [agregarArticulo, setAgregarArticulo] = useState(false);
-  const nav = useNavigate();
-  if (useValidateRol(Rol.supervisor))
+  if (useValidateRol([Rol.supervisor, Rol.bodega]))
     return (
       <Frame>
         <Box
@@ -33,16 +32,6 @@ export function Inventario() {
               Administra el catálogo, consulta existencias y controla el stock
               de tus bodega.
             </p>
-          </div>
-          <div className={css.actions}>
-            <Btn onClick={() => {}}>Gestionar existencias</Btn>
-            <Btn
-              onClick={() => {
-                setAgregarArticulo(true);
-              }}
-            >
-              + Agregar artículo
-            </Btn>
           </div>
         </Box>
         {agregarArticulo ? (
@@ -81,10 +70,10 @@ export function Inventario() {
           />
         </CardContainer>
         <p className={css.resumen}>Resumen de hoy · 12 oct 2026 · 3 bodegas</p>
-        <div className={css.historial}>
+        <Box>
           <div className={css.row}>
             <Title>Listado de artículos</Title>
-            <p>248 registros</p>
+            <p className={css.resumen}>248 registros</p>
           </div>
           <div className={css.filters}>
             <InputText
@@ -149,7 +138,10 @@ export function Inventario() {
               </div>
             </div>
           </div>
-        </div>
+        </Box>
       </Frame>
     );
+  else {
+    return <Spinner />;
+  }
 }

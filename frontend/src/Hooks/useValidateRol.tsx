@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GetUserData } from "../Helpers/APIConnector";
 import { Rol } from "../types/general";
 
-// Verifica si el usuario tiene un rol asignado y si es igual al requerido para la página o componente
-// El rol puede ser uno definido o admin
-const useValidateRol = (rol: Rol): boolean => {
+const useValidateRol = (roles: Rol[]): boolean => {
   const nav = useNavigate();
   const [status, setStatus] = useState<boolean>(false);
+
+  // estabilizamos la referencia del array para evitar loop en el useEffect
+  const rolesKey = useMemo(() => roles.join(","), [roles]);
 
   useEffect(() => {
     let cancelled = false;
@@ -16,19 +17,24 @@ const useValidateRol = (rol: Rol): boolean => {
     GetUserData()
       .then((res) => {
         if (cancelled) return;
-        console.log(`Comparando rol ${rol} con rol de token: ${res?.rolID}`);
 
-        if (res?.error) {
+        const rolUsuario = res?.rolID as Rol | undefined;
+
+        console.log(
+          `Roles permitidos: [${roles.join(", ")}] | rol del token: ${rolUsuario}`,
+        );
+
+        if (res?.error || rolUsuario === undefined) {
           setStatus(false);
           nav("/403");
           return;
         }
-        if (res?.rolID === rol || res?.rolID === Rol.admin) {
-          setStatus(true);
-        } else {
-          setStatus(false);
-          nav("/403");
-        }
+
+        const tieneAcceso =
+          rolUsuario === Rol.admin || roles.includes(rolUsuario);
+
+        setStatus(tieneAcceso);
+        if (!tieneAcceso) nav("/403");
       })
       .catch(() => {
         if (cancelled) return;
@@ -39,7 +45,7 @@ const useValidateRol = (rol: Rol): boolean => {
     return () => {
       cancelled = true;
     };
-  }, [rol, nav]);
+  }, [rolesKey, nav]);
 
   return status;
 };

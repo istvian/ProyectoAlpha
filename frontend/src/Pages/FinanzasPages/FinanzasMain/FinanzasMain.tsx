@@ -12,7 +12,7 @@ import { useState } from "react";
 export function FinanzasMain() {
   const nav = useNavigate();
   const [agregarDocumento, setAgregarDocumento] = useState(false);
-  if (useValidateRol(Rol.finanzas))
+  if (useValidateRol([Rol.finanzas]))
     return (
       <Frame>
         <Box

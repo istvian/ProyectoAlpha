@@ -16,7 +16,10 @@ app = FastAPI(title="API Proyecto Alpha")
 register_tortoise(
     app,
     db_url="sqlite://db.sqlite3",
-    modules={"models": ["models.user", "models.rol"]},
+    # db_url="postgresql://postgres:xSK4B8q8BboKy95X@db.ckwvsfebfuskjsaxycaw.supabase.co:5432/postgres",
+    modules={
+        "models": ["models.user", "models.rol", "models.proveedor", "models.egreso"]
+    },
     generate_schemas=True,
     add_exception_handlers=True,
 )

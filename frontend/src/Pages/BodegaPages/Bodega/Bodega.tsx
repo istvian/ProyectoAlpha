@@ -14,7 +14,7 @@ import { CardContainer } from "../../../Components/CardContainer/CardContainer";
 
 export function Bodega() {
   const nav = useNavigate();
-  if (useValidateRol(Rol.bodega))
+  if (useValidateRol([Rol.bodega]))
     return (
       <Frame>
         <Box
@@ -47,10 +47,10 @@ export function Bodega() {
           <Card title="Salidas de hoy" content="5 salidas" />
         </CardContainer>
         <p className={css.resumen}>Resumen de hoy · 12 oct 2026 · 3 bodegas</p>
-        <div className={css.historial}>
+        <Box>
           <div className={css.row}>
             <Title>Historial de movimientos</Title>
-            <p>248 registros</p>
+            <p className={css.resumen}>248 registros</p>
           </div>
           <div className={css.filters}>
             <InputText
@@ -124,7 +124,7 @@ export function Bodega() {
               </div>
             </div>
           </div>
-        </div>
+        </Box>
       </Frame>
     );
 }
