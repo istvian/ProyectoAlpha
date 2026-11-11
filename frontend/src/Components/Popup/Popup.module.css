@@ -1,0 +1,29 @@
+.popup {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0px;
+}
+.bg {
+  background-color: var(--transparent-color);
+  width: 100vw;
+  height: 100vh;
+  inset: 0;
+  backdrop-filter: blur(2px);
+}
+.content {
+  position: absolute;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  width: 80%;
+  max-width: 500px;
+  max-height:80%;
+  overflow-y: auto;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: var(--box-color);
+}

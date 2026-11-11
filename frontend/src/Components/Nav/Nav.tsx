@@ -5,12 +5,39 @@ import { Btn } from "../Btn/Btn";
 import { Ruta } from "../Ruta/Ruta";
 import css from "./Nav.module.css";
 import { useEffect, useState } from "react";
-import type { UserData } from "../../types/general";
+import { Rol, type UserData } from "../../types/general";
 
 export function Nav() {
   const nav = useNavigate();
   const status = useIsLogin();
   const [user, setUser] = useState<UserData>();
+
+  type RutaItem = {
+    nombre: string;
+    ruta: string;
+    roles: Rol[];
+  };
+
+  const RUTAS: RutaItem[] = [
+    { nombre: "Dashboard", ruta: "/", roles: [Rol.admin] },
+    {
+      nombre: "Inventario y artículos",
+      ruta: "/inventario",
+      roles: [Rol.admin, Rol.bodega, Rol.supervisor],
+    },
+    {
+      nombre: "Operaciones de bodega",
+      ruta: "/bodega",
+      roles: [Rol.admin, Rol.bodega],
+    },
+    {
+      nombre: "Compras y facturación",
+      ruta: "/finanzas",
+      roles: [Rol.admin, Rol.finanzas],
+    },
+    { nombre: "Consultas y Cardex", ruta: "/cardex", roles: [Rol.admin] },
+    { nombre: "Panel Admin", ruta: "/admin", roles: [Rol.admin] },
+  ];
 
   useEffect(() => {
     GetUserData().then((res) => {
@@ -40,16 +67,18 @@ export function Nav() {
           />
           <div className={css.userInfo}>
             <p>{user?.correo}</p>
-            <p style={{ textTransform: "capitalize" }}>{user?.rol}</p>
+            <p style={{ textTransform: "capitalize" }}>
+              {user?.nombre} | {user?.rol}
+            </p>
           </div>
         </Link>
         <div className={css.links}>
-          <Ruta nombre="Dashboard" ruta="/" />
-          <Ruta nombre="Inventario y artículos" ruta="/inventario" />
-          <Ruta nombre="Operaciones de bodega" ruta="/bodega" />
-          <Ruta nombre="Compras y facturación" ruta="/finanzas" />
-          <Ruta nombre="Consultas y Cardex" ruta="/cardex" />
-          <Ruta nombre="Panel Admin" ruta="/admin" />
+          {RUTAS.filter(
+            (item) => user && item.roles.includes(user.rol_id as Rol),
+          ).map((item) => (
+            <Ruta key={item.ruta} nombre={item.nombre} ruta={item.ruta} />
+          ))}
+
           <Btn onClick={HandleLogOut} warning>
             <i className="fa-solid fa-arrow-right-from-bracket"></i>
           </Btn>
