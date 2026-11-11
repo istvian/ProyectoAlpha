@@ -8,6 +8,7 @@ class Articulos(Model):
     descripcion = fields.CharField(max_length=255)
     stock_actual = fields.IntField(default=0)
     stock_minimo = fields.IntField(default=0)
+    precio_lista = fields.DecimalField(max_digits=10, decimal_places=2, null=True)
     especificaciones_tecnicas = fields.JSONField(null=True)
 
     class Meta:
