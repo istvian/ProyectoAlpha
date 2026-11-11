@@ -11,12 +11,105 @@ async def SetupDB():
         db_url="sqlite://db.sqlite3",
         # db_url="postgresql://postgres:xSK4B8q8BboKy95X@db.ckwvsfebfuskjsaxycaw.supabase.co:5432/postgres",
         modules={
-            "models": ["models.user", "models.rol", "models.proveedor", "models.egreso"]
+            "models": [
+                "models.user",
+                "models.rol",
+                "models.proveedor",
+                "models.egreso",
+                "models.cliente",
+                "models.obra",
+            ]
         },
     )
+    await PrepareLegacyEgresoSchema()
+    await PrepareLegacyDetalleSchema()
     await Tortoise.generate_schemas()
     await CreateRoles()
     await SetupAccounts()
+
+
+async def PrepareLegacyEgresoSchema():
+    connection = Tortoise.get_connection("default")
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+
+    if "egresos" not in tables or "egresos_obra" in tables:
+        return
+
+    egreso_count = (
+        await connection.execute_query_dict('SELECT COUNT(*) AS count FROM "egresos"')
+    )[0]["count"]
+    detalle_count = 0
+    if "detalle_egreso" in tables:
+        detalle_count = (
+            await connection.execute_query_dict(
+                'SELECT COUNT(*) AS count FROM "detalle_egreso"'
+            )
+        )[0]["count"]
+
+    if egreso_count or detalle_count:
+        raise RuntimeError(
+            "La base SQLite contiene egresos antiguos. Migra sus datos y relaciones "
+            "antes de cambiar el esquema a egresos_obra."
+        )
+
+    # The legacy tables are empty; drop them so Tortoise can recreate the detail FK
+    # against egresos_obra. Existing data is never discarded automatically.
+    if "detalle_egreso" in tables:
+        await connection.execute_script('DROP TABLE "detalle_egreso"')
+    await connection.execute_script('DROP TABLE "egresos"')
+
+
+async def PrepareLegacyDetalleSchema():
+    connection = Tortoise.get_connection("default")
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+
+    if "articulos" in tables:
+        article_columns = {
+            row["name"]
+            for row in await connection.execute_query_dict(
+                'PRAGMA table_info("articulos")'
+            )
+        }
+        if "precio_lista" not in article_columns:
+            await connection.execute_script(
+                'ALTER TABLE "articulos" ADD COLUMN "precio_lista" DECIMAL(10, 2)'
+            )
+
+    if "detalle_egreso" not in tables:
+        return
+
+    detail_columns = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            'PRAGMA table_info("detalle_egreso")'
+        )
+    }
+    if {"cantidad_solicitada", "precio_lista_vigente"} <= detail_columns:
+        return
+
+    detail_count = (
+        await connection.execute_query_dict(
+            'SELECT COUNT(*) AS count FROM "detalle_egreso"'
+        )
+    )[0]["count"]
+    if detail_count:
+        raise RuntimeError(
+            "La tabla detalle_egreso contiene registros con el esquema anterior. "
+            "Migra cantidad y define explícitamente precio_lista_vigente para cada "
+            "detalle antes de actualizar el esquema."
+        )
+
+    await connection.execute_script('DROP TABLE "detalle_egreso"')
 
 
 async def CreateRoles():

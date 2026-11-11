@@ -11,6 +11,8 @@ from pydantic import BaseModel, Field
 from middlewares.jwt_helper import check_user
 from models.proveedor import Articulos
 from models.egreso import Egreso, DetalleEgreso
+from models.obra import Obra
+from models.user import User
 from schemas.roles import Roles
 
 # Configuración del enrutador de FastAPI
@@ -75,12 +77,46 @@ async def registrar_egreso(data: EgresoSchema):
                     ),
                 )
 
-        # --- PASO 2: CREACIÓN DE LA CABECERA DEL EGRESO ---
+            if articulo.precio_lista is None or articulo.precio_lista < 0:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        f"El artículo '{articulo.descripcion}' no tiene un precio "
+                        "de lista válido configurado."
+                    ),
+                )
+
+        # --- PASO 2: VALIDACIÓN DE OBRA Y RESPONSABLES ---
+        obra = await Obra.get_or_none(id=data.obra_id)
+        if not obra:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"La obra con ID {data.obra_id} no existe.",
+            )
+
+        usuario = await User.get_or_none(id=data.usuario_id)
+        if not usuario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"El usuario con ID {data.usuario_id} no existe.",
+            )
+
+        tecnico = await User.get_or_none(id=data.tecnico_id)
+        if not tecnico:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"El usuario receptor con ID {data.tecnico_id} no existe.",
+            )
+
+        # --- PASO 3: CREACIÓN DE LA CABECERA DEL EGRESO ---
         nuevo_egreso = await Egreso.create(
-            obra_id=data.obra_id, tecnico_id=data.tecnico_id, usuario_id=data.usuario_id
+            obra=obra,
+            responsable_entrega=usuario.nombre,
+            responsable_recepcion=tecnico.nombre,
+            usuario=usuario,
         )
 
-        # --- PASO 3: PROCESAMIENTO DE DETALLES Y DESCUENTO DE STOCK ---
+        # --- PASO 4: PROCESAMIENTO DE DETALLES Y DESCUENTO DE STOCK ---
         for item in data.detalles:
             articulo = await Articulos.get(id=item.producto_id)
 
@@ -88,8 +124,8 @@ async def registrar_egreso(data: EgresoSchema):
             await DetalleEgreso.create(
                 egreso=nuevo_egreso,
                 articulo=articulo,
-                cantidad=item.cantidad,
-                costo_unitario=0.0,
+                cantidad_solicitada=item.cantidad,
+                precio_lista_vigente=articulo.precio_lista,
             )
 
             # Rebaja de stock en tiempo real
