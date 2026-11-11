@@ -11,7 +11,14 @@ async def SetupDB():
         db_url="sqlite://db.sqlite3",
         # db_url="postgresql://postgres:xSK4B8q8BboKy95X@db.ckwvsfebfuskjsaxycaw.supabase.co:5432/postgres",
         modules={
-            "models": ["models.user", "models.rol", "models.proveedor", "models.egreso"]
+            "models": [
+                "models.user",
+                "models.rol",
+                "models.proveedor",
+                "models.egreso",
+                "models.cliente",
+                "models.obra",
+            ]
         },
     )
     await Tortoise.generate_schemas()
