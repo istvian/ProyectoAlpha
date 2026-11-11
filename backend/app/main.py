@@ -24,6 +24,7 @@ register_tortoise(
             "models.egreso",
             "models.cliente",
             "models.obra",
+            "models.cardex_log",
         ]
     },
     generate_schemas=True,
