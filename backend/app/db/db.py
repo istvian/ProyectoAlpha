@@ -18,14 +18,45 @@ async def SetupDB():
                 "models.egreso",
                 "models.cliente",
                 "models.obra",
+                "models.cardex_log",
             ]
         },
     )
     await PrepareLegacyEgresoSchema()
     await PrepareLegacyDetalleSchema()
     await Tortoise.generate_schemas()
+    await EnsureCardexMovementTypeConstraint()
     await CreateRoles()
     await SetupAccounts()
+
+
+async def EnsureCardexMovementTypeConstraint():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    allowed_types = (
+        "'ENTRADA_COMPRA', 'SALIDA_OBRA', 'MERMA', 'DEVOLUCION', 'USO_INTERNO'"
+    )
+    await connection.execute_script(
+        f"""
+        CREATE TRIGGER IF NOT EXISTS cardex_logs_tipo_movimiento_insert
+        BEFORE INSERT ON cardex_logs
+        FOR EACH ROW
+        WHEN NEW.tipo_movimiento NOT IN ({allowed_types})
+        BEGIN
+            SELECT RAISE(ABORT, 'tipo_movimiento must be a valid Cardex movement');
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS cardex_logs_tipo_movimiento_update
+        BEFORE UPDATE OF tipo_movimiento ON cardex_logs
+        FOR EACH ROW
+        WHEN NEW.tipo_movimiento NOT IN ({allowed_types})
+        BEGIN
+            SELECT RAISE(ABORT, 'tipo_movimiento must be a valid Cardex movement');
+        END;
+        """
+    )
 
 
 async def PrepareLegacyEgresoSchema():
