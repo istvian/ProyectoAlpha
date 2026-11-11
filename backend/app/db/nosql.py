@@ -89,9 +89,6 @@ class NoSQLDatabase:
         cantidad: int = 20,
         pagina: int = 1,
         usuario: str | None = None,
-        evento: str | None = None,
-        desde: datetime | None = None,  # en hora Chile
-        hasta: datetime | None = None,  # en hora Chile
     ):
         """
         Devuelve los últimos logs ordenados por fecha descendente,
@@ -104,16 +101,6 @@ class NoSQLDatabase:
         filtro = {}
         if usuario:
             filtro["usuario"] = usuario
-        if evento:
-            filtro["evento"] = evento
-
-        rango = {}
-        if desde:
-            rango["$gte"] = desde.astimezone(timezone.utc)
-        if hasta:
-            rango["$lte"] = hasta.astimezone(timezone.utc)
-        if rango:
-            filtro["fecha"] = rango
 
         try:
             cursor = (

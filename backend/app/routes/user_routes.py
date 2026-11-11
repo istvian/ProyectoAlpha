@@ -24,13 +24,24 @@ class UsuarioLogin(BaseModel):
 
 
 @router.get("/renew", dependencies=[Depends(check_user(Roles.cualquiera))])
-def renew(request: Request, response: Response):
+async def renew(request: Request, response: Response):
     try:
         token = request.cookies.get("token")
         payload = decode_jwt(token)
         if not payload:
             return {"error": True, "mensaje": "Error refrescando token"}
-        token = generate_jwt(payload["correo"], payload["rol"], 15)
+        user = await User.get_or_none(correo=payload.get("correo"))
+        if not user:
+            return {
+                "error": True,
+                "mensaje": "Cuenta no existe",
+            }
+        if user.enabled == False:
+            return {
+                "error": True,
+                "mensaje": "Cuenta deshabilitada hable con un administrador",
+            }
+        token = generate_jwt(user.correo, user.rol, 15)
         response.set_cookie(
             key="token",
             value=token,
@@ -89,7 +100,7 @@ async def user_data(
             "mensaje": "Información de usuario",
             "correo": user.correo,
             "rol": Roles(user.rol.id).name,
-            "rolID": Roles(user.rol.id),
+            "rol_id": Roles(user.rol.id),
             "nombre": user.nombre,
         }
     except Exception as error:
@@ -100,7 +111,6 @@ async def user_data(
 @router.post("/login")
 async def login_user(body: UsuarioLogin, response: Response):
     try:
-
         user = await User.get_or_none(correo=body.correo).select_related("rol")
         if not user or not validar_contraseña(body.password, user.password):
             return {"error": True, "mensaje": "Correo o contraseña incorrectos"}

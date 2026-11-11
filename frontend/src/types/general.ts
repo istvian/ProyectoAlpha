@@ -3,26 +3,38 @@ export interface LoginData {
   password: string;
 }
 
-export interface RegisterData {
-  correo: string;
-  password: string;
-  nombre: string;
-}
-
 export interface LoginResponse {
   user_id: number;
   expires: number;
 }
-export interface Response {
+export interface ResponseBase<T = null> {
   mensaje: string;
   error: boolean;
+  data?: T | null;
 }
 
 export interface UserData {
   correo: string;
   rol: string;
-  rolID: number;
+  rol_id: number;
   nombre: string;
+  password?: string;
+  enabled?: boolean;
+  created?: string;
+}
+export interface SystemLog {
+  _id: string;
+  fecha: Date;
+  fecha_local: string;
+  usuario: string;
+  evento: string;
+  resultado: string;
+  ipOrigen: string;
+  consulta: {
+    method: string;
+    path: string;
+    query: string;
+  };
 }
 
 export interface DocumentoTributario {

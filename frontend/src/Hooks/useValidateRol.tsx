@@ -18,7 +18,7 @@ const useValidateRol = (roles: Rol[]): boolean => {
       .then((res) => {
         if (cancelled) return;
 
-        const rolUsuario = res?.rolID as Rol | undefined;
+        const rolUsuario = res?.rol_id as Rol | undefined;
 
         console.log(
           `Roles permitidos: [${roles.join(", ")}] | rol del token: ${rolUsuario}`,

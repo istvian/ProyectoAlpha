@@ -18,16 +18,16 @@ export function Main() {
     correo: "",
     rol: "",
     nombre: "",
-    rolID: 0,
+    rol_id: 0,
   });
   const nav = useNavigate();
 
   useEffect(() => {
     GetUserData().then((res) => {
-      if (res?.rolID === Rol.admin) return;
-      if (res?.rolID === Rol.bodega) nav("bodega");
-      if (res?.rolID === Rol.finanzas) nav("finanzas");
-      if (res?.rolID === Rol.supervisor) nav("inventario");
+      if (res?.rol_id === Rol.admin) return;
+      if (res?.rol_id === Rol.bodega) nav("bodega");
+      if (res?.rol_id === Rol.finanzas) nav("finanzas");
+      if (res?.rol_id === Rol.supervisor) nav("inventario");
 
       setUser(res as UserData);
     });

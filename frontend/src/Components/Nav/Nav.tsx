@@ -74,7 +74,7 @@ export function Nav() {
         </Link>
         <div className={css.links}>
           {RUTAS.filter(
-            (item) => user && item.roles.includes(user.rolID as Rol),
+            (item) => user && item.roles.includes(user.rol_id as Rol),
           ).map((item) => (
             <Ruta key={item.ruta} nombre={item.nombre} ruta={item.ruta} />
           ))}
