@@ -1,62 +1,26 @@
-from tortoise.models import Model
 from tortoise import fields
+from tortoise.models import Model
 
 
-class Articulos(Model):
-    id = fields.IntField(pk=True)
-    codigo_sku = fields.CharField(max_length=50, unique=True)
-    descripcion = fields.CharField(max_length=255)
-    stock_actual = fields.IntField(default=0)
-    stock_minimo = fields.IntField(default=0)
-    especificaciones_tecnicas = fields.JSONField(null=True)
+class Proveedor(Model):
+    """Entidad que suministra los productos registrados en compras.
 
-    class Meta:
-        table = "articulos"
+    Relaciones: un proveedor puede tener muchas facturas, contactos y cuentas
+    bancarias; cada registro asociado pertenece a un proveedor.
+    Justificación: el PDF Alpha A, p. 2, «Gestión de Entidades», y p. 4,
+    «Gestión de Proveedores y Clientes», requieren mantener sus datos
+    tributarios y comerciales para vincularlos a las compras.
+    """
 
-    def __str__(self):
-        return f"{self.codigo_sku} - {self.descripcion}"
-
-
-class Proveedores(Model):
-    id = fields.IntField(pk=True)
-    rut = fields.CharField(max_length=20, unique=True)
+    id = fields.IntField(primary_key=True)
+    rut = fields.CharField(max_length=12, unique=True)
     razon_social = fields.CharField(max_length=150)
-    deleted = fields.BooleanField()
+    activo = fields.BooleanField(default=True)
+    giro = fields.CharField(max_length=150, null=True)
+    creado_en = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "proveedores"
 
     def __str__(self):
         return self.razon_social
-
-
-class FacturasProveedor(Model):
-    id = fields.IntField(pk=True)
-    proveedor = fields.ForeignKeyField(
-        "models.Proveedores", related_name="facturas", on_delete=fields.CASCADE
-    )
-    numero_factura = fields.CharField(max_length=50)
-    datos_dte = fields.JSONField(null=True)
-
-    class Meta:
-        table = "facturas_proveedor"
-
-    def __str__(self):
-        return f"Factura {self.numero_factura}"
-
-
-class DetalleFactura(Model):
-    id = fields.IntField(pk=True)
-    factura = fields.ForeignKeyField(
-        "models.FacturasProveedor", related_name="detalles", on_delete=fields.CASCADE
-    )
-    articulo = fields.ForeignKeyField(
-        "models.Articulos", related_name="detalles_factura", on_delete=fields.RESTRICT
-    )
-    cantidad = fields.IntField()
-
-    class Meta:
-        table = "detalle_factura"
-
-    def __str__(self):
-        return f"Detalle {self.id} - Cantidad: {self.cantidad}"

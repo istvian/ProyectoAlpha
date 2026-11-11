@@ -1,50 +1,67 @@
-"""
-Módulo de Modelos para la Gestión de Egresos de Materiales (HU-02)
-Define la estructura relacional de la cabecera del egreso y sus respectivos ítems o detalles.
-"""
-
-from tortoise import fields, models
+from tortoise import fields
+from tortoise.models import Model
 
 
-class Egreso(models.Model):
+class Egreso(Model):
+    """Cabecera de un despacho de materiales a una obra.
+
+    Relaciones: cada egreso pertenece a una obra y lo registra un usuario;
+    contiene muchas líneas de detalle. Puede estar asociado a una solicitud
+    aprobada y tener un acuse de recepción.
+    Justificación: el PDF Alpha A, pp. 3 y 5, pide registrar egresos a obras,
+    controlar stock y documentar la recepción del material.
     """
-    Modelo que representa la cabecera de un egreso de materiales hacia una obra.
-    Registra el contexto operativo del movimiento de inventario.
-    """
-    id = fields.IntField(pk=True)
-    obra_id = fields.IntField(description="ID o referencia a la obra de destino")
-    tecnico_id = fields.IntField(description="Técnico responsable que recibe el material")
-    usuario_id = fields.IntField(description="Bodeguero o usuario que registra el egreso en el sistema")
-    fecha_registro = fields.DatetimeField(auto_now_add=True, description="Fecha y hora exacta del registro")
+
+    id = fields.IntField(primary_key=True)
+    obra = fields.ForeignKeyField(
+        "models.Obra",
+        related_name="egresos",
+        on_delete=fields.RESTRICT,
+    )
+    fecha_salida = fields.DatetimeField(auto_now_add=True)
+    responsable_obra = fields.CharField(max_length=100)
+    tecnico_receptor_id = fields.CharField(max_length=50)
+    motivo = fields.TextField()
+    estado = fields.CharField(max_length=12, default="BORRADOR")
+    usuario = fields.ForeignKeyField(
+        "models.User",
+        related_name="egresos_creados",
+        on_delete=fields.RESTRICT,
+    )
+    evidencia_adjunta = fields.JSONField(default=dict)
+    creado_en = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
-        table = "egresos"
+        table = "egresos_obra"
 
     def __str__(self):
-        return f"Egreso #{self.id} - Obra {self.obra_id}"
+        return f"Egreso #{self.id} - Obra #{self.obra_id}"
 
 
-class DetalleEgreso(models.Model):
+class DetalleEgreso(Model):
+    """Artículo y cantidad incluidos en un despacho.
+
+    Relaciones: muchas líneas pertenecen a un egreso; cada línea identifica
+    un artículo y puede ser referenciada por movimientos de Cardex.
+    Justificación: el PDF Alpha A, pp. 3 y 5, requiere asociar materiales
+    despachados con la obra y mantener la trazabilidad de cada movimiento.
     """
-    Modelo que representa el detalle por ítem de un egreso de materiales.
-    Mantiene la relación directa con el artículo sustraído y la cantidad despachada.
-    """
-    id = fields.IntField(pk=True)
+
+    id = fields.IntField(primary_key=True)
     egreso = fields.ForeignKeyField(
-        "models.Egreso", 
-        related_name="detalles", 
-        description="Cabecera del egreso a la que pertenece este detalle"
+        "models.Egreso",
+        related_name="detalles",
+        on_delete=fields.CASCADE,
     )
     articulo = fields.ForeignKeyField(
-        "models.Articulos", 
-        related_name="egresos_articulo", 
-        description="Artículo del inventario que está siendo egresado"
+        "models.Articulo",
+        related_name="detalles_egreso",
+        on_delete=fields.RESTRICT,
     )
-    cantidad = fields.IntField(description="Cantidad de unidades retiradas")
-    costo_unitario = fields.DecimalField(max_digits=10, decimal_places=2, default=0.0, description="Costo unitario de salida")
+    cantidad_solicitada = fields.DecimalField(max_digits=12, decimal_places=3)
 
     class Meta:
         table = "detalle_egreso"
 
     def __str__(self):
-        return f"Detalle {self.id}: {self.cantidad} unidades del artículo ID {self.articulo}"
+        return f"Detalle #{self.id} - Artículo #{self.articulo_id}"
