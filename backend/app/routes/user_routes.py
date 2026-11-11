@@ -1,16 +1,15 @@
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, EmailStr
-from tortoise.exceptions import IntegrityError
-from db import db
-from models.rol import Rol
 from models.user import User
 from middlewares.bcript_helper import validar_contraseña
 from middlewares.jwt_helper import check_user, generate_jwt, validar_rol, decode_jwt
 from schemas.roles import Roles
+from db.nosql import get_db
 
 router = APIRouter()
+db = get_db()
 
 
 class UsuarioRegister(BaseModel):
@@ -25,13 +24,24 @@ class UsuarioLogin(BaseModel):
 
 
 @router.get("/renew", dependencies=[Depends(check_user(Roles.cualquiera))])
-def renew(request: Request, response: Response):
+async def renew(request: Request, response: Response):
     try:
         token = request.cookies.get("token")
         payload = decode_jwt(token)
         if not payload:
             return {"error": True, "mensaje": "Error refrescando token"}
-        token = generate_jwt(payload["correo"], payload["rol"], 15)
+        user = await User.get_or_none(correo=payload.get("correo"))
+        if not user:
+            return {
+                "error": True,
+                "mensaje": "Cuenta no existe",
+            }
+        if user.enabled == False:
+            return {
+                "error": True,
+                "mensaje": "Cuenta deshabilitada hable con un administrador",
+            }
+        token = generate_jwt(user.correo, user.rol, 15)
         response.set_cookie(
             key="token",
             value=token,
@@ -40,6 +50,7 @@ def renew(request: Request, response: Response):
             secure=False,  # Cambiar para producción
             samesite="lax",
         )
+
         return {"error": False, "mensaje": "Token refrescado"}
     except Exception as error:
         print(error)
@@ -89,7 +100,7 @@ async def user_data(
             "mensaje": "Información de usuario",
             "correo": user.correo,
             "rol": Roles(user.rol.id).name,
-            "rolID": Roles(user.rol.id),
+            "rol_id": Roles(user.rol.id),
             "nombre": user.nombre,
         }
     except Exception as error:
@@ -100,7 +111,6 @@ async def user_data(
 @router.post("/login")
 async def login_user(body: UsuarioLogin, response: Response):
     try:
-
         user = await User.get_or_none(correo=body.correo).select_related("rol")
         if not user or not validar_contraseña(body.password, user.password):
             return {"error": True, "mensaje": "Correo o contraseña incorrectos"}

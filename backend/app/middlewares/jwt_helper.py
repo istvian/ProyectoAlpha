@@ -24,7 +24,7 @@ def generate_jwt(correo, rol, minutos_exp):
     return encoded_jwt
 
 
-def decode_jwt(token):
+def decode_jwt(token) -> dict:
     try:
         payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
         return payload
@@ -33,7 +33,7 @@ def decode_jwt(token):
     except jwt.InvalidTokenError as e:
         print(f"Error: Token inválido ({e}).")
 
-    return None
+    return {}
 
 
 def validar_rol(token, rol: Roles):
@@ -59,7 +59,8 @@ def validar_rol(token, rol: Roles):
 
 
 def check_user(rol: Roles):
-    def dependency(token: str | None = Cookie(default=None)):
+    def dependency(request: Request):
+        token = request.cookies.get("token")
         if not token:
             raise HTTPException(
                 status_code=401,
@@ -67,6 +68,7 @@ def check_user(rol: Roles):
             )
         try:
             payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
+            request.state.usuario = payload.get("correo")
             jwt_rol = payload.get("rol", -1)
             if not (
                 jwt_rol == rol.value

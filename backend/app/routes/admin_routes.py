@@ -1,0 +1,106 @@
+import time
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Request, Response
+from pydantic import BaseModel, EmailStr
+from models.user import User
+from middlewares.bcript_helper import validar_contraseña, encriptar_contraseña
+from middlewares.jwt_helper import check_user, generate_jwt, validar_rol, decode_jwt
+from schemas.roles import Roles
+from db.nosql import get_db
+from datetime import datetime, timezone
+
+router = APIRouter()
+db = get_db()
+
+
+class NuevoUsuario(BaseModel):
+    correo: EmailStr
+    password: Optional[str] = None
+    nombre: str
+    enabled: bool
+    rol_id: int
+
+
+# Crear un usuario via panel administrador
+@router.post("/user", dependencies=[Depends(check_user(Roles.admin))])
+async def create_user(request: Request, body: NuevoUsuario, response: Response):
+    try:
+        if not body.password or body.password == "":
+            return {"error": True, "mensaje": "Campos incompletos"}
+        user = await User.get_or_none(correo=body.correo)
+        if user:
+            return {"error": True, "mensaje": "Usuario ya existe"}
+        await User.create(
+            nombre=body.nombre,
+            correo=body.correo,
+            password=encriptar_contraseña(body.password),
+            enabled=body.enabled,
+            rol_id=body.rol_id,
+        )
+        return {"error": False, "mensaje": "Se creo el usuario correctamente"}
+    except Exception as error:
+        print(error)
+        return {"error": True, "mensaje": str(error)}
+
+
+# Crear un usuario via panel administrador
+@router.patch("/user", dependencies=[Depends(check_user(Roles.admin))])
+async def modify_user(request: Request, body: NuevoUsuario, response: Response):
+    try:
+        user = await User.get_or_none(correo=body.correo)
+        if not user:
+            return {"error": True, "mensaje": "Usuario no existe"}
+        update_data = {
+            "nombre": body.nombre,
+            "correo": body.correo,
+            "enabled": body.enabled,
+            "rol_id": body.rol_id,
+        }
+        if body.password and body.password.strip():
+            update_data["password"] = encriptar_contraseña(body.password)
+        user.update_from_dict(update_data)
+        await user.save()
+        return {"error": False, "mensaje": "Se guardo el usuario correctamente"}
+    except Exception as error:
+        print(error)
+        return {"error": True, "mensaje": str(error)}
+
+
+@router.get("/users", dependencies=[Depends(check_user(Roles.admin))])
+async def get_userdata(request: Request, response: Response):
+    try:
+        users = await User.all().values(
+            "id", "nombre", "correo", "enabled", "created", "rol_id"
+        )
+        for user in users:
+            try:
+                user["rol"] = Roles(user["rol_id"]).name
+            except ValueError:
+                user["rol"] = "Desconocido"
+
+        return {
+            "error": False,
+            "mensaje": "Consulta realizada correctamente",
+            "data": users,
+        }
+    except Exception as error:
+        print(error)
+        return {"error": True, "mensaje": str(error)}
+
+
+@router.get("/logs", dependencies=[Depends(check_user(Roles.admin))])
+async def get_logs(
+    cantidad: int = 20,
+    pagina: int = 1,
+):
+    try:
+        logs = db.ObtenerUltimosLogs(cantidad, pagina)
+        return {
+            "error": False,
+            "mensaje": "Logs retornados correctamente",
+            "data": logs,
+        }
+    except Exception as error:
+        print(error)
+        return {"error": True, "mensaje": str(error)}

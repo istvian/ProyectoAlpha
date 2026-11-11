@@ -96,14 +96,7 @@ function App() {
                 <Route element={<CardexMain />} path="/cardex" />
                 <Route element={<PanelAdmin />} path="/admin" />
                 <Route element={<Bodega />} path="/bodega" />
-                <Route
-                  element={<SalidaMateriales />}
-                  path="/bodega/salida"
-                />
-                <Route
-                  element={<AgregarArticulo />}
-                  path="/inventario/agregar"
-                />
+                <Route element={<SalidaMateriales />} path="/bodega/salida" />
                 <Route element={<NotFound />} path="*" />
               </Route>
             </Route>
