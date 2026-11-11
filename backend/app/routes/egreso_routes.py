@@ -77,6 +77,15 @@ async def registrar_egreso(data: EgresoSchema):
                     ),
                 )
 
+            if articulo.precio_lista is None or articulo.precio_lista < 0:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        f"El artículo '{articulo.descripcion}' no tiene un precio "
+                        "de lista válido configurado."
+                    ),
+                )
+
         # --- PASO 2: VALIDACIÓN DE OBRA Y RESPONSABLES ---
         obra = await Obra.get_or_none(id=data.obra_id)
         if not obra:
@@ -115,8 +124,8 @@ async def registrar_egreso(data: EgresoSchema):
             await DetalleEgreso.create(
                 egreso=nuevo_egreso,
                 articulo=articulo,
-                cantidad=item.cantidad,
-                costo_unitario=0.0,
+                cantidad_solicitada=item.cantidad,
+                precio_lista_vigente=articulo.precio_lista,
             )
 
             # Rebaja de stock en tiempo real

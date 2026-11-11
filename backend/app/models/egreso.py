@@ -46,20 +46,31 @@ class DetalleEgreso(models.Model):
     """
     id = fields.IntField(pk=True)
     egreso = fields.ForeignKeyField(
-        "models.Egreso", 
-        related_name="detalles", 
-        description="Cabecera del egreso a la que pertenece este detalle"
+        "models.Egreso",
+        related_name="detalles",
+        on_delete=fields.RESTRICT,
+        description="Cabecera del egreso a la que pertenece este detalle",
     )
     articulo = fields.ForeignKeyField(
-        "models.Articulos", 
-        related_name="egresos_articulo", 
-        description="Artículo del inventario que está siendo egresado"
+        "models.Articulos",
+        related_name="egresos_articulo",
+        on_delete=fields.RESTRICT,
+        description="Artículo del inventario que está siendo egresado",
     )
-    cantidad = fields.IntField(description="Cantidad de unidades retiradas")
-    costo_unitario = fields.DecimalField(max_digits=10, decimal_places=2, default=0.0, description="Costo unitario de salida")
+    cantidad_solicitada = fields.IntField(
+        description="Cantidad de unidades solicitadas"
+    )
+    precio_lista_vigente = fields.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        description="Precio de lista vigente al momento del egreso",
+    )
 
     class Meta:
         table = "detalle_egreso"
 
     def __str__(self):
-        return f"Detalle {self.id}: {self.cantidad} unidades del artículo ID {self.articulo}"
+        return (
+            f"Detalle {self.id}: {self.cantidad_solicitada} unidades "
+            f"del artículo ID {self.articulo}"
+        )

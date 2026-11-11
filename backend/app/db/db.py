@@ -22,6 +22,7 @@ async def SetupDB():
         },
     )
     await PrepareLegacyEgresoSchema()
+    await PrepareLegacyDetalleSchema()
     await Tortoise.generate_schemas()
     await CreateRoles()
     await SetupAccounts()
@@ -61,6 +62,54 @@ async def PrepareLegacyEgresoSchema():
     if "detalle_egreso" in tables:
         await connection.execute_script('DROP TABLE "detalle_egreso"')
     await connection.execute_script('DROP TABLE "egresos"')
+
+
+async def PrepareLegacyDetalleSchema():
+    connection = Tortoise.get_connection("default")
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+
+    if "articulos" in tables:
+        article_columns = {
+            row["name"]
+            for row in await connection.execute_query_dict(
+                'PRAGMA table_info("articulos")'
+            )
+        }
+        if "precio_lista" not in article_columns:
+            await connection.execute_script(
+                'ALTER TABLE "articulos" ADD COLUMN "precio_lista" DECIMAL(10, 2)'
+            )
+
+    if "detalle_egreso" not in tables:
+        return
+
+    detail_columns = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            'PRAGMA table_info("detalle_egreso")'
+        )
+    }
+    if {"cantidad_solicitada", "precio_lista_vigente"} <= detail_columns:
+        return
+
+    detail_count = (
+        await connection.execute_query_dict(
+            'SELECT COUNT(*) AS count FROM "detalle_egreso"'
+        )
+    )[0]["count"]
+    if detail_count:
+        raise RuntimeError(
+            "La tabla detalle_egreso contiene registros con el esquema anterior. "
+            "Migra cantidad y define explícitamente precio_lista_vigente para cada "
+            "detalle antes de actualizar el esquema."
+        )
+
+    await connection.execute_script('DROP TABLE "detalle_egreso"')
 
 
 async def CreateRoles():
