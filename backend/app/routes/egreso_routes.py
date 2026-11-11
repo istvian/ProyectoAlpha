@@ -5,12 +5,15 @@ Expone los endpoints HTTP para el registro seguro de salidas de material con con
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from tortoise.transactions import atomic
+from tortoise.expressions import F
 from typing import List
 from pydantic import BaseModel, Field
 
 from middlewares.jwt_helper import check_user
 from models.proveedor import Articulos
 from models.egreso import Egreso, DetalleEgreso
+from models.obra import Obra
+from models.user import User
 from schemas.roles import Roles
 
 # Configuración del enrutador de FastAPI
@@ -35,7 +38,7 @@ class EgresoSchema(BaseModel):
         ..., description="ID del usuario/bodeguero que opera el sistema"
     )
     detalles: List[ItemEgresoSchema] = Field(
-        ..., description="Lista de artículos e ítems a egresar"
+        ..., min_length=1, description="Lista de artículos e ítems a egresar"
     )
 
 
@@ -57,44 +60,98 @@ async def registrar_egreso(data: EgresoSchema):
     Si ocurre cualquier fallo, se ejecuta un rollback automático garantizando la integridad de los datos.
     """
     try:
-        # --- PASO 1: VALIDACIÓN DE EXISTENCIAS Y STOCK ---
+        # Sum duplicate product lines so the stock check covers the whole request.
+        cantidades_por_articulo: dict[int, int] = {}
         for item in data.detalles:
-            articulo = await Articulos.get_or_none(id=item.producto_id)
+            cantidades_por_articulo[item.producto_id] = (
+                cantidades_por_articulo.get(item.producto_id, 0) + item.cantidad
+            )
+
+        # --- PASO 1: VALIDACIÓN DE EXISTENCIAS Y STOCK ---
+        articulos: dict[int, Articulos] = {}
+        for producto_id, cantidad_solicitada in cantidades_por_articulo.items():
+            articulo = await Articulos.get_or_none(id=producto_id)
             if not articulo:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"El artículo con ID {item.producto_id} no existe en el inventario.",
+                    detail=f"El artículo con ID {producto_id} no existe en el inventario.",
                 )
 
-            if articulo.stock_actual < item.cantidad:
+            if articulo.stock_actual < cantidad_solicitada:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
                         f"Stock insuficiente para el artículo '{articulo.descripcion}'. "
-                        f"Stock actual: {articulo.stock_actual}, solicitado: {item.cantidad}."
+                        f"Stock actual: {articulo.stock_actual}, "
+                        f"solicitado: {cantidad_solicitada}."
                     ),
                 )
 
-        # --- PASO 2: CREACIÓN DE LA CABECERA DEL EGRESO ---
-        nuevo_egreso = await Egreso.create(
-            obra_id=data.obra_id, tecnico_id=data.tecnico_id, usuario_id=data.usuario_id
-        )
+            if articulo.precio_lista is None or articulo.precio_lista < 0:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        f"El artículo '{articulo.descripcion}' no tiene un precio "
+                        "de lista válido configurado."
+                    ),
+                )
+            articulos[producto_id] = articulo
 
-        # --- PASO 3: PROCESAMIENTO DE DETALLES Y DESCUENTO DE STOCK ---
-        for item in data.detalles:
-            articulo = await Articulos.get(id=item.producto_id)
-
-            # Registrar línea de detalle asociada al egreso
-            await DetalleEgreso.create(
-                egreso=nuevo_egreso,
-                articulo=articulo,
-                cantidad=item.cantidad,
-                costo_unitario=0.0,
+        # --- PASO 2: VALIDACIÓN DE OBRA Y RESPONSABLES ---
+        obra = await Obra.get_or_none(id=data.obra_id)
+        if not obra:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"La obra con ID {data.obra_id} no existe.",
             )
 
-            # Rebaja de stock en tiempo real
-            articulo.stock_actual -= item.cantidad
-            await articulo.save()
+        usuario = await User.get_or_none(id=data.usuario_id)
+        if not usuario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"El usuario con ID {data.usuario_id} no existe.",
+            )
+
+        tecnico = await User.get_or_none(id=data.tecnico_id)
+        if not tecnico:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"El usuario receptor con ID {data.tecnico_id} no existe.",
+            )
+
+        # --- PASO 3: CREACIÓN DE LA CABECERA DEL EGRESO ---
+        nuevo_egreso = await Egreso.create(
+            obra=obra,
+            responsable_entrega=usuario.nombre,
+            responsable_recepcion=tecnico.nombre,
+            usuario=usuario,
+        )
+
+        # --- PASO 4: DESCUENTO CONDICIONAL DE STOCK ---
+        for producto_id, cantidad_solicitada in cantidades_por_articulo.items():
+            updated = await Articulos.filter(
+                id=producto_id,
+                stock_actual__gte=cantidad_solicitada,
+            ).update(stock_actual=F("stock_actual") - cantidad_solicitada)
+            if updated != 1:
+                articulo = await Articulos.get(id=producto_id)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"Stock insuficiente para el artículo '{articulo.descripcion}'. "
+                        f"Stock actual: {articulo.stock_actual}, "
+                        f"solicitado: {cantidad_solicitada}."
+                    ),
+                )
+
+        # --- PASO 5: REGISTRO DE LOS DETALLES ---
+        for item in data.detalles:
+            await DetalleEgreso.create(
+                egreso=nuevo_egreso,
+                articulo=articulos[item.producto_id],
+                cantidad_solicitada=item.cantidad,
+                precio_lista_vigente=articulos[item.producto_id].precio_lista,
+            )
 
         return {
             "success": True,
