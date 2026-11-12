@@ -13,7 +13,7 @@ http:
         "tipo": "Factura",
         "proveedor": "Juanito 2 Ltda.",
         "rut": "11222333-4",
-        "folio": "123456",
+        "folio": "1234567890",
         "emision": "2026-11-11",
         "vencimiento": "2026-11-15",
         "observaciones": "Primera factura",
@@ -29,7 +29,7 @@ http:
         "productos": [
           {
             "nombre": "Producto 1",
-            "sku": "PRO",
+            "sku": "PR",
             "descripcion": "Es un producto",
             "stock": 5,
             "description": "Descripción del producto",
@@ -41,7 +41,7 @@ http:
           },
            {
             "nombre": "Producto 2",
-            "sku": "PROD",
+            "sku": "P",
             "descripcion": "Es un producto",
             "stock": 5,
             "description": "Descripción del producto",

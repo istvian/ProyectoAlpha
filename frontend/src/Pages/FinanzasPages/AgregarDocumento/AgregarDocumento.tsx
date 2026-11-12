@@ -73,19 +73,19 @@ export function AgregarDocumento({
       setErrorMsg("Debe seleccionar un tipo de documento tributario.");
       return;
     }
-    if (!formulario.proveedor.trim()) {
+    if (!formulario?.proveedor?.trim()) {
       setErrorMsg("El campo Proveedor es obligatorio.");
       return;
     }
-    if (!formulario.rut.trim()) {
+    if (!formulario?.rut?.trim()) {
       setErrorMsg("El RUT del proveedor es obligatorio.");
       return;
     }
-    if (!formulario.folio.trim()) {
+    if (!formulario?.folio?.trim()) {
       setErrorMsg("El Folio es obligatorio.");
       return;
     }
-    if (formulario.productos.length === 0) {
+    if (formulario?.productos?.length === 0) {
       setErrorMsg("Debe agregar al menos un producto al documento.");
       return;
     }

@@ -10,6 +10,7 @@ import {
   type DocumentoTributario,
   type Obra,
   type Proveedor,
+  type UserData,
 } from "../../../types/general";
 import { useEffect, useState } from "react";
 import { InputDate } from "../../../Components/InputDate/InputDate";
@@ -18,6 +19,7 @@ import {
   GetFacturas,
   GetObras,
   GetProveedores,
+  GetTecnicos,
 } from "../../../Helpers/APIConnector";
 import { Popup } from "../../../Components/Popup/Popup";
 import { AgregarProveedor } from "../AgregarProveedor/AgregarProveedor";
@@ -34,6 +36,7 @@ export function FinanzasMain() {
   const [facturas, setFacturas] = useState<DocumentoTributario[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [obras, setObras] = useState<Obra[]>([]);
+  const [tecnicos, setTecnicos] = useState<UserData[]>([]);
 
   // Estados de filtros
   const [filtroTipo, setFiltroTipo] = useState("");
@@ -61,6 +64,11 @@ export function FinanzasMain() {
     GetObras().then((res) => {
       if (!res?.error && res?.data) {
         setObras(res?.data);
+      }
+    });
+    GetTecnicos().then((res) => {
+      if (res?.data) {
+        setTecnicos(res.data);
       }
     });
   }, [popupAgregarDocumento, popupAgregarProveedor, popupAgregarObra]);
@@ -266,6 +274,10 @@ export function FinanzasMain() {
                       <tr key={index}>
                         <td>{item.codigo_obra}</td>
                         <td>{item.nombre_obra}</td>
+                        <td>{item.tipo_servicio}</td>
+                        <td>
+                          {item.tecnico_responsable_mail}
+                        </td>
                         <td>{item.enabled ? "Habilitada" : "Deshabilitada"}</td>
                         <td className={css.tdEditar}>
                           <Btn

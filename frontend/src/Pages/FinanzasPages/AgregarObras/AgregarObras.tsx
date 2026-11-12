@@ -25,7 +25,7 @@ export function AgregarObras({ isEdit, onEnd, obras }: AgregarProveedorProps) {
     enabled: true,
     fecha_creacion: new Date(),
     nombre_obra: "",
-    tecnico_responsable_mail: tecnicos[0]?.nombre,
+    tecnico_responsable_mail: tecnicos[0]?.correo || "",
     tipo_servicio: "",
   };
   const [obra, setObra] = useState<Obra>({ ...BASE_OBRA });
@@ -37,6 +37,10 @@ export function AgregarObras({ isEdit, onEnd, obras }: AgregarProveedorProps) {
       setObra({ ...BASE_OBRA });
     }
   }, [obras]);
+
+  useEffect(() => {
+    console.log(obra);
+  }, [obra]);
 
   useEffect(() => {
     GetTecnicos().then((res) => {
@@ -101,7 +105,7 @@ export function AgregarObras({ isEdit, onEnd, obras }: AgregarProveedorProps) {
             enabled: value == 1 ? false : true,
           }));
         }}
-        options={["Habilitada", "Deshabilitada"]}
+        options={["Deshabilitada", "Habilitada"]}
         firstOption="Selecciona un estado"
       />
       <div className={css.row}>
@@ -115,7 +119,7 @@ export function AgregarObras({ isEdit, onEnd, obras }: AgregarProveedorProps) {
         </Btn>
         <Btn
           disabled={
-            !obra?.nombre_obra?.trim() || !obra?.tecnico_responsable_mail?.trim()
+            !obra?.nombre_obra?.trim() || !obra?.tecnico_responsable_mail
           }
           onClick={() => {
             HandleSaveOrEdit();

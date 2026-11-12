@@ -1,4 +1,5 @@
 import time
+import traceback
 
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, EmailStr
@@ -30,7 +31,10 @@ async def renew(request: Request, response: Response):
         payload = decode_jwt(token)
         if not payload:
             return {"error": True, "mensaje": "Error refrescando token"}
-        user = await User.get_or_none(correo=payload.get("correo"))
+        user = await User.get_or_none(correo=payload.get("correo")).select_related(
+            "rol"
+        )
+        rol = user.rol_id  # type: ignore
         if not user:
             return {
                 "error": True,
@@ -41,18 +45,24 @@ async def renew(request: Request, response: Response):
                 "error": True,
                 "mensaje": "Cuenta deshabilitada hable con un administrador",
             }
-        token = generate_jwt(user.correo, user.rol, 15)
+        newtoken = generate_jwt(user.correo, rol, 15)
         response.set_cookie(
             key="token",
-            value=token,
+            value=newtoken,
             max_age=15 * 60,
             httponly=True,
             secure=False,  # Cambiar para producción
             samesite="lax",
         )
-
-        return {"error": False, "mensaje": "Token refrescado"}
+        expires_in = 15 * 60
+        return {
+            "error": False,
+            "mensaje": "Token refrescado",
+            "user_id": user.id,
+            "expires": int(time.time() * 1000) + expires_in * 1000,
+        }
     except Exception as error:
+        traceback.print_exc()
         print(error)
         return {"error": True, "mensaje": str(error)}
 

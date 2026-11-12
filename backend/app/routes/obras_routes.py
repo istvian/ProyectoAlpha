@@ -24,10 +24,25 @@ class ObraBaseModel(BaseModel):
 async def get_obras(request: Request, response: Response):
     try:
         obras = await Obra.all().prefetch_related("tecnico_responsable")
-        if obras:
-            return {"error": False, "mensaje": "Lectura completa", "data": obras}
-        else:
-            return {"error": False, "mensaje": "Lectura completa", "data": []}
+        data = []
+        for obra in obras:
+            data.append(
+                {
+                    "id": obra.id,
+                    "codigo_obra": obra.codigo_obra,
+                    "nombre_obra": obra.nombre_obra,
+                    "tipo_servicio": obra.tipo_servicio,
+                    "tecnico_responsable_mail": (
+                        obra.tecnico_responsable.correo
+                        if obra.tecnico_responsable
+                        else None
+                    ),
+                    "tecnico_responsable_id": obra.tecnico_responsable_id,  # type: ignore
+                    "enabled": obra.enabled,
+                    "fecha_creacion": obra.fecha_creacion,
+                }
+            )
+        return {"error": False, "mensaje": "Lectura completa", "data": data}
 
     except Exception as error:
         print(error)

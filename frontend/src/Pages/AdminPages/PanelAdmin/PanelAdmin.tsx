@@ -70,7 +70,7 @@ export function PanelAdmin() {
   }, [paginaLog]);
 
   function HandleSearch() {
-    const query = searchQuery.toLowerCase().trim();
+    const query = searchQuery?.toLowerCase()?.trim();
 
     const filtered = usersList.filter((item) => {
       const matchesQuery =
@@ -216,7 +216,7 @@ export function PanelAdmin() {
           }}
         >
           <div>
-            <Title>Panel Admin</Title>
+            <Title>Panel Admin TI</Title>
             <p>
               Administra usuarios, asigna roles y consulta la actividad del
               sistema.
@@ -241,13 +241,13 @@ export function PanelAdmin() {
           />
           <Card
             title="Roles disponibles"
-            content="5 roles"
+            content={`${new Set(usersList.map((item) => item.rol)).size} roles`}
             footer="Permisos según perfíl de acceso"
           />
           <Card
             title="Actividad de hoy"
-            content="6 eventos"
-            footer="Último registro: 13/10/2026 - 09:5"
+            content={`${logs.length} eventos`}
+            footer={`Último registro: ${new Date(logs[0]?.fecha_local).toLocaleString("es-CL")}`}
           />
         </CardContainer>
         <Box>

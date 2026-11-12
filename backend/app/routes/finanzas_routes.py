@@ -153,6 +153,8 @@ async def get_facturas():
 async def get_tecnicos():
     try:
         data = await User.all().filter(rol=Roles.tecnico.value)
+        for user in data:
+            del user.password
         return {
             "error": False,
             "mensaje": "Facturas retornadas correctamente",
