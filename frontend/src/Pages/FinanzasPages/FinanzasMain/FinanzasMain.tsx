@@ -8,17 +8,32 @@ import useValidateRol from "../../../Hooks/useValidateRol";
 import {
   Rol,
   type DocumentoTributario,
+  type Obra,
   type Proveedor,
 } from "../../../types/general";
 import { useEffect, useState } from "react";
 import { InputDate } from "../../../Components/InputDate/InputDate";
 import { Selector } from "../../../Components/Selector/Selector";
-import { GetFacturas, GetProveedores } from "../../../Helpers/APIConnector";
+import {
+  GetFacturas,
+  GetObras,
+  GetProveedores,
+} from "../../../Helpers/APIConnector";
+import { Popup } from "../../../Components/Popup/Popup";
+import { AgregarProveedor } from "../AgregarProveedor/AgregarProveedor";
+import { AgregarObras } from "../AgregarObras/AgregarObras";
 
 export function FinanzasMain() {
-  const [agregarDocumento, setAgregarDocumento] = useState(false);
+  const [popupAgregarDocumento, setPopupAgregarDocumento] = useState(false);
+  const [popupAgregarProveedor, setPopupAgregarProveedor] = useState(false);
+  const [popupAgregarObra, setPopupAgregarObra] = useState(false);
+  const [agregarProveedorEdit, setAgregarProveedorEdit] = useState(false);
+  const [agregarObraEdit, setAgregarObraEdit] = useState(false);
+  const [currentProveedor, setCurrentProveedor] = useState<Proveedor | null>();
+  const [currentObra, setCurrentObra] = useState<Obra | null>();
   const [facturas, setFacturas] = useState<DocumentoTributario[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [obras, setObras] = useState<Obra[]>([]);
 
   // Estados de filtros
   const [filtroTipo, setFiltroTipo] = useState("");
@@ -43,31 +58,47 @@ export function FinanzasMain() {
         setProveedores(res?.data);
       }
     });
-  }, [agregarDocumento]);
+    GetObras().then((res) => {
+      if (!res?.error && res?.data) {
+        setObras(res?.data);
+      }
+    });
+  }, [popupAgregarDocumento, popupAgregarProveedor, popupAgregarObra]);
 
   // Filtrar facturas
+  const toYMD = (date: Date | string) => {
+    if (!date) return "";
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(d.getTime())) return "";
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const facturasFiltradas = facturas.filter((item) => {
     const cumpleTipo = !filtroTipo || item.tipo === filtroTipo;
-    const cumpleProveedor =
-      !filtroProveedor || item.proveedor === filtroProveedor;
 
-    let cumpleEmision = true;
-    if (!isNaN(filtroEmision.getTime()) && item.emision) {
-      const itemEmision = new Date(item.emision);
-      cumpleEmision =
-        itemEmision.getFullYear() === filtroEmision.getFullYear() &&
-        itemEmision.getMonth() === filtroEmision.getMonth() &&
-        itemEmision.getDate() === filtroEmision.getDate();
+    let cumpleProveedor = true;
+    if (filtroProveedor) {
+      const proveedorObj = proveedores.find(
+        (prov) => prov.id === item.proveedor_id,
+      );
+      const nombreProveedor = proveedorObj
+        ? proveedorObj.razon_social
+        : item.proveedor;
+      cumpleProveedor = nombreProveedor === filtroProveedor;
     }
 
-    let cumpleVencimiento = true;
-    if (!isNaN(filtroVencimiento.getTime()) && item.vencimiento) {
-      const itemVencimiento = new Date(item.vencimiento);
-      cumpleVencimiento =
-        itemVencimiento.getFullYear() === filtroVencimiento.getFullYear() &&
-        itemVencimiento.getMonth() === filtroVencimiento.getMonth() &&
-        itemVencimiento.getDate() === filtroVencimiento.getDate();
-    }
+    const cumpleEmision =
+      isNaN(filtroEmision.getTime()) ||
+      !item.emision ||
+      toYMD(item.emision) === toYMD(filtroEmision);
+
+    const cumpleVencimiento =
+      isNaN(filtroVencimiento.getTime()) ||
+      !item.vencimiento ||
+      toYMD(item.vencimiento) === toYMD(filtroVencimiento);
 
     return cumpleTipo && cumpleProveedor && cumpleEmision && cumpleVencimiento;
   });
@@ -110,28 +141,175 @@ export function FinanzasMain() {
               reportes financieros.
             </p>
           </div>
-          <div className={css.actions}>
-            <Btn
-              onClick={() => {
-                setAgregarDocumento(true);
-              }}
-            >
-              Nuevo documento
-            </Btn>
-          </div>
         </Box>
-        {agregarDocumento ? (
-          <AgregarDocumento
+
+        <Popup isVisible={popupAgregarProveedor}>
+          <AgregarProveedor
+            data={currentProveedor}
+            isEdit={agregarProveedorEdit}
             onEnd={() => {
-              setAgregarDocumento(false);
+              setPopupAgregarProveedor(false);
             }}
           />
-        ) : (
-          ""
-        )}
+        </Popup>
+        <Popup isVisible={popupAgregarDocumento}>
+          <AgregarDocumento
+            proveedores={proveedores}
+            onEnd={() => {
+              setPopupAgregarDocumento(false);
+            }}
+          />
+        </Popup>
+        <Popup isVisible={popupAgregarObra}>
+          <AgregarObras
+            obras={currentObra}
+            isEdit={agregarObraEdit}
+            onEnd={() => {
+              setPopupAgregarObra(false);
+            }}
+          />
+        </Popup>
+
+        <Box>
+          <div className={css.row}>
+            <Title>Listado de proveedores</Title>
+            <Btn
+              onClick={() => {
+                setCurrentProveedor(null);
+                setPopupAgregarProveedor(true);
+                setAgregarProveedorEdit(false);
+              }}
+            >
+              Agregar proveedor
+            </Btn>
+          </div>
+          <div className={css.tableContainer}>
+            <table className={css.table}>
+              <thead>
+                <tr>
+                  <th>Razón social</th>
+                  <th>RUT</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {proveedores.length > 0 ? (
+                  proveedores.map((item, index) => {
+                    return (
+                      <tr key={index}>
+                        <td>{item.razon_social}</td>
+                        <td>{item.rut}</td>
+                        <td>{item.deleted ? "Deshabilitado" : "Habilitado"}</td>
+                        <td className={css.tdEditar}>
+                          <Btn
+                            onClick={() => {
+                              setAgregarProveedorEdit(true);
+                              setPopupAgregarProveedor(true);
+                              setCurrentProveedor(item);
+                            }}
+                          >
+                            Modificar
+                          </Btn>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      style={{ textAlign: "center", padding: "1.5rem" }}
+                    >
+                      No se encontraron proveedores
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <div className={css.row}>
+              <p className={css.resumen}>
+                Mostrando {proveedores.length} proveedores
+              </p>
+            </div>
+          </div>
+        </Box>
+        <Box>
+          <div className={css.row}>
+            <Title>Listado de obras</Title>
+            <Btn
+              onClick={() => {
+                setCurrentObra(null);
+                setPopupAgregarObra(true);
+                setAgregarObraEdit(false);
+              }}
+            >
+              Agregar obra
+            </Btn>
+          </div>
+          <div className={css.tableContainer}>
+            <table className={css.table}>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Tipo de servicio</th>
+                  <th>Técnico responsable</th>
+                  <th>Estado</th>
+                  <th>Fecha de creación</th>
+                </tr>
+              </thead>
+              <tbody>
+                {obras.length > 0 ? (
+                  obras.map((item, index) => {
+                    return (
+                      <tr key={index}>
+                        <td>{item.codigo_obra}</td>
+                        <td>{item.nombre_obra}</td>
+                        <td>{item.enabled ? "Habilitada" : "Deshabilitada"}</td>
+                        <td className={css.tdEditar}>
+                          <Btn
+                            onClick={() => {
+                              setAgregarObraEdit(true);
+                              setPopupAgregarObra(true);
+                              setCurrentObra(item);
+                            }}
+                          >
+                            Modificar
+                          </Btn>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      style={{ textAlign: "center", padding: "1.5rem" }}
+                    >
+                      No se encontraron obras
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <div className={css.row}>
+              <p className={css.resumen}>Mostrando {obras.length} obras</p>
+            </div>
+          </div>
+        </Box>
         <Box>
           <div className={css.row}>
             <Title>Listado de facturas</Title>
+            <div className={css.actions}>
+              <Btn
+                onClick={() => {
+                  setPopupAgregarDocumento(true);
+                }}
+              >
+                Nuevo documento
+              </Btn>
+            </div>
           </div>
           <div className={css.filters}>
             <Selector

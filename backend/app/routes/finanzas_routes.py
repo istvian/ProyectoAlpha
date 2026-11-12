@@ -10,7 +10,9 @@ from models.proveedor import (
     DocumentosTributarios,
     Proveedores,
 )
-from middlewares.jwt_helper import check_user, validar_rol
+from models.user import User
+from models.cardex_log import CardexLog, TipoMovimiento
+from middlewares.jwt_helper import check_user, decode_jwt, validar_rol
 from schemas.roles import Roles
 from db.nosql import get_db
 from datetime import date
@@ -21,14 +23,14 @@ db = get_db()
 
 class ProductoSchema(BaseModel):
     nombre: str
-    sku: str
+    sku: Optional[str]
     descripcion: Optional[str] = ""
     stock: int
-    stockMinimo: int = Field(0, ge=0)
-    precioNeto: float = Field(..., gt=0)
-    importeBase: Optional[float] = 0.0
-    costoNeto: Optional[float] = 0.0
-    netoFinal: Optional[float] = 0.0
+    stock_minimo: int = Field(0, ge=0)
+    precio_neto: float = Field(..., gt=0)
+    importe_base: Optional[float] = 0.0
+    costo_neto: Optional[float] = 0.0
+    neto_final: Optional[float] = 0.0
 
 
 class DocumentoTributarioCreateSchema(BaseModel):
@@ -45,12 +47,12 @@ class DocumentoTributarioCreateSchema(BaseModel):
     descuento2: Optional[float] = 0.0
     descuento3: Optional[float] = 0.0
 
-    importeBase: float
-    descuentoTotal: float
+    importe_base: float
+    descuento_total: float
     subtotal: float
     iva: float
     total: float
-    cantidadProductos: int
+    cantidad_productos: int
 
     productos: List[ProductoSchema]
 
@@ -61,6 +63,11 @@ async def create_factura(
     request: Request, body: DocumentoTributarioCreateSchema, response: Response
 ):
     try:
+        token = request.cookies.get("token")
+        payload = decode_jwt(token)
+        usuario = await User.get_or_none(correo=payload["correo"])
+        if not usuario:
+            return {"error": True, "mensaje": "Usuario no autenticado o no existe"}
         proveedor = await Proveedores.get_or_none(rut=body.rut)
         if not proveedor:
             proveedor = await Proveedores.create(
@@ -78,31 +85,49 @@ async def create_factura(
                 descuento1=body.descuento1,
                 descuento2=body.descuento2,
                 descuento3=body.descuento3,
-                importe_base=body.importeBase,
-                descuento_total=body.descuentoTotal,
+                importe_base=body.importe_base,
+                descuento_total=body.descuento_total,
                 subtotal=body.subtotal,
                 iva=body.iva,
                 total=body.total,
-                cantidad_productos=body.cantidadProductos,
+                cantidad_productos=body.cantidad_productos,
             )
+        else:
+            return {"error": True, "mensaje": "El folio del documento ya existe"}
         for producto in body.productos:
             detalle = {}
+            ultimo = await Articulos.all().last()
+            id = ultimo.id + 1 if ultimo is not None else 1
+            today = date.today()
+            anio_actual = today.year
+            sku = f"PROD-{anio_actual}-{id}"
             articulo = await Articulos.create(
-                codigo_sku=producto.sku,
+                codigo_sku=sku,
                 nombre=producto.nombre,
                 descripcion=producto.descripcion,
                 stock_actual=producto.stock,
-                stock_minimo=producto.stockMinimo,
-                precio_lista=producto.precioNeto,
+                stock_minimo=producto.stock_minimo,
+                precio_lista=producto.precio_neto,
             )
             detalle["documento"] = documento
             detalle["articulo"] = articulo
             detalle["cantidad"] = articulo.stock_actual
-            detalle["precio_neto"] = producto.precioNeto
-            detalle["importe_base"] = producto.importeBase
-            detalle["costo_neto_unitario"] = producto.costoNeto
-            detalle["neto_final"] = producto.netoFinal
+            detalle["precio_neto"] = producto.precio_neto
+            detalle["importe_base"] = producto.importe_base
+            detalle["costo_neto_unitario"] = producto.costo_neto
+            detalle["neto_final"] = producto.neto_final
             await DetalleDocumento.create(**detalle)
+            await CardexLog.create(
+                producto=articulo,
+                usuario=usuario,
+                tipo_movimiento=TipoMovimiento.ENTRADA_COMPRA,
+                cantidad=articulo.stock_actual,
+                saldo_resultante=articulo.stock_actual,
+                obra=None,
+                motivo_justificacion=f"Ingreso de producto en Factura Folio {documento.folio}",
+                costo_unitario=articulo.precio_lista,
+                saldo_valorizado=articulo.precio_lista,
+            )
 
         return {"error": False, "mensaje": "Se creo correctamente"}
     except Exception as error:
@@ -114,6 +139,20 @@ async def create_factura(
 async def get_facturas():
     try:
         data = await DocumentosTributarios.all()
+        return {
+            "error": False,
+            "mensaje": "Facturas retornadas correctamente",
+            "data": data,
+        }
+    except Exception as error:
+        print(error)
+        return {"error": True, "mensaje": str(error)}
+
+
+@router.get("/tecnicos", dependencies=[Depends(check_user(Roles.finanzas))])
+async def get_tecnicos():
+    try:
+        data = await User.all().filter(rol=Roles.tecnico.value)
         return {
             "error": False,
             "mensaje": "Facturas retornadas correctamente",

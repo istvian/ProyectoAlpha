@@ -79,8 +79,8 @@ export interface SalidaProducto {
 
 export interface Proveedor {
   razon_social: string;
-  deleted: false;
-  id: number;
+  deleted: boolean;
+  id: number | null;
   rut: string;
 }
 
@@ -113,4 +113,14 @@ export interface Articulo {
   stock: number;
   stockMinimo: number;
   ubicacion: string;
+}
+
+export interface Obra {
+  id: string | null;
+  codigo_obra: string;
+  nombre_obra: string;
+  tipo_servicio: string;
+  tecnico_responsable_mail: string;
+  enabled: boolean;
+  fecha_creacion: Date | string;
 }

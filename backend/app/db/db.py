@@ -162,6 +162,9 @@ async def SetupAccounts():
     await CreateAccount(
         "supervisor@mail.cl", "Qwerty1234!", Roles.supervisor, "Diego Muñoz"
     )
+    await CreateAccount(
+        "tecnico@mail.cl", "Qwerty1234!", Roles.tecnico, "Jose Tecnico"
+    )
 
 
 async def CreateAccount(mail, password, rol: Roles, name):
