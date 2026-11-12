@@ -31,11 +31,29 @@ export function CardexMain() {
               movimiento.
             </p>
           </div>
-          <div className={css.actions}>
-            <Btn onClick={() => {}}>Exportar PDF</Btn>
-            <Btn onClick={() => {}}>Exportar Excel</Btn>
-          </div>
         </Box>
+        <CardContainer>
+          <Card
+            title="Saldo inicial"
+            content="120 cajas"
+            footer="Al 30/09/2026"
+          />
+          <Card
+            title="Entradas del período"
+            content="190 cajas"
+            footer="Al 30/09/2026"
+          />
+          <Card
+            title="Salidas del período"
+            content="135 cajas"
+            footer="Al 30/09/2026"
+          />
+          <Card
+            title="Saldo al cierre"
+            content="175 cajas"
+            footer="Al 30/09/2026"
+          />
+        </CardContainer>
         <Box>
           <div className={css.filters}>
             <Selector
@@ -71,28 +89,7 @@ export function CardexMain() {
             <Btn onClick={() => {}}>Limpiar</Btn>
           </div>
         </Box>
-        <CardContainer>
-          <Card
-            title="Saldo inicial"
-            content="120 cajas"
-            footer="Al 30/09/2026"
-          />
-          <Card
-            title="Entradas del período"
-            content="190 cajas"
-            footer="Al 30/09/2026"
-          />
-          <Card
-            title="Salidas del período"
-            content="135 cajas"
-            footer="Al 30/09/2026"
-          />
-          <Card
-            title="Saldo al cierre"
-            content="175 cajas"
-            footer="Al 30/09/2026"
-          />
-        </CardContainer>
+
         <Box>
           <div className={css.row}>
             <Title>Cardex</Title>

@@ -41,4 +41,4 @@ class CardexLog(models.Model):
         table = "cardex_logs"
 
     def __str__(self):
-        return f"{self.tipo_movimiento.value} - producto {self.producto_id}"
+        return f"{self.tipo_movimiento.value} - producto {self.producto_id}" # type: ignore

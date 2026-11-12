@@ -1,7 +1,9 @@
 import axios from "axios";
 import type {
+  DocumentoTributario,
   LoginData,
   LoginResponse,
+  Proveedor,
   ResponseBase,
   SystemLog,
   UserData,
@@ -132,6 +134,55 @@ export async function GetLogs(
         },
       })
     ).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+//#endregion
+
+//#region  Finanzas
+export async function CreateFactura(
+  formData: DocumentoTributario,
+): Promise<ResponseBase | null> {
+  try {
+    console.log(formData);
+    const url = "/finanzas/factura";
+    console.log("Petición POST:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase = (await api.post(url, formData)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+export async function GetFacturas(): Promise<ResponseBase<
+  DocumentoTributario[] | []
+> | null> {
+  try {
+    const url = "/finanzas/factura";
+    console.log("Petición GET:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase<DocumentoTributario[]> = (await api.get(url))
+      .data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+export async function GetProveedores(): Promise<ResponseBase<
+  Proveedor[] | []
+> | null> {
+  try {
+    const url = "/proveedor";
+    console.log("Petición GET:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase<Proveedor[]> = (await api.get(url)).data;
     console.log(response);
     return response;
   } catch (e) {

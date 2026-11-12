@@ -36,7 +36,7 @@ class Egreso(models.Model):
         table = "egresos_obra"
 
     def __str__(self):
-        return f"Egreso #{self.id} - Obra {self.obra_id}"
+        return f"Egreso #{self.id} - Obra {self.obra_id}" # type: ignore
 
 
 class DetalleEgreso(models.Model):

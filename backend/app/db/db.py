@@ -150,6 +150,7 @@ async def CreateRoles():
         await Rol.create(nombre="bodega")
         await Rol.create(nombre="finanzas")
         await Rol.create(nombre="supervisor")
+        await Rol.create(nombre="tecnico")
 
 
 async def SetupAccounts():

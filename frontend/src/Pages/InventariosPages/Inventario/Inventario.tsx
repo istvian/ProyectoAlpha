@@ -33,6 +33,10 @@ export function Inventario() {
               de tus bodega.
             </p>
           </div>
+          <div className={css.actions}>
+            <Btn onClick={() => {}}>Exportar PDF</Btn>
+            <Btn onClick={() => {}}>Exportar Excel</Btn>
+          </div>
         </Box>
         {agregarArticulo ? (
           <AgregarArticulo
