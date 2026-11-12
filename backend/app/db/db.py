@@ -38,8 +38,7 @@ async def EnsureCardexMovementTypeConstraint():
     allowed_types = (
         "'ENTRADA_COMPRA', 'SALIDA_OBRA', 'MERMA', 'DEVOLUCION', 'USO_INTERNO'"
     )
-    await connection.execute_script(
-        f"""
+    await connection.execute_script(f"""
         CREATE TRIGGER IF NOT EXISTS cardex_logs_tipo_movimiento_insert
         BEFORE INSERT ON cardex_logs
         FOR EACH ROW
@@ -55,8 +54,7 @@ async def EnsureCardexMovementTypeConstraint():
         BEGIN
             SELECT RAISE(ABORT, 'tipo_movimiento must be a valid Cardex movement');
         END;
-        """
-    )
+        """)
 
 
 async def PrepareLegacyEgresoSchema():
@@ -162,6 +160,7 @@ async def SetupAccounts():
     await CreateAccount(
         "supervisor@mail.cl", "Qwerty1234!", Roles.supervisor, "Diego Muñoz"
     )
+    await CreateAccount("tecnico@mail.cl", "Qwerty1234!", Roles.tecnico, "Jose Tecnico")
 
 
 async def CreateAccount(mail, password, rol: Roles, name):

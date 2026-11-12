@@ -13,6 +13,7 @@ class ProveedorBaseModel(BaseModel):
     id: int | None = None
     rut: str
     razon_social: str
+    deleted: bool
 
 
 class ProveedorDeleteBaseModel(BaseModel):
@@ -22,7 +23,7 @@ class ProveedorDeleteBaseModel(BaseModel):
 @router.get("", dependencies=[Depends(check_user(Roles.finanzas))])
 async def get_proveedor(request: Request, response: Response):
     try:
-        proveedores = await Proveedores.filter(deleted=False).all()
+        proveedores = await Proveedores.all()
         if proveedores:
             return {"error": False, "mensaje": "Lectura completa", "data": proveedores}
         else:
@@ -64,13 +65,14 @@ async def update_proveedor(
 ):
     try:
         proveedor = await Proveedores.get(id=body.id)
+        proveedor.deleted = body.deleted
         proveedor.razon_social = body.razon_social
         proveedor.rut = body.rut
         await proveedor.save()
 
         return {
             "error": False,
-            "mensaje": "Proveedor creado correctamente",
+            "mensaje": "Proveedor actualizado correctamente",
             "alert": True,
         }
 
@@ -79,29 +81,5 @@ async def update_proveedor(
         return {
             "error": True,
             "mensaje": "Ocurrio un error al actualizar el proveedor",
-            "alert": True,
-        }
-
-
-@router.delete("", dependencies=[Depends(check_user(Roles.finanzas))])
-async def delete_proveedor(
-    body: ProveedorDeleteBaseModel, request: Request, response: Response
-):
-    try:
-        proveedor = await Proveedores.get(id=body.id)
-        proveedor.deleted = True
-        await proveedor.save()
-
-        return {
-            "error": False,
-            "mensaje": "Proveedor eliminado correctamente",
-            "alert": True,
-        }
-
-    except Exception as error:
-        print(error)
-        return {
-            "error": True,
-            "mensaje": "Ocurrio un error al eliminar el proveedor",
             "alert": True,
         }

@@ -36,7 +36,7 @@ export function Nav() {
       roles: [Rol.admin, Rol.finanzas],
     },
     { nombre: "Consultas y Cardex", ruta: "/cardex", roles: [Rol.admin] },
-    { nombre: "Panel Admin", ruta: "/admin", roles: [Rol.admin] },
+    { nombre: "Admin TI", ruta: "/admin", roles: [Rol.admin] },
   ];
 
   useEffect(() => {

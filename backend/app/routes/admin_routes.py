@@ -27,9 +27,8 @@ class NuevoUsuario(BaseModel):
 async def create_user(request: Request, body: NuevoUsuario, response: Response):
     try:
         print(body.rol_id)
-        if body.rol_id != Roles.tecnico.value:
-            if not body.password or body.password == "":
-                return {"error": True, "mensaje": "Campos incompletos"}
+        if not body.password or body.password == "":
+            return {"error": True, "mensaje": "Campos incompletos"}
         user = await User.get_or_none(correo=body.correo)
         if user:
             return {"error": True, "mensaje": "Usuario ya existe"}

@@ -6,14 +6,22 @@ import { InputText } from "../../../Components/InputText/InputText";
 import { Selector } from "../../../Components/Selector/Selector";
 import { Title } from "../../../Components/Title/Title";
 import css from "./AgregarDocumento.module.css";
-import type { DocumentoTributario, Producto } from "../../../types/general";
+import type {
+  DocumentoTributario,
+  Producto,
+  Proveedor,
+} from "../../../types/general";
 import { CreateFactura } from "../../../Helpers/APIConnector";
 
 interface AgregarDocumentoProps {
   onEnd: () => void;
+  proveedores: Proveedor[];
 }
 
-export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
+export function AgregarDocumento({
+  onEnd,
+  proveedores,
+}: AgregarDocumentoProps) {
   const PRODUCTO_INICIAL: Producto = {
     sku: "",
     stock: 0,
@@ -34,9 +42,9 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
     vencimiento: new Date(),
     folio: "",
     observaciones: "",
-    proveedor: "",
+    proveedor: proveedores[0]?.razon_social,
     productos: [],
-    rut: "",
+    rut: proveedores[0]?.rut,
     tipo: "Factura electrónica",
     descuento_total: 0,
     importe_base: 0,
@@ -60,24 +68,24 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
   const [showPopup, setShowPopup] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  function handleRegistrar() {
+  async function handleRegistrar() {
     if (!formulario.tipo) {
       setErrorMsg("Debe seleccionar un tipo de documento tributario.");
       return;
     }
-    if (!formulario.proveedor.trim()) {
+    if (!formulario?.proveedor?.trim()) {
       setErrorMsg("El campo Proveedor es obligatorio.");
       return;
     }
-    if (!formulario.rut.trim()) {
+    if (!formulario?.rut?.trim()) {
       setErrorMsg("El RUT del proveedor es obligatorio.");
       return;
     }
-    if (!formulario.folio.trim()) {
+    if (!formulario?.folio?.trim()) {
       setErrorMsg("El Folio es obligatorio.");
       return;
     }
-    if (formulario.productos.length === 0) {
+    if (formulario?.productos?.length === 0) {
       setErrorMsg("Debe agregar al menos un producto al documento.");
       return;
     }
@@ -88,14 +96,18 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
     };
     setErrorMsg("");
     console.log(formulario);
-    CreateFactura(payload).then((res) => {
+    try {
+      const res = await CreateFactura(payload);
       if (!res?.error) {
         alert("Se ha guardado correctamente la factura");
+        onEnd();
       } else {
-        alert(res.mensaje);
+        alert(res.mensaje || "Error al guardar la factura");
       }
-    });
-    onEnd();
+    } catch (error) {
+      console.error(error);
+      alert("Ocurrió un error al registrar la factura.");
+    }
   }
   const dateToString = (date: Date) => {
     if (!date || isNaN(date.getTime())) return "";
@@ -107,10 +119,6 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
     return `${year}-${month}-${day}`;
   };
   function handleAgregarProducto() {
-    if (!producto.nombre.trim()) {
-      alert("El SKU del producto es obligatorio.");
-      return;
-    }
     if (!producto.nombre.trim()) {
       alert("El nombre del producto es obligatorio.");
       return;
@@ -202,7 +210,7 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
 
     setFormulario((prev) => ({
       ...prev,
-      descuentoTotal: monto1 + monto2 + monto3,
+      descuento_total: monto1 + monto2 + monto3,
       subtotal: saldo3,
       iva: saldo3 * 0.19,
       total: saldo3 + saldo3 * 0.19,
@@ -220,9 +228,9 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
 
     setFormulario((prev) => ({
       ...prev,
-      importeBase: imbase,
+      importe_base: imbase,
       productos: productos,
-      cantidadProductos: productos.length,
+      cantidad_productos: productos.length,
     }));
   }
   function handleCancelar() {
@@ -257,21 +265,24 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
                 setFormulario((prev) => ({ ...prev, tipo: selected }));
               }}
             />
-            <InputText
-              value={formulario?.proveedor}
-              onChange={(text) => {
-                setFormulario((prev) => ({ ...prev, proveedor: text }));
+            <Selector
+              data={formulario.proveedor}
+              firstOption="Selecciona un proveedor"
+              options={
+                proveedores
+                  .filter((item) => !item.deleted)
+                  .map((item) => item.razon_social) || []
+              }
+              title="Proveedor"
+              setData={(data) => {
+                setFormulario((prev) => ({
+                  ...prev,
+                  proveedor: data,
+                  rut:
+                    proveedores.find((item) => item.razon_social === data)
+                      ?.rut || "",
+                }));
               }}
-              label="Proveedor *"
-              placeholder="Razón social del proveedor"
-            />
-            <InputText
-              value={formulario?.rut}
-              onChange={(text) => {
-                setFormulario((prev) => ({ ...prev, rut: text }));
-              }}
-              label="RUT del proveedor *"
-              placeholder="Ej: 11.111.111-1"
             />
             <InputText
               value={formulario?.folio}
@@ -314,14 +325,6 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
             <div className={css.content}>
               <Title>Nuevo producto</Title>
               <InputText
-                value={producto?.sku}
-                onChange={(text) => {
-                  setProducto((prev) => ({ ...prev, sku: text }));
-                }}
-                label="SKU"
-                placeholder="Ingrese el SKU"
-              />
-              <InputText
                 value={producto?.nombre}
                 onChange={(text) => {
                   setProducto((prev) => ({ ...prev, nombre: text }));
@@ -351,7 +354,7 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
                 onChange={(text) => {
                   setProducto((prev) => ({
                     ...prev,
-                    stockMinimo: Number(text),
+                    stock_minimo: Number(text),
                   }));
                 }}
                 type="number"
@@ -363,7 +366,7 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
                 onChange={(text) => {
                   setProducto((prev) => ({
                     ...prev,
-                    precioNeto: Number(text),
+                    precio_neto: Number(text),
                   }));
                 }}
                 type="number"
@@ -428,8 +431,12 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
                       <td>
                         ${Number(item.importe_base).toLocaleString("es-CL")}
                       </td>
-                      <td>${Number(item.costo_neto).toLocaleString("es-CL")}</td>
-                      <td>${Number(item.neto_final).toLocaleString("es-CL")}</td>
+                      <td>
+                        ${Number(item.costo_neto).toLocaleString("es-CL")}
+                      </td>
+                      <td>
+                        ${Number(item.neto_final).toLocaleString("es-CL")}
+                      </td>
                     </tr>
                   );
                 })}
@@ -502,7 +509,7 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
             </p>
           </div>
           <div className={css.row}>
-            <p>Saldo despúes del descuento</p>
+            <p>Saldo después del descuento</p>
             <p>
               <b>
                 ${Number(formulario.saldoDescuento1).toLocaleString("es-CL")}
@@ -533,7 +540,7 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
             </p>
           </div>
           <div className={css.row}>
-            <p>Saldo despúes del descuento</p>
+            <p>Saldo después del descuento</p>
             <p>
               <b>
                 $ {Number(formulario.saldoDescuento2).toLocaleString("es-CL")}
@@ -564,7 +571,7 @@ export function AgregarDocumento({ onEnd }: AgregarDocumentoProps) {
             </p>
           </div>
           <div className={css.row}>
-            <p>Saldo despúes del descuento</p>
+            <p>Saldo después del descuento</p>
             <p>
               <b>
                 ${Number(formulario.saldoDescuento3).toLocaleString("es-CL")}

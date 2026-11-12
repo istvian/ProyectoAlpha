@@ -57,6 +57,8 @@ td {
   background-color: var(--box-color);
   border-bottom: 1px solid #e0e0e0;
 }
+.tdEditar > * {
+}
 .navegacion {
   display: flex;
   flex-flow: row nowrap;

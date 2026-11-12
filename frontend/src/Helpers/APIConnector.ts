@@ -3,6 +3,7 @@ import type {
   DocumentoTributario,
   LoginData,
   LoginResponse,
+  Obra,
   Proveedor,
   ResponseBase,
   SystemLog,
@@ -190,4 +191,89 @@ export async function GetProveedores(): Promise<ResponseBase<
     return null;
   }
 }
+
+export async function CreateProveedor(
+  formData: Proveedor,
+): Promise<ResponseBase | null> {
+  try {
+    console.log(formData);
+    const url = "/proveedor";
+    console.log("Petición POST:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase = (await api.post(url, formData)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+export async function EditarProveedor(
+  formData: Proveedor,
+): Promise<ResponseBase | null> {
+  try {
+    console.log(formData);
+    const url = "/proveedor";
+    console.log("Petición POST:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase = (await api.patch(url, formData)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+export async function GetTecnicos(): Promise<ResponseBase<
+  UserData[] | []
+> | null> {
+  try {
+    const url = "/finanzas/tecnicos";
+    console.log("Petición GET:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase<UserData[]> = (await api.get(url)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+export async function GetObras(): Promise<ResponseBase<Obra[] | []> | null> {
+  try {
+    const url = "/obras";
+    console.log("Petición GET:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase<Obra[]> = (await api.get(url)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+export async function CreateObra(formData: Obra): Promise<ResponseBase | null> {
+  try {
+    console.log(formData);
+    const url = "/obras";
+    console.log("Petición POST:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase = (await api.post(url, formData)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+export async function EditarObra(formData: Obra): Promise<ResponseBase | null> {
+  try {
+    console.log(formData);
+    const url = "/obras";
+    console.log("Petición POST:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase = (await api.patch(url, formData)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
 //#endregion
