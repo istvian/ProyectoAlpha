@@ -8,14 +8,24 @@ import { Title } from "../../../Components/Title/Title";
 import css from "./SalidaMateriales.module.css";
 import { Selector } from "../../../Components/Selector/Selector";
 import { Popup } from "../../../Components/Popup/Popup";
+import type { SalidaMateriales, SalidaProducto } from "../../../types/general";
 
 export function SalidaMateriales() {
+  const BASE_PRODUCT: SalidaProducto = {
+    cantidad: 0,
+    nombre: "",
+    sku: "",
+  };
+
   const nav = useNavigate();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SalidaMateriales>({
     obra: "",
     tecnico: "",
-    sku: "",
-    cantidad: 0,
+    producto: [],
+  });
+  const [productos, setProductos] = useState();
+  const [selectedProduct, setSelectedProduct] = useState<SalidaProducto>({
+    ...BASE_PRODUCT,
   });
   const [isDisabled, setIsDisabled] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
@@ -29,15 +39,24 @@ export function SalidaMateriales() {
   useEffect(() => {
     if (
       formData.obra != "" &&
-      formData.sku != "" &&
-      formData.tecnico != "" &&
-      formData.cantidad > 0
+      formData.producto.length > 0 &&
+      formData.tecnico != ""
     ) {
       setIsDisabled(false);
     } else {
       setIsDisabled(true);
     }
   }, [formData]);
+
+  function handleAddProduct() {
+    if (selectedProduct.cantidad > 0 && selectedProduct.sku != "") {
+      setFormData((prev) => ({
+        ...prev,
+        producto: [...prev.producto, selectedProduct],
+      }));
+    }
+  }
+
   return (
     <Frame>
       <Popup isVisible={showPopup}>
@@ -47,8 +66,6 @@ export function SalidaMateriales() {
           <p>Resumen:</p>
           <p>Obra: {formData.obra}</p>
           <p>Técnico: {formData.tecnico}</p>
-          <p>Producto SKU: {formData.sku}</p>
-          <p>Cantidad: {formData.cantidad}</p>
         </div>
         <Btn
           onClick={() => {
@@ -92,12 +109,6 @@ export function SalidaMateriales() {
                 }}
                 options={["Obra 1", "Obra 2"]}
               />
-              {/* <InputText
-                label="Obra"
-                placeholder="Selecciona o ingresa la obra"
-                value={formData.obra}
-                onChange={(value) => updateField("obra", value)}
-              /> */}
               <Selector
                 title="Técnico receptor"
                 firstOption="Selecciona el técnico"
@@ -107,12 +118,6 @@ export function SalidaMateriales() {
                 }}
                 options={["Técnico 1", "Técnico 2"]}
               />
-              {/* <InputText
-                label="Técnico receptor"
-                placeholder="Selecciona o ingresa el técnico"
-                value={formData.tecnico}
-                onChange={(value) => updateField("tecnico", value)}
-              /> */}
             </div>
           </section>
 
@@ -124,31 +129,22 @@ export function SalidaMateriales() {
               <Selector
                 title="Producto / SKU"
                 firstOption="Selecciona el código SKU del producto"
-                data={formData.sku}
+                data={selectedProduct?.sku || ""}
                 setData={(value) => {
-                  updateField("sku", value);
+                  setSelectedProduct((prev) => ({ ...prev, sku: value }));
                 }}
                 options={["Producto 1", "Producto 2"]}
               />
-              {/* <InputText
-                label="Producto / SKU"
-                placeholder="Ingresa el código SKU del producto"
-                value={formData.sku}
-                onChange={(value) => updateField("sku", value)}
-              /> */}
               <InputText
                 label="Cantidad"
                 placeholder="Ingresa la cantidad"
                 type="number"
-                value={String(formData.cantidad)}
+                value={String(selectedProduct.cantidad)}
                 onChange={(value) => {
                   if (Number(value) <= 0) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      cantidad: 0,
-                    }));
+                    setSelectedProduct((prev) => ({ ...prev, cantidad: 0 }));
                   } else {
-                    setFormData((prev) => ({
+                    setSelectedProduct((prev) => ({
                       ...prev,
                       cantidad: Number(value),
                     }));
@@ -156,6 +152,55 @@ export function SalidaMateriales() {
                 }}
               />
             </div>
+            <div className={css.row}>
+              <Btn
+                onClick={() => handleAddProduct()}
+                disabled={
+                  selectedProduct.cantidad == 0 || selectedProduct.sku == ""
+                }
+              >
+                Agregar
+              </Btn>
+            </div>
+          </section>
+          <section className={css.section} aria-labelledby="dispatch-heading">
+            <h2 id="dispatch-heading" className={css.sectionTitle}>
+              Productos
+            </h2>
+            <table className={css.table}>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>SKU</th>
+                  <th>Producto</th>
+                  <th>Cantidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {formData.producto.map((item, index) => {
+                  return (
+                    <tr key={index}>
+                      <td>
+                        <Btn
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              producto: [
+                                ...prev.producto.filter((prod) => prod != item),
+                              ],
+                            }));
+                          }}
+                        >
+                          Quitar
+                        </Btn>
+                      </td>
+                      <td>{item.sku}</td>
+                      <td>{item.cantidad}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </section>
 
           <div className={css.actions}>

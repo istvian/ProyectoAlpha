@@ -42,8 +42,8 @@ export interface DocumentoTributario {
   proveedor: string;
   rut: string;
   folio: string;
-  emision: Date;
-  vencimiento: Date;
+  emision: Date | string;
+  vencimiento: Date | string;
   productos: Producto[] | [];
   observaciones: string;
   descuento1: number;
@@ -58,23 +58,42 @@ export interface DocumentoTributario {
   sobreDescuento3: number;
   montoDescuento3: number;
   saldoDescuento3: number;
-  importeBase: number;
+  importe_base: number;
   total: number;
-  cantidadProductos: number;
-  descuentoTotal: number;
+  cantidad_productos: number;
+  descuento_total: number;
   subtotal: number;
   iva: number;
+  proveedor_id?: number;
+}
+export interface SalidaMateriales {
+  obra: string;
+  tecnico: string;
+  producto: SalidaProducto[] | [];
+}
+export interface SalidaProducto {
+  sku: string;
+  nombre: string;
+  cantidad: number;
+}
+
+export interface Proveedor {
+  razon_social: string;
+  deleted: false;
+  id: number;
+  rut: string;
 }
 
 export interface Producto {
+  sku: string;
   nombre: string;
   descripcion: string;
   stock: number;
-  stockMinimo: number;
-  precioNeto: number;
-  importeBase: number;
-  costoNeto: number;
-  netoFinal: number;
+  stock_minimo: number;
+  precio_neto: number;
+  importe_base: number;
+  costo_neto: number;
+  neto_final: number;
 }
 export const Rol = {
   cualquiera: 0,
@@ -82,6 +101,7 @@ export const Rol = {
   bodega: 2,
   finanzas: 3,
   supervisor: 4,
+  tecnico: 5,
 } as const;
 export type Rol = (typeof Rol)[keyof typeof Rol];
 

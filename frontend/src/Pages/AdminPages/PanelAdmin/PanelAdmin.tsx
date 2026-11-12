@@ -39,7 +39,14 @@ export function PanelAdmin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [rolQuery, setRolQuery] = useState<number>(0);
   const [statusQuery, setStatusQuery] = useState<number | string>("");
-  const ROLES_OPTIONS = ["Todos", "Admin", "Bodega", "Finanzas", "Supervisor"];
+  const ROLES_OPTIONS = [
+    "Todos",
+    "Admin",
+    "Bodega",
+    "Finanzas",
+    "Supervisor",
+    "Técnico",
+  ];
 
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [paginaLog, setPaginaLog] = useState(1);
@@ -161,7 +168,13 @@ export function PanelAdmin() {
             setValue={(value) => {
               setUser((prev) => ({ ...prev, rol_id: value }));
             }}
-            options={["Administrador", "Bodega", "Finanzas", "Supervisor"]}
+            options={[
+              "Administrador",
+              "Bodega",
+              "Finanzas",
+              "Supervisor",
+              "Técnico",
+            ]}
             firstOption="Selecciona un rol"
           />
           <Selector
@@ -228,7 +241,7 @@ export function PanelAdmin() {
           />
           <Card
             title="Roles disponibles"
-            content="4 roles"
+            content="5 roles"
             footer="Permisos según perfíl de acceso"
           />
           <Card

@@ -1,0 +1,63 @@
+info:
+  name: Crear Factura
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: 127.0.0.1:8000/api/v1/finanzas/factura
+  body:
+    type: json
+    data: |-
+      {
+        "tipo": "Factura",
+        "proveedor": "Juanito 2 Ltda.",
+        "rut": "11222333-4",
+        "folio": "123456",
+        "emision": "2026-11-11",
+        "vencimiento": "2026-11-15",
+        "observaciones": "Primera factura",
+        "descuento1": 10,
+        "descuento2": 0,
+        "descuento3": 0,
+        "importeBase": 5000,
+        "descuentoTotal": 10,
+        "subtotal": 4000,
+        "iva": 1900,
+        "total": 3000,
+        "cantidadProductos": 2,
+        "productos": [
+          {
+            "nombre": "Producto 1",
+            "sku": "PRO",
+            "descripcion": "Es un producto",
+            "stock": 5,
+            "description": "Descripción del producto",
+            "stockMinimo": 2,
+            "precioNeto": 1000,
+            "importeBase": 1500,
+            "costoNeto": 2000,
+            "netoFinal": 2500
+          },
+           {
+            "nombre": "Producto 2",
+            "sku": "PROD",
+            "descripcion": "Es un producto",
+            "stock": 5,
+            "description": "Descripción del producto",
+            "stockMinimo": 2,
+            "precioNeto": 1000,
+            "importeBase": 1500,
+            "costoNeto": 2000,
+            "netoFinal": 2500
+          }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

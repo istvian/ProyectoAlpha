@@ -7,3 +7,4 @@ class Roles(Enum):
     bodega = 2
     finanzas = 3
     supervisor = 4
+    tecnico = 5
