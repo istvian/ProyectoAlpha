@@ -26,6 +26,7 @@ async def SetupDB():
     await PrepareLegacyDetalleSchema()
     await Tortoise.generate_schemas()
     await EnsureCardexMovementTypeConstraint()
+    await EnsureCardexImmutability()
     await CreateRoles()
     await SetupAccounts()
 
@@ -53,6 +54,28 @@ async def EnsureCardexMovementTypeConstraint():
         WHEN NEW.tipo_movimiento NOT IN ({allowed_types})
         BEGIN
             SELECT RAISE(ABORT, 'tipo_movimiento must be a valid Cardex movement');
+        END;
+        """)
+
+
+async def EnsureCardexImmutability():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    await connection.execute_script("""
+        CREATE TRIGGER IF NOT EXISTS cardex_logs_prevent_update
+        BEFORE UPDATE ON cardex_logs
+        FOR EACH ROW
+        BEGIN
+            SELECT RAISE(ABORT, 'cardex_logs are immutable');
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS cardex_logs_prevent_delete
+        BEFORE DELETE ON cardex_logs
+        FOR EACH ROW
+        BEGIN
+            SELECT RAISE(ABORT, 'cardex_logs are immutable');
         END;
         """)
 
