@@ -9,35 +9,21 @@ http:
   body:
     type: json
     data: |-
-      info:
-        name: Registrar Egreso
-        seq: 1
-
-      http:
-        method: POST
-        url: http://127.0.0.1:8000/api/v1/egresos
-        body:
-          type: json
-          data: |-
-            {
-              "obra_id": 1,
-              "tecnico_id": 1,
-              "usuario_id": 1,
-              "detalles": [
-                {
-                  "producto_id": 1,
-                  "cantidad": 1
-                }
-              ]
-            }
-        auth: inherit
-
-      settings:
-        encodeUrl: true
-        timeout: 0
-        followRedirects: true
-        maxRedirects: 5
-        forwardAuthorizationHeader: false
+      {
+        "obra_id": 1,
+        "tecnico_id": 5,
+        "usuario_id": 2,
+        "detalles": [
+          {
+            "producto_id": 1,
+            "cantidad": 1
+          },
+          {
+            "producto_id": 1,
+            "cantidad": 2
+          }
+        ]
+      }
   auth: inherit
 
 settings:

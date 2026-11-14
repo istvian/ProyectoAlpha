@@ -1,16 +1,19 @@
 info:
-  name: Eliminar Proveedor
+  name: Desactivar Proveedor
   type: http
   seq: 4
 
 http:
-  method: DELETE
-  url: 127.0.0.1:8000/api/v1/proveedor
+  method: PATCH
+  url: http://127.0.0.1:8000/api/v1/proveedor
   body:
     type: json
     data: |-
       {
-        "id":1
+        "id": 1,
+        "rut": "11.111.111-4",
+        "razon_social": "Proveedor de ejemplo",
+        "deleted": true
       }
   auth: inherit
 

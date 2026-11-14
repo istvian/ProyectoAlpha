@@ -1,18 +1,17 @@
 info:
-  name: Register
+  name: Login Admin
   type: http
   seq: 1
 
 http:
   method: POST
-  url: 127.0.0.1:8000/api/v1/users/register
+  url: http://127.0.0.1:8000/api/v1/users/login
   body:
     type: json
     data: |-
       {
-        "nombre":"Juan",
-        "correo":"correo@empresa.cl",
-        "password":"12345678"
+        "correo":"admin@mail.cl",
+        "password":"Qwerty1234!"
       }
   auth: inherit
 
