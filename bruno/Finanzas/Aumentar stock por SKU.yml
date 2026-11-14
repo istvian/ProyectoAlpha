@@ -1,0 +1,50 @@
+info:
+  name: Aumentar stock por SKU
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: http://127.0.0.1:8000/api/v1/finanzas/factura
+  body:
+    type: json
+    data: |-
+      {
+        "tipo": "Factura",
+        "proveedor": "Proveedor de prueba",
+        "rut": "11222333-6",
+        "folio": "SKU-ADD-2026-001",
+        "emision": "2026-11-14",
+        "vencimiento": "2026-11-30",
+        "observaciones": "Aumento de stock de un SKU existente",
+        "descuento1": 0,
+        "descuento2": 0,
+        "descuento3": 0,
+        "importe_base": 2400,
+        "descuento_total": 0,
+        "subtotal": 2400,
+        "iva": 456,
+        "total": 2856,
+        "cantidad_productos": 2,
+        "productos": [
+          {
+            "nombre": "Producto 1",
+            "sku": "BRUNO-1",
+            "descripcion": "Artículo del request Crear Factura",
+            "stock": 2,
+            "stock_minimo": 0,
+            "precio_neto": 1200,
+            "importe_base": 2400,
+            "costo_neto": 1200,
+            "neto_final": 2400
+          }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

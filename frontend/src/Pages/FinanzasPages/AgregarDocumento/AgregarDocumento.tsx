@@ -10,6 +10,7 @@ import type {
   DocumentoTributario,
   Producto,
   Proveedor,
+  TipoDocumentoTributario,
 } from "../../../types/general";
 import { CreateFactura } from "../../../Helpers/APIConnector";
 
@@ -22,6 +23,11 @@ export function AgregarDocumento({
   onEnd,
   proveedores,
 }: AgregarDocumentoProps) {
+  const tiposDocumento: TipoDocumentoTributario[] = [
+    "Factura",
+    "Boleta",
+    "Nota de Crédito",
+  ];
   const PRODUCTO_INICIAL: Producto = {
     sku: "",
     stock: 0,
@@ -45,7 +51,7 @@ export function AgregarDocumento({
     proveedor: proveedores[0]?.razon_social,
     productos: [],
     rut: proveedores[0]?.rut,
-    tipo: "Factura electrónica",
+    tipo: "Factura",
     descuento_total: 0,
     importe_base: 0,
     iva: 0,
@@ -67,6 +73,7 @@ export function AgregarDocumento({
   const [producto, setProducto] = useState<Producto>(PRODUCTO_INICIAL);
   const [showPopup, setShowPopup] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const esNotaCredito = formulario.tipo === "Nota de Crédito";
 
   async function handleRegistrar() {
     if (!formulario.tipo) {
@@ -85,8 +92,12 @@ export function AgregarDocumento({
       setErrorMsg("El Folio es obligatorio.");
       return;
     }
-    if (formulario?.productos?.length === 0) {
+    if (!esNotaCredito && formulario?.productos?.length === 0) {
       setErrorMsg("Debe agregar al menos un producto al documento.");
+      return;
+    }
+    if (esNotaCredito && formulario.productos.length > 0) {
+      setErrorMsg("La Nota de Crédito se registra sin productos de inventario.");
       return;
     }
     const payload = {
@@ -99,14 +110,14 @@ export function AgregarDocumento({
     try {
       const res = await CreateFactura(payload);
       if (!res?.error) {
-        alert("Se ha guardado correctamente la factura");
+        alert("Se ha guardado correctamente el documento");
         onEnd();
       } else {
-        alert(res.mensaje || "Error al guardar la factura");
+        alert(res.mensaje || "Error al guardar el documento");
       }
     } catch (error) {
       console.error(error);
-      alert("Ocurrió un error al registrar la factura.");
+      alert("Ocurrió un error al registrar el documento.");
     }
   }
   const dateToString = (date: Date) => {
@@ -258,11 +269,35 @@ export function AgregarDocumento({
           <div className={css.grid}>
             <Selector
               title="Documento tributario *"
-              options={["Factura electrónica", "Boleta electrónica"]}
+              options={tiposDocumento}
               data={formulario?.tipo || ""}
               firstOption="Selecciona un documento"
               setData={(selected) => {
-                setFormulario((prev) => ({ ...prev, tipo: selected }));
+                const tipoSeleccionado = tiposDocumento.find(
+                  (tipo) => tipo === selected,
+                );
+                if (!tipoSeleccionado) return;
+                if (tipoSeleccionado === "Nota de Crédito") {
+                  setShowPopup(false);
+                }
+                setFormulario((prev) =>
+                  tipoSeleccionado === "Nota de Crédito"
+                    ? {
+                        ...prev,
+                        tipo: tipoSeleccionado,
+                        productos: [],
+                        cantidad_productos: 0,
+                        descuento1: 0,
+                        descuento2: 0,
+                        descuento3: 0,
+                        descuento_total: 0,
+                        importe_base: 0,
+                        subtotal: 0,
+                        iva: 0,
+                        total: 0,
+                      }
+                    : { ...prev, tipo: tipoSeleccionado },
+                );
               }}
             />
             <Selector
@@ -307,159 +342,183 @@ export function AgregarDocumento({
               value={formulario.vencimiento as Date}
             />
           </div>
-          <div className={css.row}>
-            <Title>Detalles de productos</Title>
-            <Btn
-              onClick={() => {
-                setShowPopup(true);
-              }}
-            >
-              Nuevo producto
-            </Btn>
-          </div>
-          <div
-            className={css.popup}
-            style={{ display: showPopup ? "flex" : "none" }}
-          >
-            <div className={css.bg}></div>
-            <div className={css.content}>
-              <Title>Nuevo producto</Title>
-              <InputText
-                value={producto?.nombre}
-                onChange={(text) => {
-                  setProducto((prev) => ({ ...prev, nombre: text }));
-                }}
-                label="Producto"
-                placeholder="Ingrese el nombre"
-              />
-              <InputText
-                value={producto?.descripcion}
-                onChange={(text) => {
-                  setProducto((prev) => ({ ...prev, descripcion: text }));
-                }}
-                label="Descripción"
-                placeholder="Ingrese la descripción"
-              />
-              <InputText
-                value={String(producto?.stock)}
-                onChange={(text) => {
-                  setProducto((prev) => ({ ...prev, stock: Number(text) }));
-                }}
-                type="number"
-                label="Stock"
-                placeholder="Ingrese la cantidad"
-              />
-              <InputText
-                value={String(producto?.stock_minimo)}
-                onChange={(text) => {
-                  setProducto((prev) => ({
-                    ...prev,
-                    stock_minimo: Number(text),
-                  }));
-                }}
-                type="number"
-                label="Stock mínimo"
-                placeholder="Ingrese la cantidad mínima"
-              />
-              <InputText
-                value={String(producto?.precio_neto)}
-                onChange={(text) => {
-                  setProducto((prev) => ({
-                    ...prev,
-                    precio_neto: Number(text),
-                  }));
-                }}
-                type="number"
-                label="Precio neto"
-                placeholder="Ingrese precio neto"
-              />
+          {!esNotaCredito ? (
+            <>
               <div className={css.row}>
+                <Title>Detalles de productos</Title>
                 <Btn
                   onClick={() => {
-                    setShowPopup(false);
-                    setProducto(PRODUCTO_INICIAL);
-                  }}
-                  warning
-                >
-                  Cancelar
-                </Btn>
-                <Btn
-                  onClick={() => {
-                    handleAgregarProducto();
+                    setShowPopup(true);
                   }}
                 >
-                  Agregar
+                  Nuevo producto
                 </Btn>
               </div>
-            </div>
-          </div>
-          <div className={css.tableContainer}>
-            <table className={css.table}>
-              <thead>
-                <tr>
-                  <th>-</th>
-                  <th>Producto</th>
-                  <th>Cantidad</th>
-                  <th>Precio neto</th>
-                  <th>Importe base</th>
-                  <th>Costo neto/u</th>
-                  <th>Neto final</th>
-                </tr>
-              </thead>
-              <tbody>
-                {formulario.productos.map((item, index) => {
-                  return (
-                    <tr key={index}>
-                      <td
-                        className={css.delete}
-                        onClick={() => {
-                          setFormulario((prev) => ({
-                            ...prev,
-                            productos: [
-                              ...prev.productos.filter((prod) => prod != item),
-                            ],
-                          }));
-                        }}
-                      >
-                        Quitar
-                      </td>
-                      <td>{item.nombre}</td>
-                      <td>{item.stock}</td>
-                      <td>
-                        ${Number(item.precio_neto).toLocaleString("es-CL")}
-                      </td>
-                      <td>
-                        ${Number(item.importe_base).toLocaleString("es-CL")}
-                      </td>
-                      <td>
-                        ${Number(item.costo_neto).toLocaleString("es-CL")}
-                      </td>
-                      <td>
-                        ${Number(item.neto_final).toLocaleString("es-CL")}
-                      </td>
+              <div
+                className={css.popup}
+                style={{ display: showPopup ? "flex" : "none" }}
+              >
+                <div className={css.bg}></div>
+                <div className={css.content}>
+                  <Title>Nuevo producto</Title>
+                  <InputText
+                    value={producto?.nombre}
+                    onChange={(text) => {
+                      setProducto((prev) => ({ ...prev, nombre: text }));
+                    }}
+                    label="Producto"
+                    placeholder="Ingrese el nombre"
+                  />
+                  <InputText
+                    value={producto?.descripcion}
+                    onChange={(text) => {
+                      setProducto((prev) => ({ ...prev, descripcion: text }));
+                    }}
+                    label="Descripción"
+                    placeholder="Ingrese la descripción"
+                  />
+                  <InputText
+                    value={producto.sku}
+                    onChange={(text) => {
+                      setProducto((prev) => ({ ...prev, sku: text }));
+                    }}
+                    label="SKU (opcional)"
+                    placeholder="SKU existente para sumar stock; vacío para crear"
+                  />
+                  <InputText
+                    value={String(producto?.stock)}
+                    onChange={(text) => {
+                      setProducto((prev) => ({
+                        ...prev,
+                        stock: Number(text),
+                      }));
+                    }}
+                    type="number"
+                    label="Stock"
+                    placeholder="Ingrese la cantidad"
+                  />
+                  <InputText
+                    value={String(producto?.stock_minimo)}
+                    onChange={(text) => {
+                      setProducto((prev) => ({
+                        ...prev,
+                        stock_minimo: Number(text),
+                      }));
+                    }}
+                    type="number"
+                    label="Stock mínimo"
+                    placeholder="Ingrese la cantidad mínima"
+                  />
+                  <InputText
+                    value={String(producto?.precio_neto)}
+                    onChange={(text) => {
+                      setProducto((prev) => ({
+                        ...prev,
+                        precio_neto: Number(text),
+                      }));
+                    }}
+                    type="number"
+                    label="Precio neto"
+                    placeholder="Ingrese precio neto"
+                  />
+                  <div className={css.row}>
+                    <Btn
+                      onClick={() => {
+                        setShowPopup(false);
+                        setProducto(PRODUCTO_INICIAL);
+                      }}
+                      warning
+                    >
+                      Cancelar
+                    </Btn>
+                    <Btn
+                      onClick={() => {
+                        handleAgregarProducto();
+                      }}
+                    >
+                      Agregar
+                    </Btn>
+                  </div>
+                </div>
+              </div>
+              <div className={css.tableContainer}>
+                <table className={css.table}>
+                  <thead>
+                    <tr>
+                      <th>-</th>
+                      <th>Producto</th>
+                      <th>SKU</th>
+                      <th>Cantidad</th>
+                      <th>Precio neto</th>
+                      <th>Importe base</th>
+                      <th>Costo neto/u</th>
+                      <th>Neto final</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className={css.row}>
-            <p className={css.infotext}>
-              {formulario.productos.length} productos y{" "}
-              {formulario.cantidad_productos} unidades
+                  </thead>
+                  <tbody>
+                    {formulario.productos.map((item, index) => {
+                      return (
+                        <tr key={index}>
+                          <td
+                            className={css.delete}
+                            onClick={() => {
+                              setFormulario((prev) => ({
+                                ...prev,
+                                productos: [
+                                  ...prev.productos.filter(
+                                    (prod) => prod != item,
+                                  ),
+                                ],
+                              }));
+                            }}
+                          >
+                            Quitar
+                          </td>
+                          <td>{item.nombre}</td>
+                          <td>{item.sku.trim() || "Se generará"}</td>
+                          <td>{item.stock}</td>
+                          <td>
+                            ${Number(item.precio_neto).toLocaleString("es-CL")}
+                          </td>
+                          <td>
+                            ${Number(item.importe_base).toLocaleString("es-CL")}
+                          </td>
+                          <td>
+                            ${Number(item.costo_neto).toLocaleString("es-CL")}
+                          </td>
+                          <td>
+                            ${Number(item.neto_final).toLocaleString("es-CL")}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className={css.row}>
+                <p className={css.infotext}>
+                  {formulario.productos.length} productos y{" "}
+                  {formulario.cantidad_productos} unidades
+                </p>
+                <p>
+                  <b>
+                    Importe base: $
+                    {Number(formulario.importe_base).toLocaleString("es-CL")}
+                  </b>
+                </p>
+              </div>
+              <p className={css.aviso}>
+                Precios sin IVA en CLP. Los descuentos del documento se aplican
+                sucesivamente a cada producto; el costo neto unitario ya incluye
+                ambos descuentos.
+              </p>
+            </>
+          ) : (
+            <p className={css.aviso}>
+              La Nota de Crédito se guardará como documento, sin crear
+              productos ni alterar existencias o movimientos del Cardex.
             </p>
-            <p>
-              <b>
-                Importe base: $
-                {Number(formulario.importe_base).toLocaleString("es-CL")}
-              </b>
-            </p>
-          </div>
-          <p className={css.aviso}>
-            Precios sin IVA en CLP. Los descuentos del documento se aplican
-            sucesivamente a cada producto; el costo neto unitario ya incluye
-            ambos descuentos.
-          </p>
+          )}
           <InputText
             value={formulario.observaciones}
             isArea
@@ -478,10 +537,52 @@ export function AgregarDocumento({
           justifyContent: "flex-start",
         }}
       >
-        <Title>Descuentos y totales</Title>
+        <Title>
+          {esNotaCredito ? "Importes de nota de crédito" : "Descuentos y totales"}
+        </Title>
         <p className={css.infotext}>
-          Cálculo automático - Pesos chilenos (CLP)
+          {esNotaCredito
+            ? "Ingrese los importes del documento en pesos chilenos (CLP)."
+            : "Cálculo automático - Pesos chilenos (CLP)"}
         </p>
+        {esNotaCredito ? (
+          <div className={css.grid}>
+            <InputText
+              value={String(formulario.subtotal)}
+              onChange={(text) => {
+                const subtotal = Number(text);
+                setFormulario((prev) => ({
+                  ...prev,
+                  importe_base: subtotal,
+                  subtotal,
+                  descuento_total: 0,
+                }));
+              }}
+              type="number"
+              label="Monto neto"
+              placeholder="Ingrese el monto neto"
+            />
+            <InputText
+              value={String(formulario.iva)}
+              onChange={(text) => {
+                setFormulario((prev) => ({ ...prev, iva: Number(text) }));
+              }}
+              type="number"
+              label="IVA"
+              placeholder="Ingrese el IVA"
+            />
+            <InputText
+              value={String(formulario.total)}
+              onChange={(text) => {
+                setFormulario((prev) => ({ ...prev, total: Number(text) }));
+              }}
+              type="number"
+              label="Monto total"
+              placeholder="Ingrese el total"
+            />
+          </div>
+        ) : (
+          <>
         <div className={css.row}>
           <p>Importe base neto</p>
           <p>${Number(formulario.importe_base).toLocaleString("es-CL")}</p>
@@ -600,6 +701,8 @@ export function AgregarDocumento({
             <b>${Number(formulario.total).toLocaleString("es-CL")}</b>
           </p>
         </div>
+          </>
+        )}
         <div className={css.row}>
           <Btn
             onClick={() => {
@@ -613,7 +716,9 @@ export function AgregarDocumento({
               handleRegistrar();
             }}
           >
-            Registrar y actualizar existencias
+            {esNotaCredito
+              ? "Registrar documento"
+              : "Registrar y actualizar existencias"}
           </Btn>
         </div>
         {errorMsg && (

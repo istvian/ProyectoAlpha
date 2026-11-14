@@ -96,6 +96,12 @@ class DetalleDocumento(Model):  # Renombrado desde DetalleFactura
     importe_base = fields.DecimalField(max_digits=12, decimal_places=2)
     costo_neto_unitario = fields.DecimalField(max_digits=12, decimal_places=2)
     neto_final = fields.DecimalField(max_digits=12, decimal_places=2)
+    precio_lista_actualizado = fields.DecimalField(
+        max_digits=12, decimal_places=2, default=0
+    )
+    descuento1 = fields.DecimalField(max_digits=5, decimal_places=2, default=0)
+    descuento2 = fields.DecimalField(max_digits=5, decimal_places=2, default=0)
+    descuento3 = fields.DecimalField(max_digits=5, decimal_places=2, default=0)
 
     class Meta:
         table = "detalle_documento"

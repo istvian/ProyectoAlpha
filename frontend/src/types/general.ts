@@ -39,12 +39,14 @@ export interface SystemLog {
 }
 
 export interface DocumentoTributario {
-  tipo: string;
+  tipo: TipoDocumentoTributario;
   proveedor: string;
   rut: string;
   folio: string;
   emision: Date | string;
   vencimiento: Date | string;
+  fecha_ingreso?: Date | string | null;
+  datos_dte?: Record<string, unknown> | null;
   productos: Producto[] | [];
   observaciones: string;
   descuento1: number;
@@ -83,7 +85,18 @@ export interface Proveedor {
   deleted: boolean;
   id: number | null;
   rut: string;
+  direccion?: string | null;
+  region?: string | null;
+  comuna?: string | null;
+  ciudad?: string | null;
+  contactos_jsonb?: Record<string, unknown> | null;
+  datos_bancarios_jsonb?: Record<string, unknown> | null;
 }
+
+export type TipoDocumentoTributario =
+  | "Factura"
+  | "Boleta"
+  | "Nota de Crédito";
 
 export interface Producto {
   sku: string;

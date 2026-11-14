@@ -1,0 +1,39 @@
+info:
+  name: Crear Nota de Crédito
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://127.0.0.1:8000/api/v1/finanzas/factura
+  body:
+    type: json
+    data: |-
+      {
+        "tipo": "Nota de Crédito",
+        "proveedor": "Proveedor de prueba",
+        "rut": "11222333-5",
+        "folio": "NC-TEST-001",
+        "emision": "2026-11-11",
+        "vencimiento": "2026-11-15",
+        "observaciones": "Nota de crédito sin movimientos de inventario",
+        "importe_base": 10000,
+        "descuento_total": 0,
+        "subtotal": 10000,
+        "iva": 1900,
+        "total": 11900,
+        "cantidad_productos": 0,
+        "datos_dte": {
+          "folio_sii": "NC-TEST-001",
+          "timbre_electronico": "dato de prueba"
+        },
+        "productos": []
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
