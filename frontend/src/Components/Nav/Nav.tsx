@@ -35,7 +35,11 @@ export function Nav() {
       ruta: "/finanzas",
       roles: [Rol.admin, Rol.finanzas],
     },
-    { nombre: "Consultas y Cardex", ruta: "/cardex", roles: [Rol.admin] },
+    {
+      nombre: "Consultas y Cardex",
+      ruta: "/cardex",
+      roles: [Rol.admin, Rol.supervisor],
+    },
     { nombre: "Admin TI", ruta: "/admin", roles: [Rol.admin] },
   ];
 

@@ -168,7 +168,7 @@ function filaMovimiento(movimiento: CardexMovimiento) {
 }
 
 export function CardexMain() {
-  const esAdmin = useValidateRol([Rol.admin]);
+  const puedeConsultar = useValidateRol([Rol.supervisor]);
   const [filtros, setFiltros] = useState<FiltrosFormulario>(filtrosIniciales);
   const [filtrosAplicados, setFiltrosAplicados] =
     useState<CardexFiltrosConsulta>(() => crearConsulta(filtrosIniciales()));
@@ -290,7 +290,7 @@ export function CardexMain() {
     }
   }
 
-  if (!esAdmin) return null;
+  if (!puedeConsultar) return null;
 
   const paginasTotales = Math.max(paginacion.total_paginas, 1);
   const primerIndicePagina = Math.max(
