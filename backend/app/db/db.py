@@ -25,6 +25,8 @@ async def SetupDB():
     await PrepareLegacyEgresoSchema()
     await PrepareLegacyDetalleSchema()
     await PrepareProveedorFacturaSchema()
+    await PrepareDetalleDocumentoSchema()
+    await PrepareArticuloPMP()
     await Tortoise.generate_schemas()
     await EnsureDocumentoTipoConstraint()
     await EnsureCardexMovementTypeConstraint()
@@ -191,7 +193,6 @@ async def PrepareProveedorFacturaSchema():
             "comuna": "VARCHAR(100)",
             "ciudad": "VARCHAR(100)",
             "contactos_jsonb": "JSON",
-            "datos_bancarios_jsonb": "JSON",
         }
         for name, sql_type in additions.items():
             if name not in columns:
@@ -229,6 +230,135 @@ async def PrepareProveedorFacturaSchema():
             SET "tipo" = 'Nota de Crédito'
             WHERE "tipo" IN ('Nota de Credito', 'Nota de crédito');
             """)
+
+
+async def PrepareDetalleDocumentoSchema():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+    if "detalle_documento" not in tables:
+        return
+
+    columns = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            'PRAGMA table_info("detalle_documento")'
+        )
+    }
+    additions = {
+        "precio_lista_actualizado": "DECIMAL(12, 2) NOT NULL DEFAULT 0",
+        "descuento1": "DECIMAL(5, 2) NOT NULL DEFAULT 0",
+        "descuento2": "DECIMAL(5, 2) NOT NULL DEFAULT 0",
+        "descuento3": "DECIMAL(5, 2) NOT NULL DEFAULT 0",
+    }
+    added_columns = set()
+    for name, sql_type in additions.items():
+        if name not in columns:
+            await connection.execute_script(
+                f'ALTER TABLE "detalle_documento" ADD COLUMN "{name}" {sql_type}'
+            )
+            added_columns.add(name)
+
+    if "precio_lista_actualizado" in added_columns and "precio_neto" in columns:
+        await connection.execute_script("""
+            UPDATE "detalle_documento"
+            SET "precio_lista_actualizado" = "precio_neto"
+            WHERE "precio_lista_actualizado" = 0;
+            """)
+
+    if "documentos_tributarios" not in tables:
+        return
+    document_columns = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            'PRAGMA table_info("documentos_tributarios")'
+        )
+    }
+    if "documento_id" not in columns:
+        return
+    for name in ("descuento1", "descuento2", "descuento3"):
+        if name not in added_columns or name not in document_columns:
+            continue
+        await connection.execute_script(f"""
+            UPDATE "detalle_documento"
+            SET "{name}" = COALESCE(
+                (
+                    SELECT documentos_tributarios."{name}"
+                    FROM documentos_tributarios
+                    WHERE documentos_tributarios.id = detalle_documento.documento_id
+                ),
+                0
+            );
+            """)
+
+
+async def PrepareArticuloPMP():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+    if "articulos" not in tables:
+        return
+
+    columns = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            'PRAGMA table_info("articulos")'
+        )
+    }
+    if "precio_medio_ponderado" in columns:
+        return
+
+    await connection.execute_script(
+        'ALTER TABLE "articulos" ADD COLUMN '
+        '"precio_medio_ponderado" DECIMAL(12, 2) NOT NULL DEFAULT 0'
+    )
+    if "precio_lista" not in columns:
+        return
+
+    if "detalle_documento" in tables:
+        detail_columns = {
+            row["name"]
+            for row in await connection.execute_query_dict(
+                'PRAGMA table_info("detalle_documento")'
+            )
+        }
+        if {"articulo_id", "cantidad", "costo_neto_unitario"} <= detail_columns:
+            await connection.execute_script("""
+                UPDATE "articulos"
+                SET "precio_medio_ponderado" = COALESCE(
+                    (
+                        SELECT ROUND(
+                            SUM(detalle_documento.cantidad * detalle_documento.costo_neto_unitario)
+                            / NULLIF(SUM(detalle_documento.cantidad), 0),
+                            2
+                        )
+                        FROM detalle_documento
+                        WHERE detalle_documento.articulo_id = articulos.id
+                    ),
+                    "precio_lista",
+                    0
+                );
+                """)
+            return
+
+    await connection.execute_script("""
+        UPDATE "articulos"
+        SET "precio_medio_ponderado" = COALESCE("precio_lista", 0);
+        """)
 
 
 async def EnsureDocumentoTipoConstraint():

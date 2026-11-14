@@ -20,12 +20,12 @@ http:
         "descuento1": 10,
         "descuento2": 0,
         "descuento3": 0,
-        "importe_base": 5000,
-        "descuento_total": 10,
-        "subtotal": 4000,
-        "iva": 1900,
-        "total": 3000,
-        "cantidad_productos": 2,
+        "importe_base": 10000,
+        "descuento_total": 1000,
+        "subtotal": 9000,
+        "iva": 1710,
+        "total": 10710,
+        "cantidad_productos": 10,
         "productos": [
           {
             "nombre": "Producto 1",
@@ -34,9 +34,9 @@ http:
             "stock": 5,
             "stock_minimo": 2,
             "precio_neto": 1000,
-            "importe_base": 1500,
-            "costo_neto": 2000,
-            "neto_final": 2500
+            "importe_base": 5000,
+            "costo_neto": 900,
+            "neto_final": 4500
           },
            {
             "nombre": "Producto 2",
@@ -45,9 +45,9 @@ http:
             "stock": 5,
             "stock_minimo": 2,
             "precio_neto": 1000,
-            "importe_base": 1500,
-            "costo_neto": 2000,
-            "neto_final": 2500
+            "importe_base": 5000,
+            "costo_neto": 900,
+            "neto_final": 4500
           }
         ]
       }

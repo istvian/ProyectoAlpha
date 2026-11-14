@@ -7,7 +7,7 @@ import { Selector } from "../../../Components/Selector/Selector";
 import { Title } from "../../../Components/Title/Title";
 import css from "./AgregarDocumento.module.css";
 import type {
-  DocumentoTributario,
+  FacturaCreate,
   Producto,
   Proveedor,
 } from "../../../types/general";
@@ -34,7 +34,7 @@ export function AgregarDocumento({
     descripcion: "",
   };
 
-  const FORMULARIO_INICIAL: DocumentoTributario = {
+  const FORMULARIO_INICIAL: FacturaCreate = {
     descuento1: 0,
     descuento2: 0,
     descuento3: 0,
@@ -45,7 +45,7 @@ export function AgregarDocumento({
     proveedor: proveedores[0]?.razon_social,
     productos: [],
     rut: proveedores[0]?.rut,
-    tipo: "Factura electrónica",
+    tipo: "Factura",
     descuento_total: 0,
     importe_base: 0,
     iva: 0,
@@ -63,16 +63,12 @@ export function AgregarDocumento({
     sobreDescuento3: 0,
   };
   const [formulario, setFormulario] =
-    useState<DocumentoTributario>(FORMULARIO_INICIAL);
+    useState<FacturaCreate>(FORMULARIO_INICIAL);
   const [producto, setProducto] = useState<Producto>(PRODUCTO_INICIAL);
   const [showPopup, setShowPopup] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   async function handleRegistrar() {
-    if (!formulario.tipo) {
-      setErrorMsg("Debe seleccionar un tipo de documento tributario.");
-      return;
-    }
     if (!formulario?.proveedor?.trim()) {
       setErrorMsg("El campo Proveedor es obligatorio.");
       return;
@@ -85,8 +81,16 @@ export function AgregarDocumento({
       setErrorMsg("El Folio es obligatorio.");
       return;
     }
-    if (formulario?.productos?.length === 0) {
-      setErrorMsg("Debe agregar al menos un producto al documento.");
+    if (
+      [formulario.descuento1, formulario.descuento2, formulario.descuento3].some(
+        (descuento) => !Number.isFinite(descuento) || descuento < 0 || descuento > 100,
+      )
+    ) {
+      setErrorMsg("Cada descuento debe estar entre 0% y 100%.");
+      return;
+    }
+    if (formulario.productos.length === 0) {
+      setErrorMsg("Debe agregar al menos un producto a la factura.");
       return;
     }
     const payload = {
@@ -98,11 +102,14 @@ export function AgregarDocumento({
     console.log(formulario);
     try {
       const res = await CreateFactura(payload);
-      if (!res?.error) {
-        alert("Se ha guardado correctamente la factura");
+      if (res && !res.error) {
+        alert("Se ha guardado correctamente la factura.");
+        setFormulario({ ...FORMULARIO_INICIAL });
+        setProducto({ ...PRODUCTO_INICIAL });
+        setShowPopup(false);
         onEnd();
       } else {
-        alert(res.mensaje || "Error al guardar la factura");
+        alert(res?.mensaje || "No se pudo guardar la factura.");
       }
     } catch (error) {
       console.error(error);
@@ -140,7 +147,6 @@ export function AgregarDocumento({
   }
 
   useEffect(() => {
-    CalcularValoresProductos();
     CalcularDescuentos();
   }, [
     formulario.productos.length,
@@ -153,84 +159,59 @@ export function AgregarDocumento({
     console.log(formulario);
   }, [formulario]);
   function CalcularDescuentos() {
-    let base1 = formulario.importe_base;
-    let monto1 = 0;
-    let saldo1 = base1;
-
-    if (formulario.descuento1 != 0) {
-      monto1 = (formulario.descuento1 * base1) / 100;
-      saldo1 = base1 - monto1;
-    }
-
-    let base2 = saldo1;
-    let monto2 = 0;
-    let saldo2 = base2;
-
-    if (formulario.descuento2 != 0) {
-      monto2 = (formulario.descuento2 * base2) / 100;
-      saldo2 = base2 - monto2;
-    }
-
-    let base3 = saldo2;
-    let monto3 = 0;
-    let saldo3 = base3;
-
-    if (formulario.descuento3 != 0) {
-      monto3 = (formulario.descuento3 * base3) / 100;
-      saldo3 = base3 - monto3;
-    }
-
-    setFormulario((prev) => ({
-      ...prev,
-      sobreDescuento1: base1,
-      montoDescuento1: monto1,
-      saldoDescuento1: saldo1,
-      sobreDescuento2: base2,
-      montoDescuento2: monto2,
-      saldoDescuento2: saldo2,
-      sobreDescuento3: base3,
-      montoDescuento3: monto3,
-      saldoDescuento3: saldo3,
-    }));
-
-    let productos = formulario.productos;
-    let totalImporteBase = 0;
-    let subtotalNeto = 0;
-    productos.forEach((prod) => {
-      prod.importe_base = prod.precio_neto * prod.stock;
-      const d1 = 1 - (formulario.descuento1 || 0) / 100;
-      const d2 = 1 - (formulario.descuento2 || 0) / 100;
-      const d3 = 1 - (formulario.descuento3 || 0) / 100;
-      const costoNeto = prod.precio_neto * d1 * d2 * d3;
-      prod.costo_neto = costoNeto;
-      prod.neto_final = costoNeto * prod.stock;
-      totalImporteBase += prod.importe_base;
-      subtotalNeto += prod.neto_final;
+    const redondear = (monto: number) =>
+      Math.round((monto + Number.EPSILON) * 100) / 100;
+    const descuentos = [
+      formulario.descuento1,
+      formulario.descuento2,
+      formulario.descuento3,
+    ];
+    const montosDescuento = [0, 0, 0];
+    let importeBase = 0;
+    let subtotal = 0;
+    let cantidadProductos = 0;
+    const productos = formulario.productos.map((producto) => {
+      const precioNeto = redondear(producto.precio_neto);
+      let costoNeto = precioNeto;
+      descuentos.forEach((porcentaje, index) => {
+        const descuentoUnitario = redondear((costoNeto * porcentaje) / 100);
+        montosDescuento[index] += descuentoUnitario * producto.stock;
+        costoNeto = redondear(costoNeto - descuentoUnitario);
+      });
+      const importeBaseProducto = redondear(precioNeto * producto.stock);
+      const netoFinal = redondear(costoNeto * producto.stock);
+      importeBase += importeBaseProducto;
+      subtotal += netoFinal;
+      cantidadProductos += producto.stock;
+      return {
+        ...producto,
+        importe_base: importeBaseProducto,
+        costo_neto: costoNeto,
+        neto_final: netoFinal,
+      };
     });
-
+    const saldoDescuento1 = importeBase - montosDescuento[0];
+    const saldoDescuento2 = saldoDescuento1 - montosDescuento[1];
+    const saldoDescuento3 = saldoDescuento2 - montosDescuento[2];
+    const iva = redondear(subtotal * 0.19);
     setFormulario((prev) => ({
       ...prev,
-      descuento_total: monto1 + monto2 + monto3,
-      subtotal: saldo3,
-      iva: saldo3 * 0.19,
-      total: saldo3 + saldo3 * 0.19,
-    }));
-  }
-
-  function CalcularValoresProductos() {
-    if (formulario.productos.length === 0) return;
-    let productos = formulario.productos;
-    let imbase = 0;
-    productos.forEach((prod) => {
-      prod.importe_base = prod.precio_neto * prod.stock;
-      imbase += prod.importe_base;
-    });
-
-    setFormulario((prev) => ({
-      ...prev,
-      importe_base: imbase,
+      sobreDescuento1: importeBase,
+      montoDescuento1: montosDescuento[0],
+      saldoDescuento1,
+      sobreDescuento2: saldoDescuento1,
+      montoDescuento2: montosDescuento[1],
+      saldoDescuento2,
+      sobreDescuento3: saldoDescuento2,
+      montoDescuento3: montosDescuento[2],
+      saldoDescuento3,
+      importe_base: importeBase,
+      descuento_total: importeBase - subtotal,
+      subtotal,
+      iva,
+      total: subtotal + iva,
+      cantidad_productos: cantidadProductos,
       productos: productos,
-      cantidad_productos: productos.length,
     }));
   }
   function handleCancelar() {
@@ -248,7 +229,7 @@ export function AgregarDocumento({
           justifyContent: "flex-start",
         }}
       >
-        <Title>Ingreso de documento</Title>
+        <Title>Ingreso de factura</Title>
         <form
           className={css.form}
           onSubmit={(e) => {
@@ -256,15 +237,6 @@ export function AgregarDocumento({
           }}
         >
           <div className={css.grid}>
-            <Selector
-              title="Documento tributario *"
-              options={["Factura electrónica", "Boleta electrónica"]}
-              data={formulario?.tipo || ""}
-              firstOption="Selecciona un documento"
-              setData={(selected) => {
-                setFormulario((prev) => ({ ...prev, tipo: selected }));
-              }}
-            />
             <Selector
               data={formulario.proveedor}
               firstOption="Selecciona un proveedor"
@@ -341,9 +313,20 @@ export function AgregarDocumento({
                 placeholder="Ingrese la descripción"
               />
               <InputText
+                value={producto.sku}
+                onChange={(text) => {
+                  setProducto((prev) => ({ ...prev, sku: text }));
+                }}
+                label="SKU (opcional)"
+                placeholder="Existente: suma stock; nuevo: crea; vacío: genera uno"
+              />
+              <InputText
                 value={String(producto?.stock)}
                 onChange={(text) => {
-                  setProducto((prev) => ({ ...prev, stock: Number(text) }));
+                  setProducto((prev) => ({
+                    ...prev,
+                    stock: Number(text),
+                  }));
                 }}
                 type="number"
                 label="Stock"
@@ -399,6 +382,7 @@ export function AgregarDocumento({
                 <tr>
                   <th>-</th>
                   <th>Producto</th>
+                  <th>SKU</th>
                   <th>Cantidad</th>
                   <th>Precio neto</th>
                   <th>Importe base</th>
@@ -424,6 +408,7 @@ export function AgregarDocumento({
                         Quitar
                       </td>
                       <td>{item.nombre}</td>
+                      <td>{item.sku.trim() || "Se generará"}</td>
                       <td>{item.stock}</td>
                       <td>
                         ${Number(item.precio_neto).toLocaleString("es-CL")}
@@ -456,9 +441,9 @@ export function AgregarDocumento({
             </p>
           </div>
           <p className={css.aviso}>
-            Precios sin IVA en CLP. Los descuentos del documento se aplican
-            sucesivamente a cada producto; el costo neto unitario ya incluye
-            ambos descuentos.
+            Precios sin IVA en CLP. Los descuentos de la factura se aplican
+            sucesivamente a cada producto; el costo neto unitario ya incluye los
+            tres descuentos.
           </p>
           <InputText
             value={formulario.observaciones}
@@ -478,10 +463,8 @@ export function AgregarDocumento({
           justifyContent: "flex-start",
         }}
       >
-        <Title>Descuentos y totales</Title>
-        <p className={css.infotext}>
-          Cálculo automático - Pesos chilenos (CLP)
-        </p>
+        <Title>Descuentos y totales de la factura</Title>
+        <p className={css.infotext}>Cálculo automático - Pesos chilenos (CLP)</p>
         <div className={css.row}>
           <p>Importe base neto</p>
           <p>${Number(formulario.importe_base).toLocaleString("es-CL")}</p>
@@ -490,6 +473,7 @@ export function AgregarDocumento({
           <div className={css.row}>
             <InputText
               label="Descuento 1"
+              type="number"
               onChange={(text) => {
                 setFormulario((prev) => ({
                   ...prev,
@@ -521,6 +505,7 @@ export function AgregarDocumento({
           <div className={css.row}>
             <InputText
               label="Descuento 2"
+              type="number"
               onChange={(text) => {
                 setFormulario((prev) => ({
                   ...prev,
@@ -552,6 +537,7 @@ export function AgregarDocumento({
           <div className={css.row}>
             <InputText
               label="Descuento 3"
+              type="number"
               onChange={(text) => {
                 setFormulario((prev) => ({
                   ...prev,
@@ -613,7 +599,7 @@ export function AgregarDocumento({
               handleRegistrar();
             }}
           >
-            Registrar y actualizar existencias
+            Registrar factura y actualizar existencias
           </Btn>
         </div>
         {errorMsg && (

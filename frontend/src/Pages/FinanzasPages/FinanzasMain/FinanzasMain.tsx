@@ -319,14 +319,14 @@ export function FinanzasMain() {
                   setPopupAgregarDocumento(true);
                 }}
               >
-                Nuevo documento
+                Nueva factura
               </Btn>
             </div>
           </div>
           <div className={css.filters}>
             <Selector
               data={filtroTipo}
-              options={["Factura electrónica", "Boleta"]}
+              options={["Factura", "Boleta", "Nota de Crédito"]}
               title="Tipo"
               setData={(selected) => {
                 setFiltroTipo(selected);
