@@ -24,7 +24,9 @@ async def SetupDB():
     )
     await PrepareLegacyEgresoSchema()
     await PrepareLegacyDetalleSchema()
+    await PrepareProveedorFacturaSchema()
     await Tortoise.generate_schemas()
+    await EnsureDocumentoTipoConstraint()
     await EnsureCardexMovementTypeConstraint()
     await EnsureCardexImmutability()
     await CreateRoles()
@@ -162,6 +164,95 @@ async def PrepareLegacyDetalleSchema():
         )
 
     await connection.execute_script('DROP TABLE "detalle_egreso"')
+
+
+async def PrepareProveedorFacturaSchema():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+
+    if "proveedores" in tables:
+        columns = {
+            row["name"]
+            for row in await connection.execute_query_dict(
+                'PRAGMA table_info("proveedores")'
+            )
+        }
+        additions = {
+            "direccion": "VARCHAR(255)",
+            "region": "VARCHAR(100)",
+            "comuna": "VARCHAR(100)",
+            "ciudad": "VARCHAR(100)",
+            "contactos_jsonb": "JSON",
+            "datos_bancarios_jsonb": "JSON",
+        }
+        for name, sql_type in additions.items():
+            if name not in columns:
+                await connection.execute_script(
+                    f'ALTER TABLE "proveedores" ADD COLUMN "{name}" {sql_type}'
+                )
+
+    if "documentos_tributarios" in tables:
+        columns = {
+            row["name"]
+            for row in await connection.execute_query_dict(
+                'PRAGMA table_info("documentos_tributarios")'
+            )
+        }
+        if "fecha_ingreso" not in columns:
+            await connection.execute_script(
+                'ALTER TABLE "documentos_tributarios" '
+                'ADD COLUMN "fecha_ingreso" DATETIME'
+            )
+        if "datos_dte" not in columns:
+            await connection.execute_script(
+                'ALTER TABLE "documentos_tributarios" ADD COLUMN "datos_dte" JSON'
+            )
+
+        await connection.execute_script("""
+            UPDATE "documentos_tributarios"
+            SET "tipo" = 'Factura'
+            WHERE "tipo" IN ('Factura electrónica', 'Factura electronica');
+
+            UPDATE "documentos_tributarios"
+            SET "tipo" = 'Boleta'
+            WHERE "tipo" IN ('Boleta electrónica', 'Boleta electronica');
+
+            UPDATE "documentos_tributarios"
+            SET "tipo" = 'Nota de Crédito'
+            WHERE "tipo" IN ('Nota de Credito', 'Nota de crédito');
+            """)
+
+
+async def EnsureDocumentoTipoConstraint():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    await connection.execute_script("""
+        CREATE TRIGGER IF NOT EXISTS documentos_tributarios_tipo_insert
+        BEFORE INSERT ON documentos_tributarios
+        FOR EACH ROW
+        WHEN NEW.tipo NOT IN ('Factura', 'Boleta', 'Nota de Crédito')
+        BEGIN
+            SELECT RAISE(ABORT, 'tipo must be Factura, Boleta or Nota de Crédito');
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS documentos_tributarios_tipo_update
+        BEFORE UPDATE OF tipo ON documentos_tributarios
+        FOR EACH ROW
+        WHEN NEW.tipo NOT IN ('Factura', 'Boleta', 'Nota de Crédito')
+        BEGIN
+            SELECT RAISE(ABORT, 'tipo must be Factura, Boleta or Nota de Crédito');
+        END;
+        """)
 
 
 async def CreateRoles():

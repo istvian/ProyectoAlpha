@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr
+from typing import Any, Optional
 from tortoise.exceptions import IntegrityError
 from db import db
 from models.proveedor import Proveedores
@@ -14,6 +15,12 @@ class ProveedorBaseModel(BaseModel):
     rut: str
     razon_social: str
     deleted: bool
+    direccion: Optional[str] = None
+    region: Optional[str] = None
+    comuna: Optional[str] = None
+    ciudad: Optional[str] = None
+    contactos_jsonb: Optional[dict[str, Any]] = None
+    datos_bancarios_jsonb: Optional[dict[str, Any]] = None
 
 
 class ProveedorDeleteBaseModel(BaseModel):
@@ -40,7 +47,15 @@ async def insert_proveedor(
 ):
     try:
         creado = await Proveedores.create(
-            rut=body.rut, razon_social=body.razon_social, deleted=False
+            rut=body.rut,
+            razon_social=body.razon_social,
+            deleted=False,
+            direccion=body.direccion,
+            region=body.region,
+            comuna=body.comuna,
+            ciudad=body.ciudad,
+            contactos_jsonb=body.contactos_jsonb,
+            datos_bancarios_jsonb=body.datos_bancarios_jsonb,
         )
         if creado:
             return {
@@ -68,6 +83,17 @@ async def update_proveedor(
         proveedor.deleted = body.deleted
         proveedor.razon_social = body.razon_social
         proveedor.rut = body.rut
+        campos_ampliados = (
+            "direccion",
+            "region",
+            "comuna",
+            "ciudad",
+            "contactos_jsonb",
+            "datos_bancarios_jsonb",
+        )
+        for campo in campos_ampliados:
+            if campo in body.model_fields_set:
+                setattr(proveedor, campo, getattr(body, campo))
         await proveedor.save()
 
         return {

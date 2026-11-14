@@ -1,5 +1,13 @@
+from enum import Enum
+
 from tortoise.models import Model
 from tortoise import fields
+
+
+class TipoDocumentoTributario(str, Enum):
+    FACTURA = "Factura"
+    BOLETA = "Boleta"
+    NOTA_CREDITO = "Nota de Crédito"
 
 
 class Articulos(Model):
@@ -24,6 +32,12 @@ class Proveedores(Model):
     id = fields.IntField(pk=True)
     rut = fields.CharField(max_length=20, unique=True)
     razon_social = fields.CharField(max_length=150)
+    direccion = fields.CharField(max_length=255, null=True)
+    region = fields.CharField(max_length=100, null=True)
+    comuna = fields.CharField(max_length=100, null=True)
+    ciudad = fields.CharField(max_length=100, null=True)
+    contactos_jsonb = fields.JSONField(null=True)
+    datos_bancarios_jsonb = fields.JSONField(null=True)
     deleted = fields.BooleanField(default=False)
 
     class Meta:
@@ -37,14 +51,16 @@ class DocumentosTributarios(Model):  # Renombrado / Ampliado desde FacturasProve
     id = fields.IntField(pk=True)
     tipo = fields.CharField(
         max_length=50
-    )  # "Factura electrónica" o "Boleta electrónica"
+    )
     proveedor = fields.ForeignKeyField(
         "models.Proveedores", related_name="documentos", on_delete=fields.CASCADE
     )
     folio = fields.CharField(max_length=50)
+    fecha_ingreso = fields.DatetimeField(auto_now_add=True, null=True)
     emision = fields.DateField()
     vencimiento = fields.DateField()
     observaciones = fields.TextField(null=True)
+    datos_dte = fields.JSONField(null=True)
 
     # Campos financieros y descuentos sucesivos
     descuento1 = fields.DecimalField(max_digits=5, decimal_places=2, default=0)

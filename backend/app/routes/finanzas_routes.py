@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, Request, Response
 from tortoise.contrib.pydantic import pydantic_model_creator, pydantic_queryset_creator
@@ -9,6 +9,7 @@ from models.proveedor import (
     DetalleDocumento,
     DocumentosTributarios,
     Proveedores,
+    TipoDocumentoTributario,
 )
 from models.user import User
 from models.cardex_log import CardexLog, TipoMovimiento
@@ -34,7 +35,7 @@ class ProductoSchema(BaseModel):
 
 
 class DocumentoTributarioCreateSchema(BaseModel):
-    tipo: str
+    tipo: TipoDocumentoTributario
     proveedor: str
     rut: str
     folio: str
@@ -54,7 +55,8 @@ class DocumentoTributarioCreateSchema(BaseModel):
     total: float
     cantidad_productos: int
 
-    productos: List[ProductoSchema]
+    datos_dte: Optional[dict[str, Any]] = None
+    productos: List[ProductoSchema] = Field(default_factory=list)
 
 
 # Insertar una factura via pestaña finanzas
@@ -63,6 +65,18 @@ async def create_factura(
     request: Request, body: DocumentoTributarioCreateSchema, response: Response
 ):
     try:
+        es_nota_credito = body.tipo == TipoDocumentoTributario.NOTA_CREDITO
+        if es_nota_credito and body.productos:
+            return {
+                "error": True,
+                "mensaje": "La Nota de Crédito se registra sin crear productos ni movimientos de inventario.",
+            }
+        if not es_nota_credito and not body.productos:
+            return {
+                "error": True,
+                "mensaje": "Debe agregar al menos un producto al documento.",
+            }
+
         token = request.cookies.get("token")
         payload = decode_jwt(token)
         usuario = await User.get_or_none(correo=payload["correo"])
@@ -76,12 +90,13 @@ async def create_factura(
         documento = await DocumentosTributarios.get_or_none(folio=body.folio)
         if not documento:
             documento = await DocumentosTributarios.create(
-                tipo=body.tipo,
+                tipo=body.tipo.value,
                 proveedor=proveedor,
                 folio=body.folio,
                 emision=body.emision,
                 vencimiento=body.vencimiento,
                 observaciones=body.observaciones,
+                datos_dte=body.datos_dte,
                 descuento1=body.descuento1,
                 descuento2=body.descuento2,
                 descuento3=body.descuento3,
