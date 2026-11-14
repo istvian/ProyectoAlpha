@@ -1,0 +1,23 @@
+info:
+  name: Login Bodega
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: http://127.0.0.1:8000/api/v1/users/login
+  body:
+    type: json
+    data: |-
+      {
+        "correo": "bodega@mail.cl",
+        "password": "Qwerty1234!"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

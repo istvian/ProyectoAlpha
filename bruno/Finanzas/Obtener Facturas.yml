@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: 127.0.0.1:8000/api/v1/finanzas/factura
+  url: http://127.0.0.1:8000/api/v1/finanzas/factura
   auth: inherit
 
 settings:

@@ -5,28 +5,14 @@ info:
 
 http:
   method: GET
-  url: http://127.0.0.1:8000/api/v1/admin/logs?cantidad=20&pagina=2&usuario=&evento=
+  url: http://127.0.0.1:8000/api/v1/admin/logs
   params:
     - name: cantidad
       value: "20"
       type: query
     - name: pagina
-      value: "2"
+      value: "1"
       type: query
-    - name: usuario
-      value: ""
-      type: query
-    - name: evento
-      value: ""
-      type: query
-    - name: desde
-      value: ""
-      type: query
-      disabled: true
-    - name: hasta
-      value: ""
-      type: query
-      disabled: true
   auth: inherit
 
 settings:

@@ -1,17 +1,17 @@
 info:
-  name: Login
+  name: Login Finanzas
   type: http
-  seq: 1
+  seq: 7
 
 http:
   method: POST
-  url: 127.0.0.1:8000/api/v1/users/login
+  url: http://127.0.0.1:8000/api/v1/users/login
   body:
     type: json
     data: |-
       {
-        "correo":"admin@mail.cl",
-        "password":"Qwerty1234!"
+        "correo": "finanzas@mail.cl",
+        "password": "Qwerty1234!"
       }
   auth: inherit
 

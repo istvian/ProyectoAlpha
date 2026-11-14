@@ -1,0 +1,28 @@
+info:
+  name: Actualizar Obra
+  type: http
+  seq: 3
+
+http:
+  method: PATCH
+  url: http://127.0.0.1:8000/api/v1/obras
+  body:
+    type: json
+    data: |-
+      {
+        "id": 1,
+        "codigo_obra": "OBR-1",
+        "nombre_obra": "Obra actualizada",
+        "tipo_servicio": "Prueba",
+        "tecnico_responsable_mail": "tecnico@mail.cl",
+        "enabled": true,
+        "fecha_creacion": "2026-11-14T00:00:00"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

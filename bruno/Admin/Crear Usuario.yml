@@ -1,0 +1,26 @@
+info:
+  name: Crear Usuario
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://127.0.0.1:8000/api/v1/admin/user
+  body:
+    type: json
+    data: |-
+      {
+        "correo": "usuario.bruno.qa@example.com",
+        "password": "CambiarPassword123!",
+        "nombre": "Usuario Bruno QA",
+        "enabled": true,
+        "rol_id": 2
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

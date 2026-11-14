@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: 127.0.0.1:8000/api/v1/finanzas/factura
+  url: http://127.0.0.1:8000/api/v1/finanzas/factura
   body:
     type: json
     data: |-
@@ -20,36 +20,34 @@ http:
         "descuento1": 10,
         "descuento2": 0,
         "descuento3": 0,
-        "importeBase": 5000,
-        "descuentoTotal": 10,
+        "importe_base": 5000,
+        "descuento_total": 10,
         "subtotal": 4000,
         "iva": 1900,
         "total": 3000,
-        "cantidadProductos": 2,
+        "cantidad_productos": 2,
         "productos": [
           {
             "nombre": "Producto 1",
-            "sku": "PR",
+            "sku": "BRUNO-1",
             "descripcion": "Es un producto",
             "stock": 5,
-            "description": "Descripción del producto",
-            "stockMinimo": 2,
-            "precioNeto": 1000,
-            "importeBase": 1500,
-            "costoNeto": 2000,
-            "netoFinal": 2500
+            "stock_minimo": 2,
+            "precio_neto": 1000,
+            "importe_base": 1500,
+            "costo_neto": 2000,
+            "neto_final": 2500
           },
            {
             "nombre": "Producto 2",
-            "sku": "P",
+            "sku": "BRUNO-2",
             "descripcion": "Es un producto",
             "stock": 5,
-            "description": "Descripción del producto",
-            "stockMinimo": 2,
-            "precioNeto": 1000,
-            "importeBase": 1500,
-            "costoNeto": 2000,
-            "netoFinal": 2500
+            "stock_minimo": 2,
+            "precio_neto": 1000,
+            "importe_base": 1500,
+            "costo_neto": 2000,
+            "neto_final": 2500
           }
         ]
       }

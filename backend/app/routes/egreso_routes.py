@@ -3,6 +3,8 @@ Módulo de Rutas para la Gestión de Egresos (HU-02)
 Expone los endpoints HTTP para el registro seguro de salidas de material con control atómico y validación de stock.
 """
 
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from tortoise.transactions import atomic
 from tortoise.expressions import F
@@ -14,6 +16,7 @@ from models.proveedor import Articulos
 from models.egreso import Egreso, DetalleEgreso
 from models.obra import Obra
 from models.user import User
+from models.cardex_log import CardexLog, TipoMovimiento
 from schemas.roles import Roles
 
 # Configuración del enrutador de FastAPI
@@ -69,6 +72,7 @@ async def registrar_egreso(data: EgresoSchema):
 
         # --- PASO 1: VALIDACIÓN DE EXISTENCIAS Y STOCK ---
         articulos: dict[int, Articulos] = {}
+        precios_unitarios: dict[int, Decimal] = {}
         for producto_id, cantidad_solicitada in cantidades_por_articulo.items():
             articulo = await Articulos.get_or_none(id=producto_id)
             if not articulo:
@@ -96,6 +100,7 @@ async def registrar_egreso(data: EgresoSchema):
                     ),
                 )
             articulos[producto_id] = articulo
+            precios_unitarios[producto_id] = articulo.precio_lista
 
         # --- PASO 2: VALIDACIÓN DE OBRA Y RESPONSABLES ---
         obra = await Obra.get_or_none(id=data.obra_id)
@@ -151,6 +156,27 @@ async def registrar_egreso(data: EgresoSchema):
                 articulo=articulos[item.producto_id],
                 cantidad_solicitada=item.cantidad,
                 precio_lista_vigente=articulos[item.producto_id].precio_lista,
+            )
+
+        # --- PASO 6: REGISTRO DEL MOVIMIENTO EN CARDEX ---
+        for producto_id, cantidad_solicitada in cantidades_por_articulo.items():
+            articulo_actualizado = await Articulos.get(id=producto_id)
+            costo_unitario = precios_unitarios[producto_id]
+            await CardexLog.create(
+                producto=articulos[producto_id],
+                usuario=usuario,
+                tipo_movimiento=TipoMovimiento.SALIDA_OBRA,
+                cantidad=cantidad_solicitada,
+                saldo_resultante=articulo_actualizado.stock_actual,
+                obra=obra,
+                motivo_justificacion=(
+                    f"Salida a obra {obra.codigo_obra} "
+                    f"- Egreso #{nuevo_egreso.id}"
+                ),
+                costo_unitario=costo_unitario,
+                saldo_valorizado=(
+                    Decimal(articulo_actualizado.stock_actual) * costo_unitario
+                ),
             )
 
         return {
