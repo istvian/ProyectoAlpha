@@ -67,7 +67,7 @@ def _filtros_reporte(
     }
 
 
-@router.get("/filtros", dependencies=[Depends(check_user(Roles.admin))])
+@router.get("/filtros", dependencies=[Depends(check_user(Roles.supervisor))])
 async def get_cardex_filtros():
     productos = await Articulos.all().order_by("nombre", "id").values(
         "id", "nombre", "codigo_sku"
@@ -86,7 +86,7 @@ async def get_cardex_filtros():
     }
 
 
-@router.get("", dependencies=[Depends(check_user(Roles.admin))])
+@router.get("", dependencies=[Depends(check_user(Roles.supervisor))])
 async def get_cardex(
     desde: Optional[date] = None,
     hasta: Optional[date] = None,
@@ -150,7 +150,7 @@ async def get_cardex(
     }
 
 
-@router.get("/exportar", dependencies=[Depends(check_user(Roles.admin))])
+@router.get("/exportar", dependencies=[Depends(check_user(Roles.supervisor))])
 async def exportar_cardex(
     formato: Literal["pdf", "excel"],
     desde: Optional[date] = None,
