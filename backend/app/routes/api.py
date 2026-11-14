@@ -3,6 +3,7 @@ from routes.user_routes import router as user_router
 from routes.admin_routes import router as admin_router
 from routes.proveedor_routes import router as proveedor_router
 from routes.egreso_routes import router as egreso_router
+from routes.cardex_routes import router as cardex_router
 from routes.finanzas_routes import router as finanzas_router
 from routes.obras_routes import router as obras_router
 
@@ -11,5 +12,6 @@ api_router.include_router(user_router, prefix="/users", tags=["Users"])
 api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])
 api_router.include_router(proveedor_router, prefix="/proveedor", tags=["Proveedor"])
 api_router.include_router(egreso_router, prefix="/egresos", tags=["Egresos"])
+api_router.include_router(cardex_router, prefix="/cardex", tags=["Cardex"])
 api_router.include_router(finanzas_router, prefix="/finanzas", tags=["Finanzas"])
 api_router.include_router(obras_router, prefix="/obras", tags=["Obras"])
