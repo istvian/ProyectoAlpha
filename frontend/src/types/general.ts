@@ -69,6 +69,9 @@ export interface DocumentoTributario {
   iva: number;
   proveedor_id?: number;
 }
+export type FacturaCreate = Omit<DocumentoTributario, "tipo"> & {
+  tipo: "Factura";
+};
 export interface SalidaMateriales {
   obra: string;
   tecnico: string;
@@ -90,7 +93,6 @@ export interface Proveedor {
   comuna?: string | null;
   ciudad?: string | null;
   contactos_jsonb?: Record<string, unknown> | null;
-  datos_bancarios_jsonb?: Record<string, unknown> | null;
 }
 
 export type TipoDocumentoTributario =

@@ -20,7 +20,6 @@ class ProveedorBaseModel(BaseModel):
     comuna: Optional[str] = None
     ciudad: Optional[str] = None
     contactos_jsonb: Optional[dict[str, Any]] = None
-    datos_bancarios_jsonb: Optional[dict[str, Any]] = None
 
 
 class ProveedorDeleteBaseModel(BaseModel):
@@ -55,7 +54,6 @@ async def insert_proveedor(
             comuna=body.comuna,
             ciudad=body.ciudad,
             contactos_jsonb=body.contactos_jsonb,
-            datos_bancarios_jsonb=body.datos_bancarios_jsonb,
         )
         if creado:
             return {
@@ -89,7 +87,6 @@ async def update_proveedor(
             "comuna",
             "ciudad",
             "contactos_jsonb",
-            "datos_bancarios_jsonb",
         )
         for campo in campos_ampliados:
             if campo in body.model_fields_set:

@@ -6,6 +6,7 @@ import type {
   CardexFormatoReporte,
   CardexRespuesta,
   DocumentoTributario,
+  FacturaCreate,
   LoginData,
   LoginResponse,
   Obra,
@@ -151,7 +152,7 @@ export async function GetLogs(
 
 //#region  Finanzas
 export async function CreateFactura(
-  formData: DocumentoTributario,
+  formData: FacturaCreate,
 ): Promise<ResponseBase | null> {
   try {
     console.log(formData);

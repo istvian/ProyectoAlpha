@@ -26,6 +26,7 @@ async def SetupDB():
     await PrepareLegacyDetalleSchema()
     await PrepareProveedorFacturaSchema()
     await PrepareDetalleDocumentoSchema()
+    await PrepareArticuloPMP()
     await Tortoise.generate_schemas()
     await EnsureDocumentoTipoConstraint()
     await EnsureCardexMovementTypeConstraint()
@@ -192,7 +193,6 @@ async def PrepareProveedorFacturaSchema():
             "comuna": "VARCHAR(100)",
             "ciudad": "VARCHAR(100)",
             "contactos_jsonb": "JSON",
-            "datos_bancarios_jsonb": "JSON",
         }
         for name, sql_type in additions.items():
             if name not in columns:
@@ -297,6 +297,68 @@ async def PrepareDetalleDocumentoSchema():
                 0
             );
             """)
+
+
+async def PrepareArticuloPMP():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+    if "articulos" not in tables:
+        return
+
+    columns = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            'PRAGMA table_info("articulos")'
+        )
+    }
+    if "precio_medio_ponderado" in columns:
+        return
+
+    await connection.execute_script(
+        'ALTER TABLE "articulos" ADD COLUMN '
+        '"precio_medio_ponderado" DECIMAL(12, 2) NOT NULL DEFAULT 0'
+    )
+    if "precio_lista" not in columns:
+        return
+
+    if "detalle_documento" in tables:
+        detail_columns = {
+            row["name"]
+            for row in await connection.execute_query_dict(
+                'PRAGMA table_info("detalle_documento")'
+            )
+        }
+        if {"articulo_id", "cantidad", "costo_neto_unitario"} <= detail_columns:
+            await connection.execute_script("""
+                UPDATE "articulos"
+                SET "precio_medio_ponderado" = COALESCE(
+                    (
+                        SELECT ROUND(
+                            SUM(detalle_documento.cantidad * detalle_documento.costo_neto_unitario)
+                            / NULLIF(SUM(detalle_documento.cantidad), 0),
+                            2
+                        )
+                        FROM detalle_documento
+                        WHERE detalle_documento.articulo_id = articulos.id
+                    ),
+                    "precio_lista",
+                    0
+                );
+                """)
+            return
+
+    await connection.execute_script("""
+        UPDATE "articulos"
+        SET "precio_medio_ponderado" = COALESCE("precio_lista", 0);
+        """)
 
 
 async def EnsureDocumentoTipoConstraint():

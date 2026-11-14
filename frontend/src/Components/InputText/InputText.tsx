@@ -8,6 +8,7 @@ interface InputTextProps {
   disabled?: boolean;
   isArea?: boolean;
   onChange: (text: string) => void;
+  onBlur?: () => void;
 }
 
 export function InputText({
@@ -18,6 +19,7 @@ export function InputText({
   disabled = false,
   onChange,
   isArea = false,
+  onBlur,
 }: InputTextProps) {
   if (isArea) {
     return (
@@ -29,6 +31,7 @@ export function InputText({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
         />
       </div>
     );
@@ -43,6 +46,7 @@ export function InputText({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
         />
       </div>
     );

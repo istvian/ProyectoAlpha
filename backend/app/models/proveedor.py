@@ -20,6 +20,9 @@ class Articulos(Model):
     stock_actual = fields.IntField(default=0)
     stock_minimo = fields.IntField(default=0)
     precio_lista = fields.DecimalField(max_digits=12, decimal_places=2, null=True)
+    precio_medio_ponderado = fields.DecimalField(
+        max_digits=12, decimal_places=2, default=0
+    )
 
     class Meta:
         table = "articulos"
@@ -37,7 +40,6 @@ class Proveedores(Model):
     comuna = fields.CharField(max_length=100, null=True)
     ciudad = fields.CharField(max_length=100, null=True)
     contactos_jsonb = fields.JSONField(null=True)
-    datos_bancarios_jsonb = fields.JSONField(null=True)
     deleted = fields.BooleanField(default=False)
 
     class Meta:

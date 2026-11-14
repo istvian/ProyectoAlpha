@@ -319,7 +319,7 @@ export function FinanzasMain() {
                   setPopupAgregarDocumento(true);
                 }}
               >
-                Nuevo documento
+                Nueva factura
               </Btn>
             </div>
           </div>
