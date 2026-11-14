@@ -126,3 +126,80 @@ export interface Obra {
   enabled: boolean;
   fecha_creacion: Date | string;
 }
+
+export type CardexTipoMovimiento =
+  | "ENTRADA_COMPRA"
+  | "SALIDA_OBRA"
+  | "MERMA"
+  | "DEVOLUCION"
+  | "USO_INTERNO";
+
+export interface CardexMovimiento {
+  id: number;
+  fecha_hora: string;
+  producto: {
+    id: number;
+    nombre: string;
+    codigo_sku: string | null;
+  };
+  usuario: {
+    id: number;
+    nombre: string;
+  };
+  tipo_movimiento: CardexTipoMovimiento;
+  cantidad: number;
+  saldo_resultante: number;
+  obra: {
+    id: number;
+    codigo_obra: string;
+    nombre_obra: string;
+  } | null;
+  motivo_justificacion: string;
+  costo_unitario: number | string;
+  saldo_valorizado: number | string;
+}
+
+export interface CardexFiltrosConsulta {
+  desde?: string;
+  hasta?: string;
+  producto_id?: number;
+  obra_id?: number;
+  tipo_movimiento?: CardexTipoMovimiento;
+}
+
+export interface CardexConsulta extends CardexFiltrosConsulta {
+  pagina: number;
+  cantidad: number;
+}
+
+export interface CardexRespuesta {
+  error: boolean;
+  mensaje: string;
+  data: CardexMovimiento[];
+  paginacion: {
+    pagina: number;
+    cantidad: number;
+    total: number;
+    total_paginas: number;
+  };
+}
+
+export interface CardexFiltrosRespuesta {
+  error: boolean;
+  mensaje: string;
+  data: {
+    productos: {
+      id: number;
+      nombre: string;
+      codigo_sku: string | null;
+    }[];
+    obras: {
+      id: number;
+      codigo_obra: string;
+      nombre_obra: string;
+    }[];
+    tipos_movimiento: CardexTipoMovimiento[];
+  };
+}
+
+export type CardexFormatoReporte = "pdf" | "excel";

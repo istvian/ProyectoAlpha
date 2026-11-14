@@ -6,3 +6,5 @@ bcrypt
 pyjwt
 tzdata
 pymongo
+reportlab
+openpyxl
