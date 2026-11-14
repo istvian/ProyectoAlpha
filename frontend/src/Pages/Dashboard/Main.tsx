@@ -57,8 +57,10 @@ export function Main() {
           <div className={css.actions}>
             <Btn onClick={() => {}}>Crear nuevo usuario</Btn>
             <Btn onClick={() => {}}>Revisar logs del sistema</Btn>
-            <Btn onClick={() => {}}>Visor de Cardex</Btn>
-            <Btn onClick={() => {}}>Generar informe (PDF)</Btn>
+            <Btn onClick={() => nav("/cardex")}>Visor de Cardex</Btn>
+            <Btn onClick={() => nav("/cardex")}>
+              Generar informe (PDF/Excel)
+            </Btn>
             <Btn onClick={() => {}}>Ajustar stock</Btn>
           </div>
         </Box>

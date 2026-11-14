@@ -1,5 +1,10 @@
 import axios from "axios";
 import type {
+  CardexConsulta,
+  CardexFiltrosConsulta,
+  CardexFiltrosRespuesta,
+  CardexFormatoReporte,
+  CardexRespuesta,
   DocumentoTributario,
   LoginData,
   LoginResponse,
@@ -276,4 +281,40 @@ export async function EditarObra(formData: Obra): Promise<ResponseBase | null> {
   }
 }
 
+//#endregion
+
+//#region Cardex
+export async function GetCardex(
+  consulta: CardexConsulta,
+): Promise<CardexRespuesta> {
+  const response = await api.get<CardexRespuesta>("/cardex", {
+    params: consulta,
+  });
+  return response.data;
+}
+
+export async function GetCardexFiltros(): Promise<CardexFiltrosRespuesta> {
+  const response = await api.get<CardexFiltrosRespuesta>("/cardex/filtros");
+  return response.data;
+}
+
+export async function DescargarReporteCardex(
+  filtros: CardexFiltrosConsulta,
+  formato: CardexFormatoReporte,
+): Promise<{ blob: Blob; filename: string }> {
+  const response = await api.get<Blob>("/cardex/exportar", {
+    params: { ...filtros, formato },
+    responseType: "blob",
+  });
+  const disposition = response.headers["content-disposition"] as
+    | string
+    | undefined;
+  const filename = disposition?.match(/filename="?([^";]+)"?/i)?.[1];
+  return {
+    blob: response.data,
+    filename:
+      filename ??
+      `reporte_auditoria_cardex.${formato === "excel" ? "xlsx" : "pdf"}`,
+  };
+}
 //#endregion
