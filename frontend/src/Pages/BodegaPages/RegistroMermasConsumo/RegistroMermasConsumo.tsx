@@ -51,6 +51,7 @@ export function RegistroMermasConsumo() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [notice, setNotice] = useState("");
+  const [motivoIntentado, setMotivoIntentado] = useState(false);
 
   useEffect(() => {
     if (!isAllowed) return;
@@ -80,11 +81,16 @@ export function RegistroMermasConsumo() {
   const articuloSeleccionado = catalogos?.articulos.find(
     (articulo) => String(articulo.id) === formulario.articuloId,
   );
+  const motivoInvalido =
+    tipoOperacion === "merma" &&
+    motivoIntentado &&
+    !formulario.motivo.trim();
 
   function cambiarTipoOperacion(tipo: TipoOperacion) {
     if (tipo === tipoOperacion) return;
     setTipoOperacion(tipo);
     setFormulario(FORMULARIO_VACIO);
+    setMotivoIntentado(false);
     setErrorMessage("");
     setNotice("");
   }
@@ -97,6 +103,8 @@ export function RegistroMermasConsumo() {
 
   async function guardarMovimiento(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (tipoOperacion === "merma") setMotivoIntentado(true);
+
     const articuloId = Number(formulario.articuloId);
     const cantidad = Number(formulario.cantidad);
     const articulo = catalogos?.articulos.find((item) => item.id === articuloId);
@@ -115,11 +123,12 @@ export function RegistroMermasConsumo() {
       );
       return;
     }
-    if (
-      tipoOperacion === "merma" &&
-      (!formulario.obraId || !formulario.motivo.trim())
-    ) {
-      setErrorMessage("Seleccione la obra e indique el motivo de la merma.");
+    if (tipoOperacion === "merma" && !formulario.obraId) {
+      setErrorMessage("Seleccione la obra relacionada.");
+      return;
+    }
+    if (tipoOperacion === "merma" && !formulario.motivo.trim()) {
+      setErrorMessage("El motivo o justificación es obligatorio.");
       return;
     }
     if (
@@ -160,6 +169,7 @@ export function RegistroMermasConsumo() {
         `${response.mensaje} Stock disponible ahora: ${response.data.stock_resultante}.`,
       );
       setFormulario(FORMULARIO_VACIO);
+      setMotivoIntentado(false);
 
       const refreshedCatalogos = await GetEgresoCatalogos();
       if (!refreshedCatalogos || refreshedCatalogos.error || !refreshedCatalogos.data) {
@@ -227,7 +237,7 @@ export function RegistroMermasConsumo() {
             </p>
           )}
 
-          <form className={css.form} onSubmit={guardarMovimiento}>
+          <form className={css.form} onSubmit={guardarMovimiento} noValidate>
             <section className={css.section}>
               <h2 className={css.sectionTitle}>
                 {tipoOperacion === "merma"
@@ -313,10 +323,12 @@ export function RegistroMermasConsumo() {
                     </label>
 
                     <label className={css.field} htmlFor="motivo">
-                      ¿Qué ocurrió?
+                      Motivo / Justificación (obligatorio)
                       <textarea
                         id="motivo"
-                        className={`${css.input} ${css.textarea}`}
+                        className={`${css.input} ${css.textarea} ${
+                          motivoInvalido ? css.invalidInput : ""
+                        }`}
                         value={formulario.motivo}
                         onChange={(event) =>
                           actualizarCampo("motivo", event.target.value)
@@ -324,8 +336,21 @@ export function RegistroMermasConsumo() {
                         maxLength={255}
                         placeholder="Ej.: material dañado durante el almacenamiento"
                         required
+                        aria-invalid={motivoInvalido}
+                        aria-describedby={
+                          motivoInvalido
+                            ? "motivo-error motivo-ayuda"
+                            : "motivo-ayuda"
+                        }
                       />
-                      <small>{formulario.motivo.length}/255 caracteres</small>
+                      {motivoInvalido && (
+                        <small id="motivo-error" className={css.fieldError}>
+                          Escriba el motivo o justificación para continuar.
+                        </small>
+                      )}
+                      <small id="motivo-ayuda">
+                        Obligatorio · {formulario.motivo.length}/255 caracteres
+                      </small>
                     </label>
                   </>
                 ) : (

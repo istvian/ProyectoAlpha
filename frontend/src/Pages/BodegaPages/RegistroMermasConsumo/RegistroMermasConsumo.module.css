@@ -98,6 +98,11 @@
   opacity: 0.7;
 }
 
+.invalidInput {
+  border-color: #b42318;
+  box-shadow: 0 0 0 2px rgb(180 35 24 / 18%);
+}
+
 .textarea {
   min-height: 96px;
   resize: vertical;
@@ -106,6 +111,11 @@
 .field small {
   color: var(--grey-color);
   font-weight: 400;
+}
+
+.field .fieldError {
+  color: #b42318;
+  font-weight: 600;
 }
 
 .actions {
