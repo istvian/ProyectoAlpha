@@ -532,7 +532,7 @@ export function AgregarDocumento({
           <p>${Number(formulario.importe_base).toLocaleString("es-CL")}</p>
         </div>
         <div className={css.descuento}>
-          <div className={css.row}>
+          <div className={`${css.row} ${css.discountInfo}`}>
             <InputText
               label="Descuento 1"
               type="number"
@@ -564,7 +564,7 @@ export function AgregarDocumento({
           </div>
         </div>
         <div className={css.descuento}>
-          <div className={css.row}>
+          <div className={`${css.row} ${css.discountInfo}`}>
             <InputText
               label="Descuento 2"
               type="number"
@@ -596,7 +596,7 @@ export function AgregarDocumento({
           </div>
         </div>
         <div className={css.descuento}>
-          <div className={css.row}>
+          <div className={`${css.row} ${css.discountInfo}`}>
             <InputText
               label="Descuento 3"
               type="number"
