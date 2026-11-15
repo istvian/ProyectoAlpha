@@ -10,6 +10,7 @@ from routes.obras_routes import router as obras_router
 from routes.conteo_inventario_routes import router as conteo_inventario_router
 from routes.mermas_routes import router as mermas_router
 from routes.uso_interno_routes import router as uso_interno_router
+from routes.alertas_routes import router as alertas_router
 
 api_router = APIRouter()
 api_router.include_router(user_router, prefix="/users", tags=["Users"])
@@ -33,3 +34,4 @@ api_router.include_router(
     prefix="/usos-internos",
     tags=["Uso interno"],
 )
+api_router.include_router(alertas_router, prefix="/alertas", tags=["Alertas"])

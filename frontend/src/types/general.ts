@@ -417,4 +417,12 @@ export interface AdminDashboardData {
   proveedores_activos: number;
 }
 
+export interface AlertaStockMinimo {
+  id: number;
+  codigo_sku: string | null;
+  nombre: string;
+  stock_actual: number;
+  stock_minimo: number;
+}
+
 export type CardexFormatoReporte = "pdf" | "excel";

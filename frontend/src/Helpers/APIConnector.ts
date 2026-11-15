@@ -22,6 +22,7 @@ import type {
   OrdenCompraCreate,
   Proveedor,
   AdminDashboardData,
+  AlertaStockMinimo,
   RecepcionCompra,
   RecepcionCompraCreate,
   ResponseBase,
@@ -195,6 +196,26 @@ export async function GetAdminDashboard(): Promise<
   } catch (error) {
     console.error(error);
     return null;
+  }
+}
+
+export async function GetStockMinimoAlerts(): Promise<
+  ResponseBase<AlertaStockMinimo[]>
+> {
+  try {
+    const response = await api.get<ResponseBase<AlertaStockMinimo[]>>(
+      "/alertas/stock-minimo",
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(
+        error,
+        "No se pudieron consultar las alertas de stock.",
+      ),
+    };
   }
 }
 //#endregion

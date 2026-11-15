@@ -150,8 +150,10 @@ descargar el reporte en PDF o Excel.
 El Administrador puede consultar un resumen con la cantidad de artículos, el
 valor estimado del inventario, los artículos con pocas existencias, los
 movimientos del día, las cuentas y proveedores activos, y las pérdidas de
-materiales registradas. También puede crear y modificar cuentas, cambiar el
-cargo o deshabilitarlas, y revisar los registros de actividad del sistema.
+materiales registradas. El panel muestra cuáles artículos están en o bajo su
+mínimo y actualiza esa lista automáticamente cada 30 segundos. También puede
+crear y modificar cuentas, cambiar el cargo o deshabilitarlas, y revisar los
+registros de actividad del sistema.
 
 ## Datos de demostración
 
@@ -159,7 +161,3 @@ Al iniciar el backend en el entorno de desarrollo, se cargan ejemplos para
 probar las funciones: artículos, proveedores, obras, facturas, movimientos,
 órdenes de compra, recepciones y un conteo pendiente de revisión. Reiniciar el
 backend no duplica esos ejemplos.
-
-Si `APP_ENV` no está definido, el backend considera que se está trabajando en
-desarrollo y carga los ejemplos. Antes de iniciar el backend en producción,
-defina `APP_ENV=production` para que no se carguen.
