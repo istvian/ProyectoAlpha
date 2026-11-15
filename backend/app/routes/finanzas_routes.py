@@ -24,6 +24,7 @@ from middlewares.jwt_helper import check_user, decode_jwt, validar_rol
 from schemas.roles import Roles
 from db.nosql import get_db
 from datetime import date
+from services.purchase_cost_history_service import registrar_costo_compra
 
 router = APIRouter()
 db = get_db()
@@ -178,7 +179,9 @@ async def _preparar_factura_vinculada(
                 422,
                 "Las facturas vinculadas a una Orden de Compra requieren SKU por artículo",
             )
-        articulo = await Articulos.get_or_none(codigo_sku=sku)
+        articulo = (
+            await Articulos.filter(codigo_sku=sku).select_for_update().first()
+        )
         if not articulo or articulo.id not in detalles_por_articulo:
             raise HTTPException(
                 409,
@@ -375,6 +378,12 @@ async def _create_factura_atomically(
             descuento1=body.descuento1 or 0,
             descuento2=body.descuento2 or 0,
             descuento3=body.descuento3 or 0,
+        )
+        await registrar_costo_compra(
+            articulo=articulo,
+            costo_unitario=linea["costo_neto_unitario"],
+            fecha=documento.emision,
+            folio=documento.folio,
         )
         if not orden_compra:
             await CardexLog.create(

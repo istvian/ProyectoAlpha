@@ -69,15 +69,15 @@ async def _crear_conteo_demo(
 ) -> ConteoInventario:
     stock_contado = max(0, articulo.stock_actual - 1)
     conteo = await ConteoInventario.create(
-        creado_por=usuario,
+        usuario=usuario,
         estado=EstadoConteo.PENDIENTE_APROBACION,
         observaciones=OBSERVACION_CONTEO_DEMO,
     )
     await DetalleConteoInventario.create(
-        conteo=conteo,
-        articulo=articulo,
-        stock_sistema=articulo.stock_actual,
-        cantidad_contada=stock_contado,
+        toma=conteo,
+        producto=articulo,
+        stock_teorico=articulo.stock_actual,
+        conteo_fisico=stock_contado,
         diferencia=stock_contado - articulo.stock_actual,
     )
     return conteo

@@ -23,6 +23,8 @@ class Articulos(Model):
     precio_medio_ponderado = fields.DecimalField(
         max_digits=12, decimal_places=2, default=0
     )
+    especificaciones_tecnicas = fields.JSONField(default=dict)
+    ultimos_costos_compra = fields.JSONField(default=list)
 
     class Meta:
         table = "articulos"

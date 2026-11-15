@@ -67,15 +67,15 @@ async def _usuario_actual(request: Request) -> User:
 
 
 async def _serializar_conteo(conteo: ConteoInventario) -> dict:
-    await conteo.fetch_related("creado_por", "resuelto_por")
+    await conteo.fetch_related("usuario", "resuelto_por")
     detalles = await DetalleConteoInventario.filter(
-        conteo_id=conteo.id
-    ).select_related("articulo").order_by("articulo__nombre", "id")
+        toma_id=conteo.id
+    ).select_related("producto").order_by("producto__nombre", "id")
     return {
         "id": conteo.id,
         "codigo": f"CON-{conteo.id:06d}",
         "estado": conteo.estado.value,
-        "creado_por": conteo.creado_por.nombre,
+        "creado_por": conteo.usuario.nombre,
         "resuelto_por": conteo.resuelto_por.nombre if conteo.resuelto_por else None,
         "fecha": conteo.fecha.isoformat(),
         "fecha_revision": (
@@ -85,11 +85,11 @@ async def _serializar_conteo(conteo: ConteoInventario) -> dict:
         "motivo_rechazo": conteo.motivo_rechazo,
         "detalles": [
             {
-                "articulo_id": detalle.articulo_id,
-                "sku": detalle.articulo.codigo_sku,
-                "articulo": detalle.articulo.nombre,
-                "stock_sistema": detalle.stock_sistema,
-                "cantidad_contada": detalle.cantidad_contada,
+                "articulo_id": detalle.producto_id,
+                "sku": detalle.producto.codigo_sku,
+                "articulo": detalle.producto.nombre,
+                "stock_sistema": detalle.stock_teorico,
+                "cantidad_contada": detalle.conteo_fisico,
                 "diferencia": detalle.diferencia,
             }
             for detalle in detalles
@@ -169,7 +169,7 @@ async def crear_conteo(body: ConteoCreateSchema, request: Request):
         for _, cantidad_contada, stock_sistema in detalles_conteo
     )
     conteo = await ConteoInventario.create(
-        creado_por=usuario,
+        usuario=usuario,
         estado=(
             EstadoConteo.PENDIENTE_APROBACION
             if tiene_diferencias
@@ -179,10 +179,10 @@ async def crear_conteo(body: ConteoCreateSchema, request: Request):
     )
     for articulo, cantidad_contada, stock_sistema in detalles_conteo:
         await DetalleConteoInventario.create(
-            conteo=conteo,
-            articulo=articulo,
-            stock_sistema=stock_sistema,
-            cantidad_contada=cantidad_contada,
+            toma=conteo,
+            producto=articulo,
+            stock_teorico=stock_sistema,
+            conteo_fisico=cantidad_contada,
             diferencia=cantidad_contada - stock_sistema,
         )
 
@@ -217,34 +217,34 @@ async def aprobar_conteo(conteo_id: int, request: Request):
 
     usuario = await _usuario_actual(request)
     detalles = await DetalleConteoInventario.filter(
-        conteo_id=conteo.id
-    ).order_by("articulo_id", "id")
+        toma_id=conteo.id
+    ).order_by("producto_id", "id")
     articulos: dict[int, Articulos] = {}
     for detalle in detalles:
         articulo = await Articulos.filter(
-            id=detalle.articulo_id
+            id=detalle.producto_id
         ).select_for_update().first()
         if not articulo:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"El artículo {detalle.articulo_id} ya no existe.",
+                detail=f"El artículo {detalle.producto_id} ya no existe.",
             )
-        if articulo.stock_actual != detalle.stock_sistema:
+        if articulo.stock_actual != detalle.stock_teorico:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
                     f"El stock de '{articulo.nombre}' cambió desde el conteo "
-                    f"({detalle.stock_sistema} a {articulo.stock_actual}). "
+                    f"({detalle.stock_teorico} a {articulo.stock_actual}). "
                     "Realice un nuevo conteo antes de ajustar."
                 ),
             )
-        articulos[detalle.articulo_id] = articulo
+        articulos[detalle.producto_id] = articulo
 
     for detalle in detalles:
         if detalle.diferencia == 0:
             continue
-        articulo = articulos[detalle.articulo_id]
-        articulo.stock_actual = detalle.cantidad_contada
+        articulo = articulos[detalle.producto_id]
+        articulo.stock_actual = detalle.conteo_fisico
         await articulo.save(update_fields=["stock_actual"])
         costo_unitario = Decimal(articulo.precio_medio_ponderado or 0)
         await CardexLog.create(
@@ -252,14 +252,14 @@ async def aprobar_conteo(conteo_id: int, request: Request):
             usuario=usuario,
             tipo_movimiento=TipoMovimiento.AJUSTE_INVENTARIO,
             cantidad=detalle.diferencia,
-            saldo_resultante=detalle.cantidad_contada,
+            saldo_resultante=detalle.conteo_fisico,
             obra=None,
             motivo_justificacion=(
-                f"Ajuste por conteo {conteo.id} ({detalle.stock_sistema} "
-                f"a {detalle.cantidad_contada})"
+                f"Ajuste por conteo {conteo.id} ({detalle.stock_teorico} "
+                f"a {detalle.conteo_fisico})"
             ),
             costo_unitario=costo_unitario,
-            saldo_valorizado=costo_unitario * detalle.cantidad_contada,
+            saldo_valorizado=costo_unitario * detalle.conteo_fisico,
         )
 
     conteo.estado = EstadoConteo.APROBADO

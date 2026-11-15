@@ -12,7 +12,7 @@ class EstadoConteo(str, Enum):
 
 class ConteoInventario(models.Model):
     id = fields.IntField(pk=True)
-    creado_por = fields.ForeignKeyField(
+    usuario = fields.ForeignKeyField(
         "models.User",
         related_name="conteos_inventario_creados",
         on_delete=fields.RESTRICT,
@@ -33,25 +33,25 @@ class ConteoInventario(models.Model):
     fecha_revision = fields.DatetimeField(null=True)
 
     class Meta:
-        table = "conteos_inventario"
+        table = "toma_inventario"
 
 
 class DetalleConteoInventario(models.Model):
     id = fields.IntField(pk=True)
-    conteo = fields.ForeignKeyField(
+    toma = fields.ForeignKeyField(
         "models.ConteoInventario",
         related_name="detalles",
         on_delete=fields.RESTRICT,
     )
-    articulo = fields.ForeignKeyField(
+    producto = fields.ForeignKeyField(
         "models.Articulos",
         related_name="detalles_conteo",
         on_delete=fields.RESTRICT,
     )
-    stock_sistema = fields.IntField()
-    cantidad_contada = fields.IntField()
+    stock_teorico = fields.IntField()
+    conteo_fisico = fields.IntField()
     diferencia = fields.IntField()
 
     class Meta:
-        table = "detalle_conteo_inventario"
-        unique_together = (("conteo", "articulo"),)
+        table = "detalle_toma_inventario"
+        unique_together = (("toma", "producto"),)
