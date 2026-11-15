@@ -108,6 +108,7 @@ async def obtener_catalogo_conteo():
         "nombre",
         "stock_actual",
         "stock_minimo",
+        "ultimos_costos_compra",
     )
     return {
         "error": False,

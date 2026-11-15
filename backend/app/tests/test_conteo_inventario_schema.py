@@ -15,6 +15,7 @@ from routes.conteo_inventario_routes import (
     ConteoCreateSchema,
     DetalleConteoSchema,
     crear_conteo,
+    obtener_catalogo_conteo,
 )
 
 MODELOS = {
@@ -135,6 +136,24 @@ class ConteoInventarioSchemaTests(unittest.IsolatedAsyncioTestCase):
             ).count(),
             1,
         )
+
+    async def test_catalogo_conteo_devuelve_los_tres_costos_historicos(self):
+        costos = [
+            {"costo_unitario": "13.75", "fecha": "2026-03-03", "folio": "F-3"},
+            {"costo_unitario": "12.50", "fecha": "2026-03-02", "folio": "F-2"},
+            {"costo_unitario": "11.25", "fecha": "2026-03-01", "folio": "F-1"},
+        ]
+        await Articulos.create(
+            codigo_sku="CONTEO-COSTOS",
+            nombre="Artículo con historial de costos",
+            stock_actual=12,
+            stock_minimo=3,
+            ultimos_costos_compra=costos,
+        )
+
+        respuesta = await obtener_catalogo_conteo()
+
+        self.assertEqual(respuesta["data"][0]["ultimos_costos_compra"], costos)
 
     async def test_migra_tablas_anteriores_conservando_registros(self):
         await self.connection.execute_script("""
