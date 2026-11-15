@@ -15,6 +15,8 @@ import type {
   FacturaCreate,
   LoginData,
   LoginResponse,
+  MermaCreate,
+  MermaRegistro,
   Obra,
   OrdenCompra,
   OrdenCompraCreate,
@@ -24,6 +26,8 @@ import type {
   RecepcionCompraCreate,
   ResponseBase,
   SystemLog,
+  UsoInternoCreate,
+  UsoInternoRegistro,
   UserData,
 } from "../types/general";
 import { useSessionStore } from "../Stores/session";
@@ -342,6 +346,45 @@ export async function CreateEgreso(
       error: true,
       mensaje:
         error instanceof Error ? error.message : "No se pudo registrar el egreso.",
+    };
+  }
+}
+
+export async function CreateMerma(
+  formData: MermaCreate,
+): Promise<ResponseBase<MermaRegistro> | null> {
+  try {
+    const response = await api.post<ResponseBase<MermaRegistro>>(
+      "/mermas",
+      formData,
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(error, "No se pudo registrar la merma."),
+    };
+  }
+}
+
+export async function CreateUsoInterno(
+  formData: UsoInternoCreate,
+): Promise<ResponseBase<UsoInternoRegistro> | null> {
+  try {
+    const response = await api.post<ResponseBase<UsoInternoRegistro>>(
+      "/usos-internos",
+      formData,
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(
+        error,
+        "No se pudo registrar el consumo interno.",
+      ),
     };
   }
 }

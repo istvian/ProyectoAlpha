@@ -30,15 +30,15 @@
   box-shadow: var(--shadow-color) 0 0 8px;
 }
 .filters {
-  display: flex;
-  flex-flow: row wrap;
-  align-items: center;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  align-items: end;
+  gap: 0.75rem;
   width: 100%;
 }
 .filters > * {
-  margin: 0.5rem;
-  align-self: flex-end;
+  min-width: 0;
+  margin: 0;
 }
 .error {
   color: #b42318;
@@ -46,30 +46,53 @@
 }
 .tableContainer {
   width: 100%;
-  overflow-x: auto;
+  min-width: 0;
   font-size: 0.8rem;
+}
+.topScrollbar,
+.tableScroller {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
   scrollbar-width: auto;
   scrollbar-color: #6c6c6c #e0e0e0;
   -webkit-overflow-scrolling: touch;
 }
 
-.tableContainer::-webkit-scrollbar {
+.topScrollbar {
+  height: 16px;
+  margin: 0.25rem 0;
+  overflow-y: hidden;
+}
+
+.topScrollbar > div {
+  height: 1px;
+}
+
+.tableScroller {
+  overscroll-behavior-x: contain;
+}
+
+.topScrollbar::-webkit-scrollbar,
+.tableScroller::-webkit-scrollbar {
   height: 12px;
 }
 
-.tableContainer::-webkit-scrollbar-track {
+.topScrollbar::-webkit-scrollbar-track,
+.tableScroller::-webkit-scrollbar-track {
   background: #e0e0e0;
   border-radius: 999px;
 }
 
-.tableContainer::-webkit-scrollbar-thumb {
+.topScrollbar::-webkit-scrollbar-thumb,
+.tableScroller::-webkit-scrollbar-thumb {
   background: #6c6c6c;
   border: 2px solid #e0e0e0;
   border-radius: 999px;
 }
 .table {
   width: 100%;
-  margin: 2rem 0;
+  margin: 0.5rem 0;
   border-collapse: collapse;
 }
 th {
@@ -157,18 +180,11 @@ td {
   }
 
   .filters {
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .filters > * {
     width: 100%;
-    margin: 0.25rem 0;
-  }
-
-  .tableContainer {
-    overflow-x: scroll;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
   }
 
   .tableContainer::before {
@@ -177,6 +193,10 @@ td {
     margin: 0.25rem 0;
     color: var(--grey-color);
     font-size: 0.75rem;
+  }
+
+  .tableScroller {
+    overflow-x: scroll;
   }
 
   .table {

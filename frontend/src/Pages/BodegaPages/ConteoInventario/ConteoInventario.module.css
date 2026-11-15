@@ -4,6 +4,7 @@
 
 .section {
   width: 100%;
+  min-width: 0;
   padding: 1.25rem 0;
   border-top: 1px solid var(--input-color);
 }
@@ -61,6 +62,8 @@
 
 .tableWrap {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   margin: 1rem 0;
   scrollbar-width: auto;
@@ -141,9 +144,11 @@
 .countList {
   display: grid;
   gap: 1rem;
+  min-width: 0;
 }
 
 .countCard {
+  min-width: 0;
   padding: 1rem;
   border: 1px solid var(--input-color);
   border-radius: 10px;

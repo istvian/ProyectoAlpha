@@ -226,6 +226,40 @@ export interface EgresoCreate {
     cantidad: number;
   }[];
 }
+export interface MermaCreate {
+  articulo_id: number;
+  cantidad: number;
+  obra_id: number;
+  motivo: string;
+}
+export interface MermaRegistro {
+  id: number;
+  articulo_id: number;
+  articulo: string;
+  cantidad: number;
+  motivo: string;
+  obra_id: number;
+  obra: string;
+  usuario: string;
+  stock_resultante: number;
+  fecha: string;
+}
+export interface UsoInternoCreate {
+  articulo_id: number;
+  cantidad: number;
+  destino_material: string;
+  responsable_solicitud: string;
+}
+export interface UsoInternoRegistro {
+  id: number;
+  articulo_id: number;
+  articulo: string;
+  cantidad: number;
+  destino_material: string;
+  responsable_solicitud: string;
+  stock_resultante: number;
+  fecha: string;
+}
 
 export interface Proveedor {
   razon_social: string;

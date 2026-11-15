@@ -31,6 +31,11 @@ export function Nav() {
       roles: [Rol.admin, Rol.bodega],
     },
     {
+      nombre: "Mermas y consumo interno",
+      ruta: "/bodega/mermas",
+      roles: [Rol.admin, Rol.bodega],
+    },
+    {
       nombre: "Conteo físico",
       ruta: "/bodega/conteo",
       roles: [Rol.admin, Rol.bodega, Rol.supervisor],

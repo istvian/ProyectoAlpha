@@ -29,6 +29,7 @@ import { RenewToken } from "./Helpers/APIConnector";
 import { SalidaMateriales } from "./Pages/BodegaPages/SalidaMateriales/SalidaMateriales";
 import { RecepcionCompras } from "./Pages/BodegaPages/RecepcionCompras/RecepcionCompras";
 import { ConteoInventarioPage } from "./Pages/BodegaPages/ConteoInventario/ConteoInventario";
+import { RegistroMermasConsumo } from "./Pages/BodegaPages/RegistroMermasConsumo/RegistroMermasConsumo";
 
 function ProtectedRoute() {
   const status = useIsLogin();
@@ -107,6 +108,10 @@ function App() {
                   path="/bodega/conteo"
                 />
                 <Route element={<SalidaMateriales />} path="/bodega/salida" />
+                <Route
+                  element={<RegistroMermasConsumo />}
+                  path="/bodega/mermas"
+                />
                 <Route element={<NotFound />} path="*" />
               </Route>
             </Route>
