@@ -68,18 +68,3 @@ Los datos demo de desarrollo incluyen artículos, proveedor, obra, facturas,
 movimientos Cardex, órdenes de compra, recepciones y un conteo pendiente. Sirven
 para recorrer los flujos sin tener que crear primero todos los registros.
 
-### Alcance y partes pendientes
-
-- El registro de documentos admite **Factura**. No hay integración bancaria ni
-  flujo de pagos. El listado financiero todavía conserva opciones de filtro
-  heredadas para Boleta y Nota de Crédito; eso no habilita su registro.
-- La pantalla dedicada **Inventario y artículos** aún contiene cifras, filtros,
-  tabla y acciones de ejemplo que no están conectados al backend. No debe usarse
-  como fuente de existencias; el stock real se consulta y modifica mediante los
-  flujos de facturas, recepciones, salidas, conteos y Cardex.
-- Hay modelos/tablas para mermas, devoluciones a proveedor y uso interno, pero
-  esos movimientos todavía no tienen un flujo completo de API e interfaz para
-  registrarlos.
-- El rol Técnico se utiliza como responsable o receptor en obras y egresos; no
-  cuenta actualmente con un portal propio en el frontend.
-
