@@ -5,6 +5,7 @@ import { Btn } from "../../../Components/Btn/Btn";
 import { Card } from "../../../Components/Card/Card";
 import { CardContainer } from "../../../Components/CardContainer/CardContainer";
 import { Frame } from "../../../Components/Frame/Frame";
+import { StockMinimoAlertas } from "../../../Components/StockMinimoAlertas/StockMinimoAlertas";
 import { Selector } from "../../../Components/Selector/Selector";
 import { Title } from "../../../Components/Title/Title";
 import {
@@ -249,6 +250,8 @@ export function Bodega() {
           footer="Conteos aprobados hoy"
         />
       </CardContainer>
+
+      <StockMinimoAlertas />
 
       {errorResumen && (
         <p className={css.error} role="alert">

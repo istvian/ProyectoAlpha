@@ -91,6 +91,9 @@ async def _serializar_conteo(conteo: ConteoInventario) -> dict:
                 "stock_sistema": detalle.stock_teorico,
                 "cantidad_contada": detalle.conteo_fisico,
                 "diferencia": detalle.diferencia,
+                "ultimos_costos_compra": (
+                    detalle.producto.ultimos_costos_compra or []
+                ),
             }
             for detalle in detalles
         ],

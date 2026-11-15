@@ -25,7 +25,9 @@
 
 .controls {
   display: grid;
-  grid-template-columns: minmax(14rem, 2fr) minmax(10rem, 1fr) auto;
+  grid-template-columns:
+    minmax(12rem, 1.25fr) minmax(14rem, 2fr) minmax(8rem, 0.8fr)
+    minmax(10rem, auto);
   align-items: end;
   gap: 1rem;
 }
@@ -42,7 +44,7 @@
 .textarea {
   box-sizing: border-box;
   width: 100%;
-  min-height: 48px;
+  min-height: 56px;
   padding: 0.75rem;
   border: 1px solid var(--input-color);
   border-radius: 8px;
@@ -58,6 +60,11 @@
 
 .addButton {
   padding-bottom: 0.75rem;
+}
+
+.addButton > button {
+  width: 100%;
+  min-height: 56px;
 }
 
 .tableWrap {
@@ -200,6 +207,42 @@
   font-weight: 700;
 }
 
+.costosRecientes {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.etiquetaCostos {
+  flex-basis: 100%;
+  color: var(--grey-color);
+  font-size: 0.75rem;
+}
+
+.costoBadge {
+  display: flex;
+  flex-flow: column nowrap;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #f1c36d;
+  border-radius: 6px;
+  color: #664d03;
+  background: #fff8e6;
+  font-size: 0.75rem;
+}
+
+.costoBadge small,
+.sinCostos {
+  color: var(--grey-color);
+  font-size: 0.7rem;
+}
+
+@media (max-width: 900px) {
+  .controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 760px) {
   .controls {
     grid-template-columns: 1fr;
@@ -226,6 +269,7 @@
 
   .actions > * {
     width: 100%;
+    min-height: 52px;
   }
 
   .tableWrap {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box } from "../../../Components/Box/Box";
 import { Btn } from "../../../Components/Btn/Btn";
 import { Frame } from "../../../Components/Frame/Frame";
@@ -36,6 +36,15 @@ function formatoFecha(fecha: string): string {
   }).format(valor);
 }
 
+function formatoCosto(valor: string): string {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(valor));
+}
+
 function etiquetaEstado(estado: ConteoInventario["estado"]): string {
   switch (estado) {
     case "PENDIENTE_APROBACION":
@@ -63,9 +72,20 @@ export function ConteoInventarioPage() {
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false);
   const [conteoProcesando, setConteoProcesando] = useState<number | null>(null);
+  const [busquedaArticulo, setBusquedaArticulo] = useState("");
+  const busquedaRef = useRef<HTMLInputElement>(null);
+  const cantidadRef = useRef<HTMLInputElement>(null);
 
   const puedeContar = roleId === Rol.admin || roleId === Rol.bodega;
   const puedeRevisar = roleId === Rol.admin || roleId === Rol.supervisor;
+  const terminoBusqueda = busquedaArticulo.trim().toLocaleLowerCase();
+  const articulosFiltrados = articulos.filter((articulo) => {
+    const coincideBusqueda = `${articulo.codigo_sku ?? ""} ${articulo.nombre}`
+      .toLocaleLowerCase()
+      .includes(terminoBusqueda);
+    const yaContado = lineas.some((linea) => linea.articulo_id === articulo.id);
+    return coincideBusqueda && !yaContado;
+  });
 
   const cargarDatos = useCallback(async () => {
     setCargando(true);
@@ -150,9 +170,11 @@ export function ConteoInventarioPage() {
         cantidad_contada: cantidad,
       },
     ]);
+    setBusquedaArticulo("");
     setArticuloId("");
     setCantidadContada("");
     setError("");
+    busquedaRef.current?.focus();
   }
 
   async function registrarConteo() {
@@ -264,14 +286,29 @@ export function ConteoInventarioPage() {
             <h2 className={css.sectionTitle}>Registrar conteo</h2>
             <div className={css.controls}>
               <label className={css.field}>
+                Buscar por nombre o SKU
+                <input
+                  ref={busquedaRef}
+                  className={css.input}
+                  type="search"
+                  value={busquedaArticulo}
+                  onChange={(event) => setBusquedaArticulo(event.target.value)}
+                  placeholder="Nombre o código del artículo"
+                  autoComplete="off"
+                />
+              </label>
+              <label className={css.field}>
                 Artículo
                 <select
                   className={css.input}
                   value={articuloId}
-                  onChange={(event) => setArticuloId(event.target.value)}
+                  onChange={(event) => {
+                    setArticuloId(event.target.value);
+                    if (event.target.value) cantidadRef.current?.focus();
+                  }}
                 >
                   <option value="">Seleccione un artículo</option>
-                  {articulos.map((articulo) => (
+                  {articulosFiltrados.map((articulo) => (
                     <option key={articulo.id} value={articulo.id}>
                       {articulo.codigo_sku
                         ? `${articulo.codigo_sku} - `
@@ -284,6 +321,7 @@ export function ConteoInventarioPage() {
               <label className={css.field}>
                 Cantidad contada
                 <input
+                  ref={cantidadRef}
                   className={css.input}
                   type="number"
                   min="0"
@@ -291,6 +329,12 @@ export function ConteoInventarioPage() {
                   inputMode="numeric"
                   value={cantidadContada}
                   onChange={(event) => setCantidadContada(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      agregarLinea();
+                    }
+                  }}
                 />
               </label>
               <div className={css.addButton}>
@@ -446,8 +490,34 @@ export function ConteoInventarioPage() {
                         {conteo.detalles.map((detalle) => (
                           <tr key={detalle.articulo_id}>
                             <td>
-                              {detalle.sku ? `${detalle.sku} - ` : ""}
-                              {detalle.articulo}
+                              <strong>
+                                {detalle.sku ? `${detalle.sku} - ` : ""}
+                                {detalle.articulo}
+                              </strong>
+                              <div className={css.costosRecientes}>
+                                <span className={css.etiquetaCostos}>
+                                  Últimos costos de compra
+                                </span>
+                                {detalle.ultimos_costos_compra.length > 0
+                                  ? detalle.ultimos_costos_compra.map((costo) => (
+                                      <span
+                                        className={css.costoBadge}
+                                        key={`${costo.folio}-${costo.fecha}`}
+                                      >
+                                        <strong>
+                                          {formatoCosto(costo.costo_unitario)}
+                                        </strong>
+                                        <small>
+                                          {costo.folio} · {costo.fecha}
+                                        </small>
+                                      </span>
+                                    ))
+                                  : (
+                                      <span className={css.sinCostos}>
+                                        Sin costos históricos
+                                      </span>
+                                    )}
+                              </div>
                             </td>
                             <td>{detalle.stock_sistema}</td>
                             <td>{detalle.cantidad_contada}</td>

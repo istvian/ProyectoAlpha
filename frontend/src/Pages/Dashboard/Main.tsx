@@ -5,17 +5,13 @@ import { Title } from "../../Components/Title/Title";
 import css from "./Main.module.css";
 import {
   GetAdminDashboard,
-  GetStockMinimoAlerts,
   GetUserData,
 } from "../../Helpers/APIConnector";
-import {
-  Rol,
-  type AdminDashboardData,
-  type AlertaStockMinimo,
-} from "../../types/general";
+import { Rol, type AdminDashboardData } from "../../types/general";
 import { Btn } from "../../Components/Btn/Btn";
 import { Card } from "../../Components/Card/Card";
 import { CardContainer } from "../../Components/CardContainer/CardContainer";
+import { StockMinimoAlertas } from "../../Components/StockMinimoAlertas/StockMinimoAlertas";
 import useValidateRol from "../../Hooks/useValidateRol";
 import { Spinner } from "../../Components/Spinner/Spinner";
 import { useNavigate } from "react-router-dom";
@@ -32,11 +28,6 @@ export function Main() {
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
   const [cargando, setCargando] = useState(true);
   const [errorDashboard, setErrorDashboard] = useState("");
-  const [alertasStock, setAlertasStock] = useState<AlertaStockMinimo[] | null>(
-    null,
-  );
-  const [cargandoAlertas, setCargandoAlertas] = useState(true);
-  const [errorAlertas, setErrorAlertas] = useState("");
   const nav = useNavigate();
 
   useEffect(() => {
@@ -75,34 +66,6 @@ export function Main() {
       active = false;
     };
   }, []);
-  useEffect(() => {
-    let active = true;
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-
-    const consultarAlertas = async () => {
-      const response = await GetStockMinimoAlerts();
-      if (!active) return;
-
-      if (!response || response.error || !response.data) {
-        setErrorAlertas(
-          response?.mensaje || "No se pudieron consultar las alertas de stock.",
-        );
-      } else {
-        setAlertasStock(response.data);
-        setErrorAlertas("");
-      }
-
-      setCargandoAlertas(false);
-      timeout = setTimeout(consultarAlertas, 30_000);
-    };
-
-    void consultarAlertas();
-    return () => {
-      active = false;
-      if (timeout !== undefined) clearTimeout(timeout);
-    };
-  }, []);
-
   const isAdmin = useValidateRol([Rol.admin]);
   if (!isAdmin) return <Spinner />;
 
@@ -159,11 +122,7 @@ export function Main() {
         />
         <Card
           title="Stock crítico"
-          content={
-            alertasStock !== null
-              ? String(alertasStock.length)
-              : contenido(dashboard?.stock_critico)
-          }
+          content={contenido(dashboard?.stock_critico)}
           footer="Artículos en o bajo su mínimo"
         />
         <Card
@@ -199,41 +158,7 @@ export function Main() {
           footer="Proveedores habilitados"
         />
       </CardContainer>
-      <section className={css.alertas} aria-labelledby="stock-alertas-title">
-        <div>
-          <Title>
-            <span id="stock-alertas-title">Alertas de stock mínimo</span>
-          </Title>
-          <p>La lista se actualiza automáticamente cada 30 segundos.</p>
-        </div>
-        {errorAlertas && (
-          <p className={css.error} role="alert">
-            No se pudieron actualizar las alertas: {errorAlertas}
-          </p>
-        )}
-        {cargandoAlertas && alertasStock === null ? (
-          <p>Consultando existencias…</p>
-        ) : alertasStock && alertasStock.length > 0 ? (
-          <ul className={css.listaAlertas}>
-            {alertasStock.map((articulo) => (
-              <li key={articulo.id} className={css.alertaStock}>
-                <div>
-                  <strong>{articulo.nombre}</strong>
-                  <span>{articulo.codigo_sku || "Sin SKU"}</span>
-                </div>
-                <p>
-                  Disponible: <strong>{articulo.stock_actual}</strong> · Mínimo:{" "}
-                  {articulo.stock_minimo}
-                </p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className={css.sinAlertas}>
-            No hay artículos en o bajo su stock mínimo.
-          </p>
-        )}
-      </section>
+      <StockMinimoAlertas />
     </Frame>
   );
 }

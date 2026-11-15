@@ -105,6 +105,11 @@ class ConteoInventarioSchemaTests(unittest.IsolatedAsyncioTestCase):
             codigo_sku="CONTEO-TEST",
             nombre="Artículo para conteo",
             stock_actual=12,
+            ultimos_costos_compra=[
+                {"costo_unitario": "13.75", "fecha": "2026-03-03", "folio": "F-3"},
+                {"costo_unitario": "12.50", "fecha": "2026-03-02", "folio": "F-2"},
+                {"costo_unitario": "11.25", "fecha": "2026-03-01", "folio": "F-1"},
+            ],
         )
 
         respuesta = await crear_conteo(
@@ -123,6 +128,10 @@ class ConteoInventarioSchemaTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(respuesta["data"]["creado_por"], usuario.nombre)
         self.assertEqual(respuesta["data"]["detalles"][0]["stock_sistema"], 12)
         self.assertEqual(respuesta["data"]["detalles"][0]["cantidad_contada"], 10)
+        self.assertEqual(
+            respuesta["data"]["detalles"][0]["ultimos_costos_compra"],
+            articulo.ultimos_costos_compra,
+        )
         self.assertEqual(
             await ConteoInventario.filter(usuario_id=usuario.id).count(),
             1,

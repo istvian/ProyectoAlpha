@@ -133,7 +133,9 @@ sistema compara ese número con el que aparece registrado:
 
 Antes de aplicar un ajuste, el sistema comprueba que las existencias no hayan
 cambiado desde que se hizo el conteo. Esto ayuda a evitar correcciones con
-información antigua.
+información antigua. El historial compara el stock teórico con el físico y
+muestra los tres costos de compra más recientes de cada artículo para apoyar la
+conciliación.
 
 ### 7. Consultar movimientos y descargar reportes
 
@@ -150,10 +152,11 @@ descargar el reporte en PDF o Excel.
 El Administrador puede consultar un resumen con la cantidad de artículos, el
 valor estimado del inventario, los artículos con pocas existencias, los
 movimientos del día, las cuentas y proveedores activos, y las pérdidas de
-materiales registradas. El panel muestra cuáles artículos están en o bajo su
-mínimo y actualiza esa lista automáticamente cada 30 segundos. También puede
-crear y modificar cuentas, cambiar el cargo o deshabilitarlas, y revisar los
-registros de actividad del sistema.
+materiales registradas. Los paneles de Administración, Bodega e Inventario
+muestran cuáles artículos están en o bajo su mínimo y actualizan esa lista
+automáticamente cada 30 segundos. También puede crear y modificar cuentas,
+cambiar el cargo o deshabilitarlas, y revisar los registros de actividad del
+sistema.
 
 ## Datos de demostración
 

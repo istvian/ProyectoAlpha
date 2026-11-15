@@ -146,12 +146,19 @@ export type EstadoConteoInventario =
   | "RECHAZADO"
   | "SIN_DIFERENCIAS";
 
+export interface CostoCompraHistorico {
+  costo_unitario: string;
+  fecha: string;
+  folio: string;
+}
+
 export interface ConteoInventarioArticulo {
   id: number;
   codigo_sku: string | null;
   nombre: string;
   stock_actual: number;
   stock_minimo: number;
+  ultimos_costos_compra: CostoCompraHistorico[];
 }
 
 export interface DetalleConteoInventario {
@@ -161,6 +168,7 @@ export interface DetalleConteoInventario {
   stock_sistema: number;
   cantidad_contada: number;
   diferencia: number;
+  ultimos_costos_compra: CostoCompraHistorico[];
 }
 
 export interface ConteoInventario {

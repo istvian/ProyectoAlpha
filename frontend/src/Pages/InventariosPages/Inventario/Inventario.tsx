@@ -13,6 +13,7 @@ import { InputText } from "../../../Components/InputText/InputText";
 import { Selector } from "../../../Components/Selector/Selector";
 import { CardContainer } from "../../../Components/CardContainer/CardContainer";
 import { Spinner } from "../../../Components/Spinner/Spinner";
+import { StockMinimoAlertas } from "../../../Components/StockMinimoAlertas/StockMinimoAlertas";
 
 export function Inventario() {
   const [agregarArticulo, setAgregarArticulo] = useState(false);
@@ -60,19 +61,8 @@ export function Inventario() {
             content="$15.249.040"
             footer="CLP"
           />
-          <Card
-            title="Stock crítico"
-            icon="fa-solid fa-triangle-exclamation"
-            content="4 artículos"
-            footer="Existencias bajo el mínimo"
-          />
-          <Card
-            title="Sin existencias"
-            icon="fa-solid fa-box-open"
-            content="2 artículos"
-            footer="Requieren reposición"
-          />
         </CardContainer>
+        <StockMinimoAlertas />
         <p className={css.resumen}>Resumen de hoy · 12 oct 2026 · 3 bodegas</p>
         <Box>
           <div className={css.row}>
