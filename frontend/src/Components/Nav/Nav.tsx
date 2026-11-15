@@ -31,6 +31,16 @@ export function Nav() {
       roles: [Rol.admin, Rol.bodega],
     },
     {
+      nombre: "Conteo físico",
+      ruta: "/bodega/conteo",
+      roles: [Rol.admin, Rol.bodega, Rol.supervisor],
+    },
+    {
+      nombre: "Recepción de compras",
+      ruta: "/bodega/recepcion",
+      roles: [Rol.admin, Rol.bodega, Rol.finanzas, Rol.supervisor],
+    },
+    {
       nombre: "Compras y facturación",
       ruta: "/finanzas",
       roles: [Rol.admin, Rol.finanzas],

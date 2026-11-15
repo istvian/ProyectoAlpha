@@ -1,14 +1,18 @@
 import time
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, EmailStr
 from models.user import User
+from models.cardex_log import CardexLog, TipoMovimiento
+from models.proveedor import Articulos, Proveedores
 from middlewares.bcript_helper import validar_contraseña, encriptar_contraseña
 from middlewares.jwt_helper import check_user, generate_jwt, validar_rol, decode_jwt
 from schemas.roles import Roles
 from db.nosql import get_db
 from datetime import datetime, timezone
+from services.cardex_summary_service import obtener_resumen_cardex
 
 router = APIRouter()
 db = get_db()
@@ -20,6 +24,45 @@ class NuevoUsuario(BaseModel):
     nombre: str
     enabled: bool
     rol_id: int
+
+
+@router.get("/dashboard", dependencies=[Depends(check_user(Roles.admin))])
+async def get_dashboard():
+    articulos = await Articulos.all().values_list(
+        "stock_actual", "stock_minimo", "precio_medio_ponderado"
+    )
+    valor_inventario = sum(
+        (
+            Decimal(stock) * Decimal(str(pmp))
+            for stock, _, pmp in articulos
+        ),
+        Decimal("0.00"),
+    )
+    stock_critico = sum(
+        1 for stock, minimo, _ in articulos if stock <= minimo
+    )
+    usuarios_por_rol = {
+        rol.name: await User.filter(rol_id=rol.value, enabled=True).count()
+        for rol in Roles
+        if rol != Roles.cualquiera
+    }
+
+    return {
+        "error": False,
+        "mensaje": "Indicadores consultados correctamente",
+        "data": {
+            "productos": len(articulos),
+            "valor_inventario": str(valor_inventario.quantize(Decimal("0.01"))),
+            "stock_critico": stock_critico,
+            "movimientos_hoy": await obtener_resumen_cardex(),
+            "usuarios_activos": sum(usuarios_por_rol.values()),
+            "usuarios_por_rol": usuarios_por_rol,
+            "mermas_registradas": await CardexLog.filter(
+                tipo_movimiento=TipoMovimiento.MERMA
+            ).count(),
+            "proveedores_activos": await Proveedores.filter(deleted=False).count(),
+        },
+    }
 
 
 # Crear un usuario via panel administrador

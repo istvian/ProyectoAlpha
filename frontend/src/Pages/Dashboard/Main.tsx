@@ -3,118 +3,161 @@ import { Box } from "../../Components/Box/Box";
 import { Frame } from "../../Components/Frame/Frame";
 import { Title } from "../../Components/Title/Title";
 import css from "./Main.module.css";
-import { GetUserData } from "../../Helpers/APIConnector";
-import { Rol, type UserData } from "../../types/general";
+import {
+  GetAdminDashboard,
+  GetUserData,
+} from "../../Helpers/APIConnector";
+import { Rol, type AdminDashboardData } from "../../types/general";
 import { Btn } from "../../Components/Btn/Btn";
-import { Footer } from "../../Components/Footer/Footer";
 import { Card } from "../../Components/Card/Card";
 import { CardContainer } from "../../Components/CardContainer/CardContainer";
 import useValidateRol from "../../Hooks/useValidateRol";
 import { Spinner } from "../../Components/Spinner/Spinner";
 import { useNavigate } from "react-router-dom";
 
+function formatoDinero(valor: string): string {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(Number(valor));
+}
+
 export function Main() {
-  const [user, setUser] = useState<UserData>({
-    correo: "",
-    rol: "",
-    nombre: "",
-    rol_id: 0,
-  });
+  const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [errorDashboard, setErrorDashboard] = useState("");
   const nav = useNavigate();
 
   useEffect(() => {
     GetUserData().then((res) => {
-      if (res?.rol_id === Rol.admin) return;
+      if (!res || res.error) return;
+      if (res.rol_id === Rol.admin) return;
       if (res?.rol_id === Rol.bodega) nav("bodega");
       if (res?.rol_id === Rol.finanzas) nav("finanzas");
       if (res?.rol_id === Rol.supervisor) nav("inventario");
-
-      setUser(res as UserData);
     });
   }, []);
-  if (useValidateRol([Rol.admin]))
-    return (
-      <Frame>
-        {/* <Box style={{ alignItems: "center" }}>
-        <p>
-          ¡Buenos días {user.nombre}! Aquí tienes el resumen del inventario de
-          hoy
+  useEffect(() => {
+    let active = true;
+    GetAdminDashboard()
+      .then((response) => {
+        if (!response || response.error || !response.data) {
+          throw new Error(
+            response?.mensaje || "No se pudieron cargar los indicadores.",
+          );
+        }
+        if (active) setDashboard(response.data);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setErrorDashboard(
+            error instanceof Error
+              ? error.message
+              : "No se pudieron cargar los indicadores.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setCargando(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const isAdmin = useValidateRol([Rol.admin]);
+  if (!isAdmin) return <Spinner />;
+
+  const movimientos = dashboard?.movimientos_hoy;
+  const roles = dashboard?.usuarios_por_rol ?? {};
+  const contenido = (valor: number | undefined) =>
+    cargando ? "…" : errorDashboard ? "—" : String(valor ?? 0);
+
+  return (
+    <Frame>
+      <Box
+        style={{
+          flexFlow: "row wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div className={css.welcome}>
+          <Title>Panel de administración</Title>
+          <p>Indicadores calculados desde inventario, usuarios y Cardex.</p>
+        </div>
+        <div className={css.actions}>
+          <Btn onClick={() => nav("/bodega")}>Operaciones de Bodega</Btn>
+          <Btn onClick={() => nav("/bodega/recepcion")}>
+            Recepción y aprobaciones
+          </Btn>
+          <Btn onClick={() => nav("/bodega/salida")}>Registrar salida</Btn>
+          <Btn onClick={() => nav("/finanzas")}>Compras y facturación</Btn>
+          <Btn onClick={() => nav("/cardex")}>Cardex y reportes</Btn>
+          <Btn onClick={() => nav("/admin")}>Usuarios y auditoría</Btn>
+        </div>
+      </Box>
+      {errorDashboard && (
+        <p className={css.error} role="alert">
+          No se pudo cargar el panel: {errorDashboard}
         </p>
-      </Box> */}
-        <Box
-          style={{
-            flexFlow: "row nowrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div className={css.welcome}>
-            <Title>Acciones rápidas</Title>
-            <p>
-              Gestione trámites cotidianos de administrador con un solo click
-            </p>
-          </div>
-          <div className={css.actions}>
-            <Btn onClick={() => {}}>Crear nuevo usuario</Btn>
-            <Btn onClick={() => {}}>Revisar logs del sistema</Btn>
-            <Btn onClick={() => nav("/cardex")}>Visor de Cardex</Btn>
-            <Btn onClick={() => nav("/cardex")}>
-              Generar informe (PDF/Excel)
-            </Btn>
-            <Btn onClick={() => {}}>Ajustar stock</Btn>
-          </div>
-        </Box>
-        <CardContainer>
-          <Card
-            title="Total de productos"
-            content="265"
-            footer="+13 artículos"
-          />
-          <Card
-            title="Valor total en almacén"
-            content="$15.249.040"
-            footer="+4.2% que el mes anterior"
-          />
-          <Card
-            title="Stock crítico"
-            content="4 artículos por agotarse"
-            footer="Ver artículos"
-          />
-          <Card
-            title="Movimientos de hoy"
-            content="7 registros"
-            footer="2 entradas - 5 salidas"
-          />
-          <Card
-            title="Usuarios"
-            content="7 usuarios"
-            footer="+ 2 que el mes anterior"
-          />
-          <Card
-            title="Roles"
-            customContent={
-              <div className={css.roles}>
-                <p>2 administradores</p>
-                <p>1 finanzas</p>
-                <p>1 bodeguero</p>
-                <p>3 supervisores</p>
-              </div>
-            }
-          />
-          <Card
-            title="Merma"
-            content="15 productos"
-            footer="+ 2% que el mes anterior"
-          />
-          <Card
-            title="Proveedores"
-            content="30 proveedores"
-            footer="+ 2% que el mes anterior"
-          />
-        </CardContainer>
-      </Frame>
-    );
-  else {
-    return <Spinner />;
-  }
+      )}
+      <CardContainer>
+        <Card
+          title="Total de productos"
+          content={contenido(dashboard?.productos)}
+          footer="Registros de artículos"
+        />
+        <Card
+          title="Valor en inventario"
+          content={
+            cargando
+              ? "…"
+              : errorDashboard || !dashboard
+                ? "—"
+                : formatoDinero(dashboard.valor_inventario)
+          }
+          footer="Stock actual valorizado a PMP"
+        />
+        <Card
+          title="Stock crítico"
+          content={contenido(dashboard?.stock_critico)}
+          footer="Artículos en o bajo su mínimo"
+        />
+        <Card
+          title="Movimientos de hoy"
+          content={contenido(movimientos?.movimientos)}
+          footer={`${movimientos?.entradas ?? 0} entradas · ${movimientos?.salidas ?? 0} salidas`}
+        />
+        <Card
+          title="Usuarios activos"
+          content={contenido(dashboard?.usuarios_activos)}
+          footer="Usuarios habilitados"
+        />
+        <Card
+          title="Usuarios por rol"
+          customContent={
+            <div className={css.roles}>
+              <p>{contenido(roles.admin)} administradores</p>
+              <p>{contenido(roles.finanzas)} finanzas</p>
+              <p>{contenido(roles.bodega)} bodega</p>
+              <p>{contenido(roles.supervisor)} supervisores</p>
+              <p>{contenido(roles.tecnico)} técnicos</p>
+            </div>
+          }
+        />
+        <Card
+          title="Mermas registradas"
+          content={contenido(dashboard?.mermas_registradas)}
+          footer="Movimientos de merma en Cardex"
+        />
+        <Card
+          title="Proveedores activos"
+          content={contenido(dashboard?.proveedores_activos)}
+          footer="Proveedores habilitados"
+        />
+      </CardContainer>
+    </Frame>
+  );
 }

@@ -30,3 +30,17 @@
     transform: scale(0.95);
   }
 }
+
+@media (max-width: 760px) {
+  .ruta,
+  .rutaActive {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0.5rem;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+}

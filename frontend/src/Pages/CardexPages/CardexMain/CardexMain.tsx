@@ -132,6 +132,14 @@ function esSalida(tipo: CardexTipoMovimiento): boolean {
   return tipo === "SALIDA_OBRA" || tipo === "MERMA" || tipo === "USO_INTERNO";
 }
 
+function esAjuste(tipo: CardexTipoMovimiento): boolean {
+  return tipo === "AJUSTE_INVENTARIO";
+}
+
+function etiquetaMovimiento(tipo: CardexTipoMovimiento): string {
+  return esAjuste(tipo) ? "Ajuste por conteo" : tipo;
+}
+
 function nombreProducto(
   producto: CardexFiltrosRespuesta["data"]["productos"][number],
 ): string {
@@ -145,15 +153,23 @@ function nombreObra(obra: CardexFiltrosRespuesta["data"]["obras"][number]): stri
 }
 
 function filaMovimiento(movimiento: CardexMovimiento) {
+  const ajuste = esAjuste(movimiento.tipo_movimiento);
+  const cantidadEntrada =
+    esEntrada(movimiento.tipo_movimiento) ||
+    (ajuste && movimiento.cantidad > 0);
+  const cantidadSalida =
+    esSalida(movimiento.tipo_movimiento) ||
+    (ajuste && movimiento.cantidad < 0);
+  const cantidad = Math.abs(movimiento.cantidad);
   return (
     <tr key={movimiento.id}>
       <td>{formatoFecha(movimiento.fecha_hora)}</td>
       <td>{movimiento.producto.nombre}</td>
       <td>{movimiento.producto.codigo_sku ?? "—"}</td>
       <td>—</td>
-      <td>{movimiento.tipo_movimiento}</td>
-      <td>{esEntrada(movimiento.tipo_movimiento) ? movimiento.cantidad : "—"}</td>
-      <td>{esSalida(movimiento.tipo_movimiento) ? movimiento.cantidad : "—"}</td>
+      <td>{etiquetaMovimiento(movimiento.tipo_movimiento)}</td>
+      <td>{cantidadEntrada ? cantidad : "—"}</td>
+      <td>{cantidadSalida ? cantidad : "—"}</td>
       <td>{movimiento.saldo_resultante}</td>
       <td>{formatoDinero(movimiento.saldo_valorizado)}</td>
       <td>

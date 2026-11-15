@@ -71,7 +71,120 @@ export interface DocumentoTributario {
 }
 export type FacturaCreate = Omit<DocumentoTributario, "tipo"> & {
   tipo: "Factura";
+  orden_compra_id?: number;
 };
+export interface OrdenCompraDetalle {
+  id: number;
+  articulo_id: number;
+  sku: string | null;
+  nombre: string;
+  cantidad_solicitada: number;
+  cantidad_recibida: number;
+  saldo_pendiente: number;
+  cantidad_facturada: number;
+  cantidad_por_facturar: number;
+  precio_unitario: string;
+}
+export interface OrdenCompra {
+  id: number;
+  numero_orden: string;
+  proveedor_id: number;
+  proveedor: string;
+  estado: "ABIERTA" | "PARCIAL" | "COMPLETA";
+  creado_por: string;
+  fecha_creacion: string;
+  recepcion_pendiente: boolean;
+  detalles: OrdenCompraDetalle[];
+}
+export interface OrdenCompraCreate {
+  numero_orden: string;
+  proveedor_id: number;
+  detalles: {
+    articulo_id: number;
+    cantidad_solicitada: number;
+    precio_unitario: number;
+  }[];
+}
+export interface RecepcionDetalleInput {
+  detalle_orden_id: number;
+  cantidad_guia: number;
+  cantidad_recibida: number;
+}
+export interface RecepcionCompraCreate {
+  orden_compra_id: number;
+  numero_guia: string;
+  bultos_guia: number;
+  bultos_recibidos: number;
+  observaciones?: string;
+  detalles: RecepcionDetalleInput[];
+}
+export interface RecepcionCompra {
+  id: number;
+  comprobante: string;
+  orden_compra_id: number;
+  numero_orden: string;
+  proveedor: string;
+  numero_guia: string;
+  bultos_guia: number;
+  bultos_recibidos: number;
+  estado: "PENDIENTE_APROBACION" | "APROBADA";
+  observaciones?: string | null;
+  detalle_discrepancia?: string | null;
+  usuario: string;
+  fecha: string;
+  detalles: {
+    sku: string | null;
+    articulo: string;
+    cantidad_solicitada: number;
+    cantidad_guia: number;
+    cantidad_recibida: number;
+  }[];
+}
+export type EstadoConteoInventario =
+  | "PENDIENTE_APROBACION"
+  | "APROBADO"
+  | "RECHAZADO"
+  | "SIN_DIFERENCIAS";
+
+export interface ConteoInventarioArticulo {
+  id: number;
+  codigo_sku: string | null;
+  nombre: string;
+  stock_actual: number;
+  stock_minimo: number;
+}
+
+export interface DetalleConteoInventario {
+  articulo_id: number;
+  sku: string | null;
+  articulo: string;
+  stock_sistema: number;
+  cantidad_contada: number;
+  diferencia: number;
+}
+
+export interface ConteoInventario {
+  id: number;
+  codigo: string;
+  estado: EstadoConteoInventario;
+  creado_por: string;
+  resuelto_por: string | null;
+  fecha: string;
+  fecha_revision: string | null;
+  observaciones: string | null;
+  motivo_rechazo: string | null;
+  detalles: DetalleConteoInventario[];
+}
+
+export interface ConteoInventarioCreate {
+  observaciones?: string;
+  detalles: {
+    articulo_id: number;
+    stock_sistema: number;
+    cantidad_contada: number;
+  }[];
+}
+
 export interface SalidaMateriales {
   obra: string;
   tecnico: string;
@@ -81,6 +194,37 @@ export interface SalidaProducto {
   sku: string;
   nombre: string;
   cantidad: number;
+  articulo_id: number;
+}
+export interface EgresoCatalogos {
+  articulos: {
+    id: number;
+    codigo_sku: string | null;
+    nombre: string;
+    stock_actual: number;
+    stock_minimo: number;
+    precio_lista: number | string | null;
+  }[];
+  obras: {
+    id: number;
+    codigo_obra: string;
+    nombre_obra: string;
+    tecnico_responsable_id: number;
+    tecnico_responsable_nombre: string;
+  }[];
+  tecnicos: {
+    id: number;
+    nombre: string;
+    correo: string;
+  }[];
+}
+export interface EgresoCreate {
+  obra_id: number;
+  tecnico_id: number;
+  detalles: {
+    producto_id: number;
+    cantidad: number;
+  }[];
 }
 
 export interface Proveedor {
@@ -147,7 +291,8 @@ export type CardexTipoMovimiento =
   | "SALIDA_OBRA"
   | "MERMA"
   | "DEVOLUCION"
-  | "USO_INTERNO";
+  | "USO_INTERNO"
+  | "AJUSTE_INVENTARIO";
 
 export interface CardexMovimiento {
   id: number;
@@ -185,6 +330,7 @@ export interface CardexFiltrosConsulta {
 export interface CardexConsulta extends CardexFiltrosConsulta {
   pagina: number;
   cantidad: number;
+  buscar?: string;
 }
 
 export interface CardexRespuesta {
@@ -215,6 +361,26 @@ export interface CardexFiltrosRespuesta {
     }[];
     tipos_movimiento: CardexTipoMovimiento[];
   };
+}
+
+export interface CardexResumen {
+  fecha: string;
+  movimientos: number;
+  entradas: number;
+  salidas: number;
+  ajustes: number;
+  por_tipo: Record<CardexTipoMovimiento, number>;
+}
+
+export interface AdminDashboardData {
+  productos: number;
+  valor_inventario: string;
+  stock_critico: number;
+  movimientos_hoy: CardexResumen;
+  usuarios_activos: number;
+  usuarios_por_rol: Record<string, number>;
+  mermas_registradas: number;
+  proveedores_activos: number;
 }
 
 export type CardexFormatoReporte = "pdf" | "excel";

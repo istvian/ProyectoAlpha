@@ -89,3 +89,34 @@ def check_user(rol: Roles):
             )
 
     return dependency
+
+
+def check_user_any(roles: tuple[Roles, ...]):
+    allowed_roles = {role.value for role in roles}
+
+    def dependency(request: Request):
+        token = request.cookies.get("token")
+        if not token:
+            raise HTTPException(
+                status_code=401,
+                detail={"error": True, "mensaje": "Token no válido"},
+            )
+        try:
+            payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
+            request.state.usuario = payload.get("correo")
+            jwt_rol = payload.get("rol", -1)
+            if jwt_rol not in allowed_roles and jwt_rol != Roles.admin.value:
+                raise HTTPException(
+                    403, detail={"error": True, "mensaje": "Sin permisos"}
+                )
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                401, detail={"error": True, "mensaje": "Token expirado"}
+            )
+        except jwt.InvalidTokenError:
+            raise HTTPException(
+                401, detail={"error": True, "mensaje": "Token invalido"}
+            )
+
+    return dependency

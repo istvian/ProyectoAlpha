@@ -11,7 +11,11 @@ import type {
   Producto,
   Proveedor,
 } from "../../../types/general";
-import { CreateFactura } from "../../../Helpers/APIConnector";
+import {
+  CreateFactura,
+  GetOrdenesCompra,
+} from "../../../Helpers/APIConnector";
+import type { OrdenCompra } from "../../../types/general";
 
 interface AgregarDocumentoProps {
   onEnd: () => void;
@@ -67,6 +71,28 @@ export function AgregarDocumento({
   const [producto, setProducto] = useState<Producto>(PRODUCTO_INICIAL);
   const [showPopup, setShowPopup] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [ordenesCompra, setOrdenesCompra] = useState<OrdenCompra[]>([]);
+  const ordenVinculada = ordenesCompra.find(
+    (orden) => orden.id === formulario.orden_compra_id,
+  );
+  const proveedorSeleccionadoId = proveedores.find(
+    (proveedor) => proveedor.rut === formulario.rut,
+  )?.id;
+  const ordenesFacturables = ordenesCompra.filter(
+    (orden) =>
+      orden.proveedor_id === proveedorSeleccionadoId &&
+      orden.detalles.some((detalle) => detalle.cantidad_por_facturar > 0),
+  );
+
+  useEffect(() => {
+    GetOrdenesCompra().then((response) => {
+      if (response && !response.error && response.data) {
+        setOrdenesCompra(response.data);
+      } else {
+        setErrorMsg("No se pudieron cargar las Órdenes de Compra.");
+      }
+    });
+  }, []);
 
   async function handleRegistrar() {
     if (!formulario?.proveedor?.trim()) {
@@ -253,9 +279,45 @@ export function AgregarDocumento({
                   rut:
                     proveedores.find((item) => item.razon_social === data)
                       ?.rut || "",
+                  orden_compra_id: undefined,
                 }));
               }}
             />
+            <Selector
+              data={
+                ordenVinculada
+                  ? `${ordenVinculada.numero_orden} · ${ordenVinculada.proveedor}`
+                  : ""
+              }
+              firstOption="Factura sin Orden de Compra vinculada"
+              options={[
+                "Sin vincular Orden de Compra",
+                ...ordenesFacturables.map(
+                  (orden) => `${orden.numero_orden} · ${orden.proveedor}`,
+                ),
+              ]}
+              title="Orden de Compra (opcional)"
+              setData={(numeroOrden) => {
+                const orden =
+                  numeroOrden === "Sin vincular Orden de Compra"
+                    ? undefined
+                    : ordenesCompra.find(
+                        (item) =>
+                          `${item.numero_orden} · ${item.proveedor}` ===
+                          numeroOrden,
+                      );
+                setFormulario((prev) => ({
+                  ...prev,
+                  orden_compra_id: orden?.id,
+                }));
+              }}
+            />
+            {formulario.orden_compra_id && (
+              <p>
+                La recepción ya actualizó el inventario; esta factura solo
+                registrará los datos financieros.
+              </p>
+            )}
             <InputText
               value={formulario?.folio}
               onChange={(text) => {

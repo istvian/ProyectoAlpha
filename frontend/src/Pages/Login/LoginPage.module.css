@@ -1,9 +1,10 @@
 .box {
+  width: min(100%, 28rem);
+  min-width: 0;
   display: flex;
   flex-flow: column nowrap;
   align-items: center;
   justify-content: center;
-  min-width: 300px;
   background-color: var(--box-color);
   border-radius: 8px;
   padding: 1rem;

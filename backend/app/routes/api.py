@@ -5,7 +5,9 @@ from routes.proveedor_routes import router as proveedor_router
 from routes.egreso_routes import router as egreso_router
 from routes.cardex_routes import router as cardex_router
 from routes.finanzas_routes import router as finanzas_router
+from routes.facturas_routes import router as facturas_router
 from routes.obras_routes import router as obras_router
+from routes.conteo_inventario_routes import router as conteo_inventario_router
 
 api_router = APIRouter()
 api_router.include_router(user_router, prefix="/users", tags=["Users"])
@@ -14,4 +16,12 @@ api_router.include_router(proveedor_router, prefix="/proveedor", tags=["Proveedo
 api_router.include_router(egreso_router, prefix="/egresos", tags=["Egresos"])
 api_router.include_router(cardex_router, prefix="/cardex", tags=["Cardex"])
 api_router.include_router(finanzas_router, prefix="/finanzas", tags=["Finanzas"])
+api_router.include_router(
+    facturas_router, prefix="/facturas", tags=["Recepción de compras"]
+)
 api_router.include_router(obras_router, prefix="/obras", tags=["Obras"])
+api_router.include_router(
+    conteo_inventario_router,
+    prefix="/inventario/conteos",
+    tags=["Conteo físico"],
+)

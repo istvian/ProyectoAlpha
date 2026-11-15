@@ -9,3 +9,9 @@
   padding: 1rem;
   background-color: var(--bg-color);
 }
+
+@media (max-width: 640px) {
+  .main {
+    padding: 0.5rem;
+  }
+}

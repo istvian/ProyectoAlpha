@@ -1,3 +1,5 @@
+import os
+
 from tortoise import Tortoise
 from models.rol import Rol
 from models.user import User
@@ -19,6 +21,9 @@ async def SetupDB():
                 "models.cliente",
                 "models.obra",
                 "models.cardex_log",
+                "models.ajustes_operativos",
+                "models.recepcion_compra",
+                "models.conteo_inventario",
             ]
         },
     )
@@ -27,12 +32,26 @@ async def SetupDB():
     await PrepareProveedorFacturaSchema()
     await PrepareDetalleDocumentoSchema()
     await PrepareArticuloPMP()
+    await PrepareRecepcionSchema()
     await Tortoise.generate_schemas()
     await EnsureDocumentoTipoConstraint()
     await EnsureCardexMovementTypeConstraint()
     await EnsureCardexImmutability()
     await CreateRoles()
     await SetupAccounts()
+    await SeedDemoDataInDevelopment()
+
+
+async def SeedDemoDataInDevelopment():
+    if os.getenv("APP_ENV", "development").strip().lower() != "development":
+        return
+    if Tortoise.get_connection("default").capabilities.dialect != "sqlite":
+        return
+
+    from scripts.seed_demo_data import crear_datos_demo
+
+    resultado = await crear_datos_demo()
+    print(f"Datos demo de desarrollo: {resultado}")
 
 
 async def EnsureCardexMovementTypeConstraint():
@@ -41,9 +60,26 @@ async def EnsureCardexMovementTypeConstraint():
         return
 
     allowed_types = (
-        "'ENTRADA_COMPRA', 'SALIDA_OBRA', 'MERMA', 'DEVOLUCION', 'USO_INTERNO'"
+        "'ENTRADA_COMPRA', 'SALIDA_OBRA', 'MERMA', 'DEVOLUCION', "
+        "'USO_INTERNO', 'AJUSTE_INVENTARIO'"
     )
+    triggers = await connection.execute_query_dict("""
+        SELECT name, sql FROM sqlite_master
+        WHERE type = 'trigger'
+          AND name IN (
+              'cardex_logs_tipo_movimiento_insert',
+              'cardex_logs_tipo_movimiento_update'
+          )
+        """)
+    if len(triggers) == 2 and all(
+        "AJUSTE_INVENTARIO" in (trigger["sql"] or "") for trigger in triggers
+    ):
+        return
+
     await connection.execute_script(f"""
+        DROP TRIGGER IF EXISTS cardex_logs_tipo_movimiento_insert;
+        DROP TRIGGER IF EXISTS cardex_logs_tipo_movimiento_update;
+
         CREATE TRIGGER IF NOT EXISTS cardex_logs_tipo_movimiento_insert
         BEFORE INSERT ON cardex_logs
         FOR EACH ROW
@@ -359,6 +395,37 @@ async def PrepareArticuloPMP():
         UPDATE "articulos"
         SET "precio_medio_ponderado" = COALESCE("precio_lista", 0);
         """)
+
+
+async def PrepareRecepcionSchema():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+    if "recepciones_compra" not in tables:
+        return
+
+    columns = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            'PRAGMA table_info("recepciones_compra")'
+        )
+    }
+    additions = {
+        "bultos_guia": "INTEGER NOT NULL DEFAULT 0",
+        "bultos_recibidos": "INTEGER NOT NULL DEFAULT 0",
+    }
+    for name, sql_type in additions.items():
+        if name not in columns:
+            await connection.execute_script(
+                f'ALTER TABLE "recepciones_compra" ADD COLUMN "{name}" {sql_type}'
+            )
 
 
 async def EnsureDocumentoTipoConstraint():

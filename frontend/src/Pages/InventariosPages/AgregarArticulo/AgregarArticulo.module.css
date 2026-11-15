@@ -18,3 +18,14 @@
 .row > * {
   margin: 0.5rem;
 }
+
+@media (max-width: 640px) {
+  .row {
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .row > * {
+    flex: 1 1 100%;
+  }
+}
