@@ -142,10 +142,22 @@ td {
   font-size: 0.8rem;
   margin: 0.5rem;
 }
+.btns {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+  justify-self: flex-end;
+  align-self: flex-end;
+  flex: 1;
+}
+.btns > * {
+  margin: 0.5rem;
+}
 
 @media (max-width: 760px) {
   .row {
-    flex-wrap: wrap;
+    flex-flow: row wrap;
     gap: 0.5rem;
   }
 
@@ -154,11 +166,15 @@ td {
   }
 
   .filters {
-    align-items: stretch;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
   }
 
   .filters > * {
-    width: 100%;
+    flex: 1;
     margin: 0.25rem 0;
   }
 

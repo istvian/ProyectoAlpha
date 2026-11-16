@@ -434,3 +434,49 @@ export interface AlertaStockMinimo {
 }
 
 export type CardexFormatoReporte = "pdf" | "excel";
+
+export type EstadoInventario = "SIN_STOCK" | "BAJO_STOCK" | "DISPONIBLE";
+
+export interface ArticuloInventario {
+  id: number;
+  codigo_sku: string | null;
+  nombre: string;
+  descripcion: string | null;
+  categoria: string | null;
+  estado: EstadoInventario;
+  stock_actual: number;
+  stock_minimo: number;
+  precio_lista: number | string | null;
+  precio_medio_ponderado: number | string | null;
+}
+
+export interface InventarioConsulta {
+  codigo_nombre?: string;
+  categoria?: string;
+  estado?: EstadoInventario;
+  pagina: number;
+  cantidad: number;
+}
+
+export interface InventarioRespuesta {
+  error: boolean;
+  mensaje: string;
+  data: ArticuloInventario[];
+  paginacion: {
+    pagina: number;
+    cantidad: number;
+    total: number;
+    total_paginas: number;
+  };
+}
+
+export interface InventarioFiltrosRespuesta {
+  error: boolean;
+  mensaje: string;
+  data: {
+    categorias: string[];
+    estados: EstadoInventario[];
+  };
+}
+
+export type InventarioFormatoReporte = "pdf" | "excel";

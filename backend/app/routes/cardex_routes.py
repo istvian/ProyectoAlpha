@@ -85,11 +85,15 @@ def _filtros_reporte(
     dependencies=[Depends(check_user_any(ROLES_LECTURA_CARDEX))],
 )
 async def get_cardex_filtros():
-    productos = await Articulos.all().order_by("nombre", "id").values(
-        "id", "nombre", "codigo_sku"
+    productos = (
+        await Articulos.all()
+        .order_by("nombre", "id")
+        .values("id", "nombre", "codigo_sku")
     )
-    obras = await Obra.all().order_by("nombre_obra", "id").values(
-        "id", "codigo_obra", "nombre_obra"
+    obras = (
+        await Obra.all()
+        .order_by("nombre_obra", "id")
+        .values("id", "codigo_obra", "nombre_obra")
     )
     return {
         "error": False,
@@ -132,18 +136,20 @@ async def get_cardex(
         desde, hasta, producto_id, obra_id, tipo_movimiento, buscar
     )
     total = await movimientos.count()
-    resultados = await movimientos.order_by("-fecha_hora", "-id").offset(
-        (pagina - 1) * cantidad
-    ).limit(cantidad)
+    resultados = (
+        await movimientos.order_by("-fecha_hora", "-id")
+        .offset((pagina - 1) * cantidad)
+        .limit(cantidad)
+    )
 
     data = []
     for movimiento in resultados:
         obra = None
-        if movimiento.obra_id is not None:
+        if movimiento.obra_id is not None:  # type: ignore
             obra = {
-                "id": movimiento.obra_id,
-                "codigo_obra": movimiento.obra.codigo_obra,
-                "nombre_obra": movimiento.obra.nombre_obra,
+                "id": movimiento.obra_id,  # type: ignore
+                "codigo_obra": movimiento.obra.codigo_obra,  # type: ignore
+                "nombre_obra": movimiento.obra.nombre_obra,  # type: ignore
             }
 
         data.append(
@@ -151,12 +157,12 @@ async def get_cardex(
                 "id": movimiento.id,
                 "fecha_hora": movimiento.fecha_hora,
                 "producto": {
-                    "id": movimiento.producto_id,
+                    "id": movimiento.producto_id,  # type: ignore
                     "nombre": movimiento.producto.nombre,
                     "codigo_sku": movimiento.producto.codigo_sku,
                 },
                 "usuario": {
-                    "id": movimiento.usuario_id,
+                    "id": movimiento.usuario_id,  # type: ignore
                     "nombre": movimiento.usuario.nombre,
                 },
                 "tipo_movimiento": movimiento.tipo_movimiento.value,
@@ -197,9 +203,7 @@ async def exportar_cardex(
     movimientos = await _filtrar_movimientos(
         desde, hasta, producto_id, obra_id, tipo_movimiento
     ).order_by("-fecha_hora", "-id")
-    filtros = _filtros_reporte(
-        desde, hasta, producto_id, obra_id, tipo_movimiento
-    )
+    filtros = _filtros_reporte(desde, hasta, producto_id, obra_id, tipo_movimiento)
 
     if formato == "pdf":
         contenido = generar_reporte_pdf(movimientos, filtros)
@@ -208,9 +212,7 @@ async def exportar_cardex(
     else:
         contenido = generar_reporte_excel(movimientos, filtros)
         extension = "xlsx"
-        media_type = (
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
     generado = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     filename = f"reporte_auditoria_cardex_{generado}.{extension}"

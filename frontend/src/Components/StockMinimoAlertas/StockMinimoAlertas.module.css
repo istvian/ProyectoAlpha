@@ -4,6 +4,8 @@
   border: 1px solid #f1c36d;
   border-radius: 8px;
   background: #fff8e6;
+  position: fixed;
+  bottom: 0px;
 }
 
 .encabezado {

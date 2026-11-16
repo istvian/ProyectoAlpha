@@ -13,6 +13,10 @@ import type {
   EgresoCatalogos,
   EgresoCreate,
   FacturaCreate,
+  InventarioConsulta,
+  InventarioFiltrosRespuesta,
+  InventarioFormatoReporte,
+  InventarioRespuesta,
   LoginData,
   LoginResponse,
   MermaCreate,
@@ -185,13 +189,10 @@ export async function GetLogs(
   }
 }
 
-export async function GetAdminDashboard(): Promise<
-  ResponseBase<AdminDashboardData> | null
-> {
+export async function GetAdminDashboard(): Promise<ResponseBase<AdminDashboardData> | null> {
   try {
-    const response = await api.get<ResponseBase<AdminDashboardData>>(
-      "/admin/dashboard",
-    );
+    const response =
+      await api.get<ResponseBase<AdminDashboardData>>("/admin/dashboard");
     return response.data;
   } catch (error) {
     console.error(error);
@@ -326,13 +327,10 @@ export async function GetObras(): Promise<ResponseBase<Obra[] | []> | null> {
   }
 }
 
-export async function GetEgresoCatalogos(): Promise<
-  ResponseBase<EgresoCatalogos> | null
-> {
+export async function GetEgresoCatalogos(): Promise<ResponseBase<EgresoCatalogos> | null> {
   try {
-    const response = await api.get<ResponseBase<EgresoCatalogos>>(
-      "/egresos/catalogos",
-    );
+    const response =
+      await api.get<ResponseBase<EgresoCatalogos>>("/egresos/catalogos");
     return response.data;
   } catch (error) {
     console.error(error);
@@ -366,7 +364,9 @@ export async function CreateEgreso(
     return {
       error: true,
       mensaje:
-        error instanceof Error ? error.message : "No se pudo registrar el egreso.",
+        error instanceof Error
+          ? error.message
+          : "No se pudo registrar el egreso.",
     };
   }
 }
@@ -410,9 +410,9 @@ export async function CreateUsoInterno(
   }
 }
 
-export async function GetConteoCatalogo(): Promise<
-  ResponseBase<ConteoInventarioArticulo[]> | null
-> {
+export async function GetConteoCatalogo(): Promise<ResponseBase<
+  ConteoInventarioArticulo[]
+> | null> {
   try {
     const response = await api.get<ResponseBase<ConteoInventarioArticulo[]>>(
       "/inventario/conteos/catalogos",
@@ -427,12 +427,13 @@ export async function GetConteoCatalogo(): Promise<
   }
 }
 
-export async function GetConteos(): Promise<
-  ResponseBase<ConteoInventario[]> | null
-> {
+export async function GetConteos(): Promise<ResponseBase<
+  ConteoInventario[]
+> | null> {
   try {
-    const response =
-      await api.get<ResponseBase<ConteoInventario[]>>("/inventario/conteos");
+    const response = await api.get<ResponseBase<ConteoInventario[]>>(
+      "/inventario/conteos",
+    );
     return response.data;
   } catch (error) {
     console.error(error);
@@ -497,9 +498,9 @@ export async function RechazarConteo(
   }
 }
 
-export async function GetOrdenesCompra(): Promise<
-  ResponseBase<OrdenCompra[]> | null
-> {
+export async function GetOrdenesCompra(): Promise<ResponseBase<
+  OrdenCompra[]
+> | null> {
   try {
     const response: ResponseBase<OrdenCompra[]> = (
       await api.get("/facturas/ordenes-compra")
@@ -539,9 +540,9 @@ export async function CreateRecepcionCompra(
   }
 }
 
-export async function GetRecepcionesPendientes(): Promise<
-  ResponseBase<RecepcionCompra[]> | null
-> {
+export async function GetRecepcionesPendientes(): Promise<ResponseBase<
+  RecepcionCompra[]
+> | null> {
   try {
     const response: ResponseBase<RecepcionCompra[]> = (
       await api.get("/facturas/recepciones/pendientes")
@@ -610,12 +611,9 @@ export async function GetCardexFiltros(): Promise<CardexFiltrosRespuesta> {
   return response.data;
 }
 
-export async function GetCardexResumen(): Promise<
-  ResponseBase<CardexResumen>
-> {
-  const response = await api.get<ResponseBase<CardexResumen>>(
-    "/cardex/resumen",
-  );
+export async function GetCardexResumen(): Promise<ResponseBase<CardexResumen>> {
+  const response =
+    await api.get<ResponseBase<CardexResumen>>("/cardex/resumen");
   return response.data;
 }
 
@@ -636,6 +634,43 @@ export async function DescargarReporteCardex(
     filename:
       filename ??
       `reporte_auditoria_cardex.${formato === "excel" ? "xlsx" : "pdf"}`,
+  };
+}
+//#endregion
+
+//#region Inventario
+export async function GetInventarioFiltros(): Promise<InventarioFiltrosRespuesta> {
+  const response = await api.get<InventarioFiltrosRespuesta>(
+    "/inventario/filtros",
+  );
+  return response.data;
+}
+
+export async function GetInventario(
+  consulta: InventarioConsulta,
+): Promise<InventarioRespuesta> {
+  const response = await api.get<InventarioRespuesta>("/inventario", {
+    params: consulta,
+  });
+  return response.data;
+}
+
+export async function DescargarReporteInventario(
+  filtros: Omit<InventarioConsulta, "pagina" | "cantidad">,
+  formato: InventarioFormatoReporte,
+): Promise<{ blob: Blob; filename: string }> {
+  const response = await api.get<Blob>("/inventario/exportar", {
+    params: { ...filtros, formato },
+    responseType: "blob",
+  });
+  const disposition = response.headers["content-disposition"] as
+    | string
+    | undefined;
+  const filename = disposition?.match(/filename="?([^";]+)"?/i)?.[1];
+  return {
+    blob: response.data,
+    filename:
+      filename ?? `reporte_inventario.${formato === "excel" ? "xlsx" : "pdf"}`,
   };
 }
 //#endregion

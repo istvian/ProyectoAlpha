@@ -319,8 +319,10 @@ export function Bodega() {
             }
             firstOption="Todas las operaciones"
           />
+          <div className={css.btns}>
           <Btn onClick={aplicarFiltros}>Buscar</Btn>
           <Btn onClick={limpiarFiltros}>Limpiar</Btn>
+          </div>
         </div>
 
         {errorMovimientos && (
