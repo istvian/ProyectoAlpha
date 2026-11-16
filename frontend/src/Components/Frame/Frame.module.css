@@ -8,4 +8,11 @@
   height: 100%;
   padding: 1rem;
   background-color: var(--bg-color);
+  background-image: url("/cubes.png");
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: 0.5rem;
+  }
 }

@@ -1,3 +1,5 @@
+import os
+
 from tortoise import Tortoise
 from models.rol import Rol
 from models.user import User
@@ -19,6 +21,9 @@ async def SetupDB():
                 "models.cliente",
                 "models.obra",
                 "models.cardex_log",
+                "models.ajustes_operativos",
+                "models.recepcion_compra",
+                "models.conteo_inventario",
             ]
         },
     )
@@ -27,12 +32,28 @@ async def SetupDB():
     await PrepareProveedorFacturaSchema()
     await PrepareDetalleDocumentoSchema()
     await PrepareArticuloPMP()
+    await PrepareLegacyConteoSchema()
+    await PrepareRecepcionSchema()
     await Tortoise.generate_schemas()
+    await EnsureArticuloJsonFields()
     await EnsureDocumentoTipoConstraint()
     await EnsureCardexMovementTypeConstraint()
     await EnsureCardexImmutability()
     await CreateRoles()
     await SetupAccounts()
+    await SeedDemoDataInDevelopment()
+
+
+async def SeedDemoDataInDevelopment():
+    if os.getenv("APP_ENV", "development").strip().lower() != "development":
+        return
+    if Tortoise.get_connection("default").capabilities.dialect != "sqlite":
+        return
+
+    from scripts.seed_demo_data import crear_datos_demo
+
+    resultado = await crear_datos_demo()
+    print(f"Datos demo de desarrollo: {resultado}")
 
 
 async def EnsureCardexMovementTypeConstraint():
@@ -41,9 +62,26 @@ async def EnsureCardexMovementTypeConstraint():
         return
 
     allowed_types = (
-        "'ENTRADA_COMPRA', 'SALIDA_OBRA', 'MERMA', 'DEVOLUCION', 'USO_INTERNO'"
+        "'ENTRADA_COMPRA', 'SALIDA_OBRA', 'MERMA', 'DEVOLUCION', "
+        "'USO_INTERNO', 'AJUSTE_INVENTARIO'"
     )
+    triggers = await connection.execute_query_dict("""
+        SELECT name, sql FROM sqlite_master
+        WHERE type = 'trigger'
+          AND name IN (
+              'cardex_logs_tipo_movimiento_insert',
+              'cardex_logs_tipo_movimiento_update'
+          )
+        """)
+    if len(triggers) == 2 and all(
+        "AJUSTE_INVENTARIO" in (trigger["sql"] or "") for trigger in triggers
+    ):
+        return
+
     await connection.execute_script(f"""
+        DROP TRIGGER IF EXISTS cardex_logs_tipo_movimiento_insert;
+        DROP TRIGGER IF EXISTS cardex_logs_tipo_movimiento_update;
+
         CREATE TRIGGER IF NOT EXISTS cardex_logs_tipo_movimiento_insert
         BEFORE INSERT ON cardex_logs
         FOR EACH ROW
@@ -359,6 +397,153 @@ async def PrepareArticuloPMP():
         UPDATE "articulos"
         SET "precio_medio_ponderado" = COALESCE("precio_lista", 0);
         """)
+
+
+async def EnsureArticuloJsonFields():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+    if "articulos" not in tables:
+        return
+
+    columns = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            'PRAGMA table_info("articulos")'
+        )
+    }
+    nuevas_columnas = {
+        "especificaciones_tecnicas": "JSON NOT NULL DEFAULT '{}'",
+        "ultimos_costos_compra": "JSON NOT NULL DEFAULT '[]'",
+    }
+    historial_agregado = "ultimos_costos_compra" not in columns
+    for nombre, definicion in nuevas_columnas.items():
+        if nombre not in columns:
+            await connection.execute_script(
+                f'ALTER TABLE "articulos" ADD COLUMN "{nombre}" {definicion}'
+            )
+
+    if not historial_agregado or "detalle_documento" not in tables:
+        return
+
+    from models.proveedor import Articulos, DetalleDocumento
+
+    for articulo in await Articulos.all():
+        detalles = (
+            await DetalleDocumento.filter(articulo_id=articulo.id)
+            .select_related("documento")
+            .order_by("-documento__emision", "-id")
+            .limit(3)
+        )
+        articulo.ultimos_costos_compra = [
+            {
+                "costo_unitario": format(detalle.costo_neto_unitario, ".2f"),
+                "fecha": detalle.documento.emision.isoformat(),
+                "folio": detalle.documento.folio,
+            }
+            for detalle in detalles
+        ]
+        if articulo.ultimos_costos_compra:
+            await articulo.save(update_fields=["ultimos_costos_compra"])
+
+
+async def PrepareRecepcionSchema():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+    if "recepciones_compra" not in tables:
+        return
+
+    columns = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            'PRAGMA table_info("recepciones_compra")'
+        )
+    }
+    additions = {
+        "bultos_guia": "INTEGER NOT NULL DEFAULT 0",
+        "bultos_recibidos": "INTEGER NOT NULL DEFAULT 0",
+    }
+    for name, sql_type in additions.items():
+        if name not in columns:
+            await connection.execute_script(
+                f'ALTER TABLE "recepciones_compra" ADD COLUMN "{name}" {sql_type}'
+            )
+
+
+async def PrepareLegacyConteoSchema():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    tables = {
+        row["name"]
+        for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+    table_renames = (
+        ("conteos_inventario", "toma_inventario"),
+        ("detalle_conteo_inventario", "detalle_toma_inventario"),
+    )
+    for old_name, new_name in table_renames:
+        if old_name in tables and new_name in tables:
+            raise RuntimeError(
+                f"No se puede migrar el conteo: existen ambas tablas "
+                f"'{old_name}' y '{new_name}'."
+            )
+        if old_name in tables:
+            await connection.execute_script(
+                f'ALTER TABLE "{old_name}" RENAME TO "{new_name}"'
+            )
+            tables.remove(old_name)
+            tables.add(new_name)
+
+    column_renames = {
+        "toma_inventario": (("creado_por_id", "usuario_id"),),
+        "detalle_toma_inventario": (
+            ("conteo_id", "toma_id"),
+            ("articulo_id", "producto_id"),
+            ("stock_sistema", "stock_teorico"),
+            ("cantidad_contada", "conteo_fisico"),
+        ),
+    }
+    for table_name, renames in column_renames.items():
+        if table_name not in tables:
+            continue
+        columns = {
+            row["name"]
+            for row in await connection.execute_query_dict(
+                f'PRAGMA table_info("{table_name}")'
+            )
+        }
+        for old_name, new_name in renames:
+            if old_name in columns and new_name in columns:
+                raise RuntimeError(
+                    f"No se puede migrar el conteo: la tabla '{table_name}' "
+                    f"contiene las columnas '{old_name}' y '{new_name}'."
+                )
+            if old_name in columns:
+                await connection.execute_script(
+                    f'ALTER TABLE "{table_name}" '
+                    f'RENAME COLUMN "{old_name}" TO "{new_name}"'
+                )
+                columns.remove(old_name)
+                columns.add(new_name)
 
 
 async def EnsureDocumentoTipoConstraint():

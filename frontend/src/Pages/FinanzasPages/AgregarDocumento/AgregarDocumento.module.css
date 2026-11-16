@@ -38,6 +38,24 @@
 .tableContainer {
   width: 100%;
   overflow-x: auto;
+  scrollbar-width: auto;
+  scrollbar-color: #6c6c6c #e0e0e0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableContainer::-webkit-scrollbar {
+  height: 12px;
+}
+
+.tableContainer::-webkit-scrollbar-track {
+  background: #e0e0e0;
+  border-radius: 999px;
+}
+
+.tableContainer::-webkit-scrollbar-thumb {
+  background: #6c6c6c;
+  border: 2px solid #e0e0e0;
+  border-radius: 999px;
 }
 table {
   width: 100%;
@@ -78,6 +96,21 @@ td {
   justify-content: flex-start;
   width: 100%;
 }
+.discountInfo {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 0.7fr) minmax(0, 1fr);
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+}
+.discountInfo > :first-child {
+  grid-row: span 2;
+  min-width: 0;
+}
+.discountInfo > p {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
 .row > p {
   margin: 0.5rem;
   padding: 0;
@@ -103,10 +136,20 @@ td {
   flex-flow: column nowrap;
   align-items: center;
   justify-content: center;
-  min-width: 300px;
+  width: min(96vw, 48rem);
+  min-width: 0;
+  max-height: 92vh;
+  overflow-y: auto;
   padding: 1rem;
   border-radius: 8px;
   background-color: var(--box-color);
+}
+
+@media (max-width: 640px) {
+  .content {
+    width: calc(100vw - 1rem);
+    padding: 0.75rem;
+  }
 }
 .delete {
   background-color: var(--red-color);
@@ -119,5 +162,23 @@ td {
   }
   &:active {
     transform: scale(0.9);
+  }
+}
+
+@media (max-width: 760px) {
+  .tableContainer {
+    overflow-x: scroll;
+  }
+
+  .tableContainer::before {
+    content: "Desliza horizontalmente para ver mas columnas";
+    display: block;
+    margin: 0.25rem 0;
+    color: var(--grey-color);
+    font-size: 0.75rem;
+  }
+
+  table {
+    min-width: 720px;
   }
 }

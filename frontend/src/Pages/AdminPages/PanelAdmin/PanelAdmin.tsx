@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import css from "./PanelAdmin.module.css";
 import useValidateRol from "../../../Hooks/useValidateRol";
 import { Rol, type SystemLog, type UserData } from "../../../types/general";
@@ -10,7 +9,6 @@ import { CardContainer } from "../../../Components/CardContainer/CardContainer";
 import { Card } from "../../../Components/Card/Card";
 import { Selector } from "../../../Components/Selector/Selector";
 import { InputText } from "../../../Components/InputText/InputText";
-import { InputDate } from "../../../Components/InputDate/InputDate";
 import { Popup } from "../../../Components/Popup/Popup";
 import { useEffect, useState } from "react";
 import {
@@ -282,20 +280,22 @@ export function PanelAdmin() {
               options={["Activo", "Suspendido"]}
               firstOption="Selecciona un estado"
             />
-            <Btn
-              onClick={() => {
-                HandleSearch();
-              }}
-            >
-              Buscar
-            </Btn>
-            <Btn
-              onClick={() => {
-                HandleClear();
-              }}
-            >
-              Limpiar
-            </Btn>
+            <div className={css.btns}>
+              <Btn
+                onClick={() => {
+                  HandleSearch();
+                }}
+              >
+                Buscar
+              </Btn>
+              <Btn
+                onClick={() => {
+                  HandleClear();
+                }}
+              >
+                Limpiar
+              </Btn>
+            </div>
           </div>
           <div className={css.rolContainer}>
             <span className={css.rolCount}>

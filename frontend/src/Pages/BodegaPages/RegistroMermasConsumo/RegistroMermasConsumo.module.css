@@ -1,0 +1,165 @@
+.page {
+  width: 100%;
+  min-width: 0;
+}
+
+.header {
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.header p {
+  margin: 0;
+}
+
+.operationSwitch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.operationButton,
+.submit {
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--input-color);
+  border-radius: 8px;
+  background: var(--box-color);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.operationButton:hover,
+.operationButton:focus-visible {
+  border-color: var(--text-color);
+}
+
+.selectedOperation,
+.submit {
+  border-color: var(--text-color);
+  background: var(--text-color);
+  color: #fff;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.section {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--input-color);
+  border-radius: 8px;
+}
+
+.sectionTitle {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+  font-weight: 600;
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem;
+  border: 1px solid var(--input-color);
+  border-radius: 8px;
+  background: var(--box-color);
+  color: inherit;
+  font: inherit;
+}
+
+.input:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.invalidInput {
+  border-color: #b42318;
+  box-shadow: 0 0 0 2px rgb(180 35 24 / 18%);
+}
+
+.textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.field small {
+  color: var(--grey-color);
+  font-weight: 400;
+}
+
+.field .fieldError {
+  color: #b42318;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submit:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.error,
+.notice {
+  padding: 0.85rem 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+
+.error {
+  color: #842029;
+  background: #f8d7da;
+}
+
+.notice {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+@media (max-width: 640px) {
+  .operationSwitch,
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .section {
+    padding: 0.75rem;
+  }
+
+  .actions {
+    display: block;
+  }
+
+  .submit {
+    width: 100%;
+  }
+}

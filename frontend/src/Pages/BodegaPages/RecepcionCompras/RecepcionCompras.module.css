@@ -1,0 +1,315 @@
+.main {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.heading,
+.sectionHeader,
+.receiptHeading,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.heading p,
+.helpText {
+  color: var(--grey-color);
+}
+
+.section {
+  width: 100%;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--input-color);
+}
+
+.sectionTitle {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+}
+
+.orderControls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.packageControls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+  font-weight: 600;
+}
+
+.field small {
+  color: var(--grey-color);
+  font-weight: 400;
+}
+
+.input,
+.textarea,
+.quantityInput {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem;
+  border: 1px solid var(--input-color);
+  border-radius: 8px;
+  background: var(--box-color);
+  color: inherit;
+  font: inherit;
+}
+
+.scanRow {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.scanRow > button {
+  min-width: 112px;
+}
+
+.orderSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  background: var(--input-color);
+}
+
+.orderSummary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.orderSummary span {
+  color: var(--grey-color);
+  font-size: 0.85rem;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 1rem 0;
+  scrollbar-width: auto;
+  scrollbar-color: #6c6c6c #e0e0e0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableWrap::-webkit-scrollbar {
+  height: 12px;
+}
+
+.tableWrap::-webkit-scrollbar-track {
+  background: #e0e0e0;
+  border-radius: 999px;
+}
+
+.tableWrap::-webkit-scrollbar-thumb {
+  background: #6c6c6c;
+  border: 2px solid #e0e0e0;
+  border-radius: 999px;
+}
+
+.table {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--input-color);
+  text-align: left;
+}
+
+.table th {
+  background: var(--input-color);
+}
+
+.itemName {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--grey-color);
+}
+
+.quantityInput {
+  min-width: 92px;
+  text-align: center;
+}
+
+.helpText {
+  margin: 0.75rem 0;
+}
+
+.actions {
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.error,
+.notice {
+  padding: 0.85rem 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+
+.error {
+  color: #842029;
+  background: #f8d7da;
+}
+
+.notice {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.badge,
+.approvedBadge,
+.pendingBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.badge,
+.approvedBadge {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.pendingBadge {
+  color: #664d03;
+  background: #fff3cd;
+}
+
+.pendingList {
+  display: grid;
+  gap: 1rem;
+}
+
+.pendingCard {
+  padding: 1rem;
+  border: 1px solid var(--input-color);
+  border-radius: 10px;
+}
+
+.discrepancy {
+  white-space: pre-line;
+  font-weight: 600;
+}
+
+.printReceipt {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--input-color);
+  border-radius: 10px;
+}
+
+.receiptHeading h2 {
+  margin: 0;
+}
+
+.receiptHeading p {
+  color: var(--grey-color);
+}
+
+@media (max-width: 900px) {
+  .orderControls {
+    grid-template-columns: 1fr;
+  }
+
+  .packageControls {
+    grid-template-columns: 1fr;
+  }
+
+  .table {
+    min-width: 760px;
+  }
+}
+
+@media (max-width: 600px) {
+  .main {
+    padding: 0 0.5rem 1rem;
+  }
+
+  .scanRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .scanRow > button {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .receiptHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .heading,
+  .sectionHeader,
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions > * {
+    width: 100%;
+  }
+
+  .tableWrap {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .tableWrap::before {
+    content: "Desliza horizontalmente para ver mas columnas";
+    display: block;
+    margin: 0.25rem 0;
+    color: var(--grey-color);
+    font-size: 0.75rem;
+  }
+}
+
+@media print {
+  :global(body *) {
+    visibility: hidden;
+  }
+
+  .printReceipt,
+  .printReceipt :global(*) {
+    visibility: visible;
+  }
+
+  .printReceipt {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    padding: 0;
+    border: 0;
+  }
+
+  .noPrint {
+    display: none !important;
+  }
+}

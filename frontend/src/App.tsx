@@ -27,6 +27,9 @@ import { useSessionStore } from "./Stores/session";
 import { useEffect } from "react";
 import { RenewToken } from "./Helpers/APIConnector";
 import { SalidaMateriales } from "./Pages/BodegaPages/SalidaMateriales/SalidaMateriales";
+import { RecepcionCompras } from "./Pages/BodegaPages/RecepcionCompras/RecepcionCompras";
+import { ConteoInventarioPage } from "./Pages/BodegaPages/ConteoInventario/ConteoInventario";
+import { RegistroMermasConsumo } from "./Pages/BodegaPages/RegistroMermasConsumo/RegistroMermasConsumo";
 
 function ProtectedRoute() {
   const status = useIsLogin();
@@ -96,7 +99,19 @@ function App() {
                 <Route element={<CardexMain />} path="/cardex" />
                 <Route element={<PanelAdmin />} path="/admin" />
                 <Route element={<Bodega />} path="/bodega" />
+                <Route
+                  element={<RecepcionCompras />}
+                  path="/bodega/recepcion"
+                />
+                <Route
+                  element={<ConteoInventarioPage />}
+                  path="/bodega/conteo"
+                />
                 <Route element={<SalidaMateriales />} path="/bodega/salida" />
+                <Route
+                  element={<RegistroMermasConsumo />}
+                  path="/bodega/mermas"
+                />
                 <Route element={<NotFound />} path="*" />
               </Route>
             </Route>

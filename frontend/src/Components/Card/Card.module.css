@@ -3,7 +3,8 @@
   flex-flow: column nowrap;
   justify-content: flex-start;
   align-items: flex-start;
-  flex: 1;
+  flex: 1 1 14rem;
+  min-width: 0;
   padding: 1rem 2rem;
   background-color: var(--box-color);
   border-radius: 8px;

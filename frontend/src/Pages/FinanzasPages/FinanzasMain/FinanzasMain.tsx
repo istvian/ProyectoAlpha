@@ -160,7 +160,10 @@ export function FinanzasMain() {
             }}
           />
         </Popup>
-        <Popup isVisible={popupAgregarDocumento}>
+        <Popup
+          isVisible={popupAgregarDocumento}
+          style={{ width: "min(92vw, 88rem)", maxWidth: "88rem" }}
+        >
           <AgregarDocumento
             proveedores={proveedores}
             onEnd={() => {

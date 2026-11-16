@@ -34,6 +34,52 @@
   gap: 0.5rem 1rem;
 }
 
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+  font-weight: 600;
+}
+
+.field small {
+  color: var(--grey-color);
+  font-weight: 400;
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem;
+  border: 1px solid var(--input-color);
+  border-radius: 8px;
+  background: var(--box-color);
+  color: inherit;
+  font: inherit;
+}
+
+.helpText {
+  color: var(--grey-color);
+}
+
+.error,
+.notice {
+  padding: 0.85rem 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+
+.error {
+  color: #842029;
+  background: #f8d7da;
+}
+
+.notice {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
 .actions {
   display: flex;
   flex-flow: row wrap;
@@ -51,7 +97,25 @@
   }
 
   .actions {
+    align-items: stretch;
     flex-direction: column-reverse;
+  }
+
+  .actions > * {
+    width: 100%;
+  }
+
+  .tableWrap {
+    overflow-x: scroll;
+    overscroll-behavior-x: contain;
+  }
+
+  .tableWrap::before {
+    content: "Desliza horizontalmente para ver mas columnas";
+    display: block;
+    margin: 0.25rem 0;
+    color: var(--grey-color);
+    font-size: 0.75rem;
   }
 }
 
@@ -71,4 +135,44 @@
   align-items: center;
   justify-content: flex-end;
   width: 100%;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: auto;
+  scrollbar-color: #6c6c6c #e0e0e0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableWrap::-webkit-scrollbar {
+  height: 12px;
+}
+
+.tableWrap::-webkit-scrollbar-track {
+  background: #e0e0e0;
+  border-radius: 999px;
+}
+
+.tableWrap::-webkit-scrollbar-thumb {
+  background: #6c6c6c;
+  border: 2px solid #e0e0e0;
+  border-radius: 999px;
+}
+
+.table {
+  width: 100%;
+  min-width: 580px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--input-color);
+  text-align: left;
+}
+
+.table th {
+  background: var(--input-color);
 }

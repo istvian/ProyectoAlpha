@@ -9,6 +9,7 @@ class TipoMovimiento(str, Enum):
     MERMA = "MERMA"
     DEVOLUCION = "DEVOLUCION"
     USO_INTERNO = "USO_INTERNO"
+    AJUSTE_INVENTARIO = "AJUSTE_INVENTARIO"
 
 
 class CardexLog(models.Model):

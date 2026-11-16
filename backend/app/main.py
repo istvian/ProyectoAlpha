@@ -27,6 +27,9 @@ register_tortoise(
             "models.cliente",
             "models.obra",
             "models.cardex_log",
+            "models.ajustes_operativos",
+            "models.recepcion_compra",
+            "models.conteo_inventario",
         ]
     },
     generate_schemas=True,

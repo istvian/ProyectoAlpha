@@ -5,13 +5,13 @@ Expone los endpoints HTTP para el registro seguro de salidas de material con con
 
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from tortoise.transactions import atomic
 from tortoise.expressions import F
 from typing import List
 from pydantic import BaseModel, Field
 
-from middlewares.jwt_helper import check_user
+from middlewares.jwt_helper import check_user, check_user_any
 from models.proveedor import Articulos
 from models.egreso import Egreso, DetalleEgreso
 from models.obra import Obra
@@ -21,6 +21,7 @@ from schemas.roles import Roles
 
 # Configuración del enrutador de FastAPI
 router = APIRouter(tags=["Egresos"])
+ROLES_CATALOGOS_EGRESO = (Roles.bodega, Roles.finanzas)
 
 
 class ItemEgresoSchema(BaseModel):
@@ -37,12 +38,50 @@ class EgresoSchema(BaseModel):
 
     obra_id: int = Field(..., description="ID de la obra de destino")
     tecnico_id: int = Field(..., description="ID del técnico receptor")
-    usuario_id: int = Field(
-        ..., description="ID del usuario/bodeguero que opera el sistema"
-    )
     detalles: List[ItemEgresoSchema] = Field(
         ..., min_length=1, description="Lista de artículos e ítems a egresar"
     )
+
+
+@router.get(
+    "/catalogos",
+    dependencies=[Depends(check_user_any(ROLES_CATALOGOS_EGRESO))],
+)
+async def get_catalogos_egreso():
+    articulos = await Articulos.all().order_by("nombre", "id").values(
+        "id",
+        "codigo_sku",
+        "nombre",
+        "stock_actual",
+        "stock_minimo",
+        "precio_lista",
+    )
+    obras = await Obra.filter(enabled=True).select_related(
+        "tecnico_responsable"
+    ).order_by("nombre_obra", "id")
+    tecnicos = await User.filter(
+        rol_id=Roles.tecnico.value,
+        enabled=True,
+    ).order_by("nombre", "id").values("id", "nombre", "correo")
+
+    return {
+        "error": False,
+        "mensaje": "Catálogos de egreso consultados correctamente",
+        "data": {
+            "articulos": articulos,
+            "obras": [
+                {
+                    "id": obra.id,
+                    "codigo_obra": obra.codigo_obra,
+                    "nombre_obra": obra.nombre_obra,
+                    "tecnico_responsable_id": obra.tecnico_responsable_id,
+                    "tecnico_responsable_nombre": obra.tecnico_responsable.nombre,
+                }
+                for obra in obras
+            ],
+            "tecnicos": tecnicos,
+        },
+    }
 
 
 @router.post(
@@ -51,7 +90,7 @@ class EgresoSchema(BaseModel):
     dependencies=[Depends(check_user(Roles.bodega))],
 )
 @atomic()
-async def registrar_egreso(data: EgresoSchema):
+async def registrar_egreso(data: EgresoSchema, request: Request):
     """
     Registra un egreso de materiales de bodega de forma atómica (ACID).
 
@@ -74,7 +113,9 @@ async def registrar_egreso(data: EgresoSchema):
         articulos: dict[int, Articulos] = {}
         precios_unitarios: dict[int, Decimal] = {}
         for producto_id, cantidad_solicitada in cantidades_por_articulo.items():
-            articulo = await Articulos.get_or_none(id=producto_id)
+            articulo = await Articulos.filter(
+                id=producto_id
+            ).select_for_update().first()
             if not articulo:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -85,7 +126,7 @@ async def registrar_egreso(data: EgresoSchema):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
-                        f"Stock insuficiente para el artículo '{articulo.descripcion}'. "
+                        f"Stock insuficiente para el artículo '{articulo.nombre}'. "
                         f"Stock actual: {articulo.stock_actual}, "
                         f"solicitado: {cantidad_solicitada}."
                     ),
@@ -95,7 +136,7 @@ async def registrar_egreso(data: EgresoSchema):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail=(
-                        f"El artículo '{articulo.descripcion}' no tiene un precio "
+                        f"El artículo '{articulo.nombre}' no tiene un precio "
                         "de lista válido configurado."
                     ),
                 )
@@ -103,25 +144,32 @@ async def registrar_egreso(data: EgresoSchema):
             precios_unitarios[producto_id] = articulo.precio_lista
 
         # --- PASO 2: VALIDACIÓN DE OBRA Y RESPONSABLES ---
-        obra = await Obra.get_or_none(id=data.obra_id)
+        obra = await Obra.get_or_none(id=data.obra_id, enabled=True)
         if not obra:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"La obra con ID {data.obra_id} no existe.",
+                detail=f"La obra con ID {data.obra_id} no existe o está inactiva.",
             )
 
-        usuario = await User.get_or_none(id=data.usuario_id)
+        usuario = await User.get_or_none(
+            correo=request.state.usuario,
+            enabled=True,
+        )
         if not usuario:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"El usuario con ID {data.usuario_id} no existe.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="La cuenta autenticada ya no existe o está deshabilitada.",
             )
 
-        tecnico = await User.get_or_none(id=data.tecnico_id)
+        tecnico = await User.get_or_none(
+            id=data.tecnico_id,
+            rol_id=Roles.tecnico.value,
+            enabled=True,
+        )
         if not tecnico:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"El usuario receptor con ID {data.tecnico_id} no existe.",
+                detail="El técnico receptor no existe o está deshabilitado.",
             )
 
         # --- PASO 3: CREACIÓN DE LA CABECERA DEL EGRESO ---
@@ -143,7 +191,7 @@ async def registrar_egreso(data: EgresoSchema):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
-                        f"Stock insuficiente para el artículo '{articulo.descripcion}'. "
+                        f"Stock insuficiente para el artículo '{articulo.nombre}'. "
                         f"Stock actual: {articulo.stock_actual}, "
                         f"solicitado: {cantidad_solicitada}."
                     ),
@@ -180,9 +228,9 @@ async def registrar_egreso(data: EgresoSchema):
             )
 
         return {
-            "success": True,
-            "message": "Egreso de materiales registrado exitosamente y stock actualizado de forma atómica.",
-            "egreso_id": nuevo_egreso.id,
+            "error": False,
+            "mensaje": "Egreso registrado; existencias y Cardex actualizados.",
+            "data": {"egreso_id": nuevo_egreso.id},
         }
 
     except HTTPException as he:

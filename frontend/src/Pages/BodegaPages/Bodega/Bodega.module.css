@@ -75,10 +75,47 @@
   margin: 0.5rem;
   align-self: flex-end;
 }
+.filterField {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 0.35rem;
+  min-width: 10rem;
+  font-size: 0.85rem;
+  flex: 1;
+  width: 100%;
+}
+.filterField input {
+  box-sizing: border-box;
+  min-height: 2.75rem;
+  padding: 0.5rem;
+  border: 1px solid var(--input-color);
+  border-radius: 8px;
+  background-color: var(--box-color);
+  color: inherit;
+  font: inherit;
+}
 .tableContainer {
   width: 100%;
   overflow-x: auto;
   font-size: 0.8rem;
+  scrollbar-width: auto;
+  scrollbar-color: #6c6c6c #e0e0e0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableContainer::-webkit-scrollbar {
+  height: 12px;
+}
+
+.tableContainer::-webkit-scrollbar-track {
+  background: #e0e0e0;
+  border-radius: 999px;
+}
+
+.tableContainer::-webkit-scrollbar-thumb {
+  background: #6c6c6c;
+  border: 2px solid #e0e0e0;
+  border-radius: 999px;
 }
 table {
   width: 100%;
@@ -96,6 +133,77 @@ td {
   padding: 0.5rem 0.25rem;
   background-color: var(--box-color);
   border-bottom: 1px solid #e0e0e0;
+}
+.btns {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+  justify-self: flex-end;
+  align-self: flex-end;
+  flex: 1;
+}
+.btns > * {
+  margin: 0.5rem;
+}
+
+@media (max-width: 760px) {
+  .row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .info {
+    min-width: min(100%, 14rem);
+    padding: 0.75rem 1rem;
+  }
+
+  .historial {
+    padding: 0.75rem;
+  }
+
+  .filters {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .filters > * {
+    flex: 1;
+    margin: 0.25rem 0;
+  }
+ 
+
+  .tableContainer {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .tableContainer::before {
+    content: "Desliza horizontalmente para ver mas columnas";
+    display: block;
+    margin: 0.25rem 0;
+    color: var(--grey-color);
+    font-size: 0.75rem;
+  }
+
+  .table {
+    min-width: 680px;
+  }
+
+  .navegacion {
+    flex-wrap: wrap;
+  }
+}
+.error {
+  padding: 0.85rem 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+  color: #842029;
+  background: #f8d7da;
 }
 .navegacion {
   display: flex;

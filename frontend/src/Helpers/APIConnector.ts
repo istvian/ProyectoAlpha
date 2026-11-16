@@ -4,15 +4,35 @@ import type {
   CardexFiltrosConsulta,
   CardexFiltrosRespuesta,
   CardexFormatoReporte,
+  CardexResumen,
   CardexRespuesta,
+  ConteoInventario,
+  ConteoInventarioArticulo,
+  ConteoInventarioCreate,
   DocumentoTributario,
+  EgresoCatalogos,
+  EgresoCreate,
   FacturaCreate,
+  InventarioConsulta,
+  InventarioFiltrosRespuesta,
+  InventarioFormatoReporte,
+  InventarioRespuesta,
   LoginData,
   LoginResponse,
+  MermaCreate,
+  MermaRegistro,
   Obra,
+  OrdenCompra,
+  OrdenCompraCreate,
   Proveedor,
+  AdminDashboardData,
+  AlertaStockMinimo,
+  RecepcionCompra,
+  RecepcionCompraCreate,
   ResponseBase,
   SystemLog,
+  UsoInternoCreate,
+  UsoInternoRegistro,
   UserData,
 } from "../types/general";
 import { useSessionStore } from "../Stores/session";
@@ -26,6 +46,26 @@ const api = axios.create({
   baseURL: BASE_URL + API_VERSION, // Pon aquí la URL de tu backend
   withCredentials: true, // La clave: todas las peticiones de esta instancia llevarán credenciales
 });
+
+function mensajeErrorApi(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const body: unknown = error.response?.data;
+    if (typeof body === "object" && body !== null && "detail" in body) {
+      const detail = body.detail;
+      if (typeof detail === "string") return detail;
+      if (
+        typeof detail === "object" &&
+        detail !== null &&
+        "mensaje" in detail &&
+        typeof detail.mensaje === "string"
+      ) {
+        return detail.mensaje;
+      }
+    }
+    return error.message || fallback;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
 
 //#region AUTH
 
@@ -148,6 +188,37 @@ export async function GetLogs(
     return null;
   }
 }
+
+export async function GetAdminDashboard(): Promise<ResponseBase<AdminDashboardData> | null> {
+  try {
+    const response =
+      await api.get<ResponseBase<AdminDashboardData>>("/admin/dashboard");
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function GetStockMinimoAlerts(): Promise<
+  ResponseBase<AlertaStockMinimo[]>
+> {
+  try {
+    const response = await api.get<ResponseBase<AlertaStockMinimo[]>>(
+      "/alertas/stock-minimo",
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(
+        error,
+        "No se pudieron consultar las alertas de stock.",
+      ),
+    };
+  }
+}
 //#endregion
 
 //#region  Finanzas
@@ -255,6 +326,247 @@ export async function GetObras(): Promise<ResponseBase<Obra[] | []> | null> {
     return null;
   }
 }
+
+export async function GetEgresoCatalogos(): Promise<ResponseBase<EgresoCatalogos> | null> {
+  try {
+    const response =
+      await api.get<ResponseBase<EgresoCatalogos>>("/egresos/catalogos");
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function CreateEgreso(
+  formData: EgresoCreate,
+): Promise<ResponseBase<{ egreso_id: number }> | null> {
+  try {
+    const response = await api.post<ResponseBase<{ egreso_id: number }>>(
+      "/egresos",
+      formData,
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    if (axios.isAxiosError(error)) {
+      const body: unknown = error.response?.data;
+      if (
+        typeof body === "object" &&
+        body !== null &&
+        "detail" in body &&
+        typeof body.detail === "string"
+      ) {
+        return { error: true, mensaje: body.detail };
+      }
+      return { error: true, mensaje: error.message };
+    }
+    return {
+      error: true,
+      mensaje:
+        error instanceof Error
+          ? error.message
+          : "No se pudo registrar el egreso.",
+    };
+  }
+}
+
+export async function CreateMerma(
+  formData: MermaCreate,
+): Promise<ResponseBase<MermaRegistro> | null> {
+  try {
+    const response = await api.post<ResponseBase<MermaRegistro>>(
+      "/mermas",
+      formData,
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(error, "No se pudo registrar la merma."),
+    };
+  }
+}
+
+export async function CreateUsoInterno(
+  formData: UsoInternoCreate,
+): Promise<ResponseBase<UsoInternoRegistro> | null> {
+  try {
+    const response = await api.post<ResponseBase<UsoInternoRegistro>>(
+      "/usos-internos",
+      formData,
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(
+        error,
+        "No se pudo registrar el consumo interno.",
+      ),
+    };
+  }
+}
+
+export async function GetConteoCatalogo(): Promise<ResponseBase<
+  ConteoInventarioArticulo[]
+> | null> {
+  try {
+    const response = await api.get<ResponseBase<ConteoInventarioArticulo[]>>(
+      "/inventario/conteos/catalogos",
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(error, "No se pudo cargar el inventario."),
+    };
+  }
+}
+
+export async function GetConteos(): Promise<ResponseBase<
+  ConteoInventario[]
+> | null> {
+  try {
+    const response = await api.get<ResponseBase<ConteoInventario[]>>(
+      "/inventario/conteos",
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(error, "No se pudieron cargar los conteos."),
+    };
+  }
+}
+
+export async function CreateConteo(
+  formData: ConteoInventarioCreate,
+): Promise<ResponseBase<ConteoInventario> | null> {
+  try {
+    const response = await api.post<ResponseBase<ConteoInventario>>(
+      "/inventario/conteos",
+      formData,
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(error, "No se pudo registrar el conteo."),
+    };
+  }
+}
+
+export async function AprobarConteo(
+  conteoId: number,
+): Promise<ResponseBase<ConteoInventario> | null> {
+  try {
+    const response = await api.post<ResponseBase<ConteoInventario>>(
+      `/inventario/conteos/${conteoId}/aprobar`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(error, "No se pudo aprobar el conteo."),
+    };
+  }
+}
+
+export async function RechazarConteo(
+  conteoId: number,
+  motivo: string,
+): Promise<ResponseBase<ConteoInventario> | null> {
+  try {
+    const response = await api.post<ResponseBase<ConteoInventario>>(
+      `/inventario/conteos/${conteoId}/rechazar`,
+      { motivo },
+    );
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      error: true,
+      mensaje: mensajeErrorApi(error, "No se pudo rechazar el conteo."),
+    };
+  }
+}
+
+export async function GetOrdenesCompra(): Promise<ResponseBase<
+  OrdenCompra[]
+> | null> {
+  try {
+    const response: ResponseBase<OrdenCompra[]> = (
+      await api.get("/facturas/ordenes-compra")
+    ).data;
+    return response;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function CreateOrdenCompra(
+  formData: OrdenCompraCreate,
+): Promise<ResponseBase<OrdenCompra> | null> {
+  try {
+    const response: ResponseBase<OrdenCompra> = (
+      await api.post("/facturas/ordenes-compra", formData)
+    ).data;
+    return response;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function CreateRecepcionCompra(
+  formData: RecepcionCompraCreate,
+): Promise<ResponseBase<RecepcionCompra> | null> {
+  try {
+    const response: ResponseBase<RecepcionCompra> = (
+      await api.post("/facturas/recepcion", formData)
+    ).data;
+    return response;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function GetRecepcionesPendientes(): Promise<ResponseBase<
+  RecepcionCompra[]
+> | null> {
+  try {
+    const response: ResponseBase<RecepcionCompra[]> = (
+      await api.get("/facturas/recepciones/pendientes")
+    ).data;
+    return response;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function AprobarRecepcion(
+  recepcionId: number,
+): Promise<ResponseBase<RecepcionCompra> | null> {
+  try {
+    const response: ResponseBase<RecepcionCompra> = (
+      await api.post(`/facturas/recepciones/${recepcionId}/aprobar`)
+    ).data;
+    return response;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
 export async function CreateObra(formData: Obra): Promise<ResponseBase | null> {
   try {
     console.log(formData);
@@ -299,6 +611,12 @@ export async function GetCardexFiltros(): Promise<CardexFiltrosRespuesta> {
   return response.data;
 }
 
+export async function GetCardexResumen(): Promise<ResponseBase<CardexResumen>> {
+  const response =
+    await api.get<ResponseBase<CardexResumen>>("/cardex/resumen");
+  return response.data;
+}
+
 export async function DescargarReporteCardex(
   filtros: CardexFiltrosConsulta,
   formato: CardexFormatoReporte,
@@ -316,6 +634,43 @@ export async function DescargarReporteCardex(
     filename:
       filename ??
       `reporte_auditoria_cardex.${formato === "excel" ? "xlsx" : "pdf"}`,
+  };
+}
+//#endregion
+
+//#region Inventario
+export async function GetInventarioFiltros(): Promise<InventarioFiltrosRespuesta> {
+  const response = await api.get<InventarioFiltrosRespuesta>(
+    "/inventario/filtros",
+  );
+  return response.data;
+}
+
+export async function GetInventario(
+  consulta: InventarioConsulta,
+): Promise<InventarioRespuesta> {
+  const response = await api.get<InventarioRespuesta>("/inventario", {
+    params: consulta,
+  });
+  return response.data;
+}
+
+export async function DescargarReporteInventario(
+  filtros: Omit<InventarioConsulta, "pagina" | "cantidad">,
+  formato: InventarioFormatoReporte,
+): Promise<{ blob: Blob; filename: string }> {
+  const response = await api.get<Blob>("/inventario/exportar", {
+    params: { ...filtros, formato },
+    responseType: "blob",
+  });
+  const disposition = response.headers["content-disposition"] as
+    | string
+    | undefined;
+  const filename = disposition?.match(/filename="?([^";]+)"?/i)?.[1];
+  return {
+    blob: response.data,
+    filename:
+      filename ?? `reporte_inventario.${formato === "excel" ? "xlsx" : "pdf"}`,
   };
 }
 //#endregion
