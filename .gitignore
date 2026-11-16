@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 frontend/node_modules/
+playwright/node_modules
 
 # Python / Bytecode
 __pycache__/
