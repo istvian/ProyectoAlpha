@@ -104,7 +104,9 @@ async function mensajeError(error: unknown): Promise<string> {
     }
     return error.message;
   }
-  return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
+  return error instanceof Error
+    ? error.message
+    : "Ocurrió un error inesperado.";
 }
 
 function formatoFecha(fecha: string): string {
@@ -148,7 +150,9 @@ function nombreProducto(
   }`;
 }
 
-function nombreObra(obra: CardexFiltrosRespuesta["data"]["obras"][number]): string {
+function nombreObra(
+  obra: CardexFiltrosRespuesta["data"]["obras"][number],
+): string {
   return `${obra.id} - ${obra.codigo_obra} - ${obra.nombre_obra}`;
 }
 
@@ -158,8 +162,7 @@ function filaMovimiento(movimiento: CardexMovimiento) {
     esEntrada(movimiento.tipo_movimiento) ||
     (ajuste && movimiento.cantidad > 0);
   const cantidadSalida =
-    esSalida(movimiento.tipo_movimiento) ||
-    (ajuste && movimiento.cantidad < 0);
+    esSalida(movimiento.tipo_movimiento) || (ajuste && movimiento.cantidad < 0);
   const cantidad = Math.abs(movimiento.cantidad);
   return (
     <tr key={movimiento.id}>
@@ -184,7 +187,7 @@ function filaMovimiento(movimiento: CardexMovimiento) {
 }
 
 export function CardexMain() {
-  const puedeConsultar = useValidateRol([Rol.supervisor]);
+  const puedeConsultar = useValidateRol([Rol.admin, Rol.finanzas]);
   const topScrollbarRef = useRef<HTMLDivElement>(null);
   const tableScrollerRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -550,8 +553,8 @@ export function CardexMain() {
           </div>
           <div className={css.row}>
             <p className={css.resumen}>
-              Mostrando {inicioResultados}-{finResultados} de{" "}
-              {paginacion.total} movimientos
+              Mostrando {inicioResultados}-{finResultados} de {paginacion.total}{" "}
+              movimientos
             </p>
             <div className={css.navegacion}>
               <p className={css.resumen}>{CANTIDAD_POR_PAGINA} por página</p>
@@ -570,9 +573,7 @@ export function CardexMain() {
                 <button
                   type="button"
                   key={numeroPagina}
-                  className={
-                    pagina === numeroPagina ? css.btnActive : css.btn
-                  }
+                  className={pagina === numeroPagina ? css.btnActive : css.btn}
                   disabled={cargando || pagina === numeroPagina}
                   aria-current={pagina === numeroPagina ? "page" : undefined}
                   onClick={() => {

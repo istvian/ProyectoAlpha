@@ -37,7 +37,7 @@ interface DetalleOrdenBorrador {
 }
 
 export function RecepcionCompras() {
-  const isAllowed = useValidateRol([Rol.bodega, Rol.finanzas, Rol.supervisor]);
+  const isAllowed = useValidateRol([Rol.bodega]);
   const [roleId, setRoleId] = useState<number | null>(null);
   const [orders, setOrders] = useState<OrdenCompra[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
