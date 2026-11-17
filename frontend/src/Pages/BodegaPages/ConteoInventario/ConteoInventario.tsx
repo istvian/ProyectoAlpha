@@ -59,7 +59,7 @@ function etiquetaEstado(estado: ConteoInventario["estado"]): string {
 }
 
 export function ConteoInventarioPage() {
-  const isAllowed = useValidateRol([Rol.bodega, Rol.supervisor]);
+  const isAllowed = useValidateRol([Rol.bodega]);
   const [roleId, setRoleId] = useState<number | null>(null);
   const [articulos, setArticulos] = useState<ConteoInventarioArticulo[]>([]);
   const [conteos, setConteos] = useState<ConteoInventario[]>([]);
