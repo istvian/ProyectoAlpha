@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Frame } from "../../Components/Frame/Frame";
 import { Title } from "../../Components/Title/Title";
-import css from "./NotAllowed.module.css";
 
 export function NotAllowed() {
   return (

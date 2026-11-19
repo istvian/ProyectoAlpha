@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckAuth } from "../Helpers/APIConnector";
 
@@ -26,6 +26,7 @@ const useIsLogin = (watch?: any, redirectTo = ""): AuthStatus => {
         }
       })
       .catch((e) => {
+        console.log(e);
         setStatus("unauthorized");
         nav("/login");
       });

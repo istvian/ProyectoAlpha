@@ -124,6 +124,8 @@ async def EnsureCardexImmutability():
 
 async def PrepareLegacyEgresoSchema():
     connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
     tables = {
         row["name"]
         for row in await connection.execute_query_dict(
@@ -160,6 +162,8 @@ async def PrepareLegacyEgresoSchema():
 
 async def PrepareLegacyDetalleSchema():
     connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
     tables = {
         row["name"]
         for row in await connection.execute_query_dict(
@@ -353,9 +357,7 @@ async def PrepareArticuloPMP():
 
     columns = {
         row["name"]
-        for row in await connection.execute_query_dict(
-            'PRAGMA table_info("articulos")'
-        )
+        for row in await connection.execute_query_dict('PRAGMA table_info("articulos")')
     }
     if "precio_medio_ponderado" in columns:
         return
@@ -415,9 +417,7 @@ async def EnsureArticuloJsonFields():
 
     columns = {
         row["name"]
-        for row in await connection.execute_query_dict(
-            'PRAGMA table_info("articulos")'
-        )
+        for row in await connection.execute_query_dict('PRAGMA table_info("articulos")')
     }
     nuevas_columnas = {
         "especificaciones_tecnicas": "JSON NOT NULL DEFAULT '{}'",
