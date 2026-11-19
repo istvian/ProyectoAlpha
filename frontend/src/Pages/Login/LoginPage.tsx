@@ -3,11 +3,10 @@ import { Frame } from "../../Components/Frame/Frame";
 import { InputText } from "../../Components/InputText/InputText";
 import css from "./LoginPage.module.css";
 import { Btn } from "../../Components/Btn/Btn";
-import { Box } from "../../Components/Box/Box";
 import { Title } from "../../Components/Title/Title";
 import type { LoginData } from "../../types/general";
 import { Login } from "../../Helpers/APIConnector";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export function LoginPage() {
   const [loginData, setLoginData] = useState<LoginData>({
@@ -15,13 +14,10 @@ export function LoginPage() {
     correo: "",
   });
   const [errorMsg, setErrorMsg] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const nav = useNavigate();
 
   async function HandleSubmit() {
-    setIsLoading(true);
     await Login(loginData, (res) => {
-      setIsLoading(false);
       if (res.error) {
         setErrorMsg(res.mensaje);
       } else {

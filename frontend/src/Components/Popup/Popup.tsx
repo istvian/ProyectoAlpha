@@ -1,4 +1,4 @@
-import type { ReactNode, StyleHTMLAttributes } from "react";
+import type { ReactNode } from "react";
 import css from "./Popup.module.css";
 
 interface PopupProps {

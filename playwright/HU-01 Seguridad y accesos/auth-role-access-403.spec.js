@@ -5,7 +5,7 @@ const PASSWORD = 'Qwerty1234!';
 const roles = ['admin', 'finanzas', 'supervisor', 'bodega', 'tecnico'];
 
 const routes = [
-  { path: '/', allowed: ['admin'] },
+  { path: '/', allowed: ['admin', 'finanzas', 'supervisor', 'bodega', 'tecnico'] },
   { path: '/inventario', allowed: ['supervisor', 'admin', 'bodega'] },
   { path: '/finanzas', allowed: ['finanzas', 'admin'] },
   { path: '/cardex', allowed: ['bodega', 'finanzas', 'admin'] },

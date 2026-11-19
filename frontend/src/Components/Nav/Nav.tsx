@@ -9,7 +9,7 @@ import { Rol, type UserData } from "../../types/general";
 
 export function Nav() {
   const nav = useNavigate();
-  const status = useIsLogin();
+  useIsLogin();
   const [user, setUser] = useState<UserData>();
 
   type RutaItem = {
