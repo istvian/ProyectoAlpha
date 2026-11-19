@@ -74,7 +74,7 @@ async def get_catalogos_egreso():
                     "id": obra.id,
                     "codigo_obra": obra.codigo_obra,
                     "nombre_obra": obra.nombre_obra,
-                    "tecnico_responsable_id": obra.tecnico_responsable_id,
+                    "tecnico_responsable_id": obra.tecnico_responsable_id, # type: ignore
                     "tecnico_responsable_nombre": obra.tecnico_responsable.nombre,
                 }
                 for obra in obras

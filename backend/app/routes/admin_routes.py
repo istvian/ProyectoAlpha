@@ -1,4 +1,5 @@
 import time
+import asyncio
 from decimal import Decimal
 from typing import Optional
 
@@ -26,26 +27,39 @@ class NuevoUsuario(BaseModel):
     rol_id: int
 
 
+async def _usuarios_por_rol() -> dict[str, int]:
+    roles = [r for r in Roles if r != Roles.cualquiera]
+    counts = await asyncio.gather(
+        *(User.filter(rol_id=rol.value, enabled=True).count() for rol in roles)
+    )
+    return {rol.name: c for rol, c in zip(roles, counts)}
+
+
 @router.get("/dashboard", dependencies=[Depends(check_user(Roles.admin))])
 async def get_dashboard():
-    articulos = await Articulos.all().values_list(
-        "stock_actual", "stock_minimo", "precio_medio_ponderado"
-    )
-    valor_inventario = sum(
-        (
-            Decimal(stock) * Decimal(str(pmp))
-            for stock, _, pmp in articulos
+    # 1. Lanzar TODAS las consultas independientes en paralelo
+    (
+        articulos,
+        resumen_cardex,
+        mermas,
+        proveedores_activos,
+        usuarios_por_rol,
+    ) = await asyncio.gather(
+        Articulos.all().values_list(
+            "stock_actual", "stock_minimo", "precio_medio_ponderado"
         ),
+        obtener_resumen_cardex(),
+        CardexLog.filter(tipo_movimiento=TipoMovimiento.MERMA).count(),
+        Proveedores.filter(deleted=False).count(),
+        _usuarios_por_rol(),  # helper aparte (ver abajo)
+    )
+
+    # 2. Cálculos en CPU (rápidos, no necesitan await)
+    valor_inventario = sum(
+        (Decimal(stock) * Decimal(str(pmp)) for stock, _, pmp in articulos),
         Decimal("0.00"),
     )
-    stock_critico = sum(
-        1 for stock, minimo, _ in articulos if stock <= minimo
-    )
-    usuarios_por_rol = {
-        rol.name: await User.filter(rol_id=rol.value, enabled=True).count()
-        for rol in Roles
-        if rol != Roles.cualquiera
-    }
+    stock_critico = sum(1 for stock, minimo, _ in articulos if stock <= minimo)
 
     return {
         "error": False,
@@ -54,13 +68,11 @@ async def get_dashboard():
             "productos": len(articulos),
             "valor_inventario": str(valor_inventario.quantize(Decimal("0.01"))),
             "stock_critico": stock_critico,
-            "movimientos_hoy": await obtener_resumen_cardex(),
+            "movimientos_hoy": resumen_cardex,
             "usuarios_activos": sum(usuarios_por_rol.values()),
             "usuarios_por_rol": usuarios_por_rol,
-            "mermas_registradas": await CardexLog.filter(
-                tipo_movimiento=TipoMovimiento.MERMA
-            ).count(),
-            "proveedores_activos": await Proveedores.filter(deleted=False).count(),
+            "mermas_registradas": mermas,
+            "proveedores_activos": proveedores_activos,
         },
     }
 

@@ -25,6 +25,7 @@ import {
 import { StockMinimoAlertas } from "../../../Components/StockMinimoAlertas/StockMinimoAlertas";
 import { AgregarArticulo } from "../AgregarArticulo/AgregarArticulo";
 import css from "./Inventario.module.css";
+import { useNavigate } from "react-router-dom";
 
 interface FiltrosFormulario {
   codigoNombre: string;
@@ -120,6 +121,8 @@ export function Inventario() {
   const [error, setError] = useState("");
   const [errorFiltros, setErrorFiltros] = useState("");
   const [recarga, setRecarga] = useState(0);
+
+  const nav = useNavigate();
 
   useEffect(() => {
     let activo = true;
@@ -275,7 +278,7 @@ export function Inventario() {
       ) : null}
       <CardContainer>
         <Card
-          title="Artículos registrados"
+          title="Artículos"
           icon="fa-solid fa-boxes-stacked"
           content={String(paginacion.total)}
           footer="Según filtros aplicados"
@@ -355,6 +358,7 @@ export function Inventario() {
                 <th>Stock actual</th>
                 <th>Stock mínimo</th>
                 <th>Estado</th>
+                <th>Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -371,6 +375,19 @@ export function Inventario() {
                     <td>{articulo.stock_actual}</td>
                     <td>{articulo.stock_minimo}</td>
                     <td>{etiquetaEstado(articulo.estado)}</td>
+                    <td>
+                      {articulo.estado !== "DISPONIBLE" ? (
+                        <Btn
+                          onClick={() => {
+                            nav("/bodega/recepcion");
+                          }}
+                        >
+                          Solicitar
+                        </Btn>
+                      ) : (
+                        ""
+                      )}
+                    </td>
                   </tr>
                 ))
               ) : (

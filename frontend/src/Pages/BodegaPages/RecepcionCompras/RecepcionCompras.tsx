@@ -169,7 +169,9 @@ export function RecepcionCompras() {
       !Number.isFinite(precio) ||
       precio <= 0
     ) {
-      setErrorMessage("Seleccione un artículo e indique cantidad y costo válidos.");
+      setErrorMessage(
+        "Seleccione un artículo e indique cantidad y costo válidos.",
+      );
       return;
     }
     if (detallesOrden.some((detalle) => detalle.articulo_id === articulo.id)) {
@@ -295,7 +297,9 @@ export function RecepcionCompras() {
       Number(packagesOnGuide) < 0 ||
       Number(packagesReceived) < 0
     ) {
-      setErrorMessage("Ingrese cantidades válidas de bultos indicados y recibidos.");
+      setErrorMessage(
+        "Ingrese cantidades válidas de bultos indicados y recibidos.",
+      );
       return;
     }
 
@@ -324,13 +328,14 @@ export function RecepcionCompras() {
       return;
     }
 
-    const hasDiscrepancy = order.detalles.some((detail, index) => {
-      const line = details[index];
-      return (
-        line.cantidad_guia !== line.cantidad_recibida ||
-        line.cantidad_recibida !== detail.saldo_pendiente
-      );
-    }) || Number(packagesOnGuide) !== Number(packagesReceived);
+    const hasDiscrepancy =
+      order.detalles.some((detail, index) => {
+        const line = details[index];
+        return (
+          line.cantidad_guia !== line.cantidad_recibida ||
+          line.cantidad_recibida !== detail.saldo_pendiente
+        );
+      }) || Number(packagesOnGuide) !== Number(packagesReceived);
     if (hasDiscrepancy && !observations.trim()) {
       setErrorMessage(
         "Describa la recepción parcial o diferencia antes de enviarla a aprobación.",
@@ -379,7 +384,9 @@ export function RecepcionCompras() {
     try {
       const response = await AprobarRecepcion(recepcionId);
       if (!response || response.error) {
-        setErrorMessage(response?.mensaje || "No se pudo aprobar la recepción.");
+        setErrorMessage(
+          response?.mensaje || "No se pudo aprobar la recepción.",
+        );
         return;
       }
       setNotice(response.mensaje);
@@ -409,184 +416,6 @@ export function RecepcionCompras() {
             justifyContent: "flex-start",
           }}
         >
-          <div className={css.heading}>
-            <div>
-              <Title>Recepción de compras</Title>
-              <p>
-                Escanee o seleccione una Orden de Compra y verifique cada bulto
-                antes de ingresar las existencias.
-              </p>
-            </div>
-          </div>
-
-          {(errorMessage || notice) && (
-            <div
-              className={errorMessage ? css.error : css.notice}
-              role={errorMessage ? "alert" : "status"}
-            >
-              {errorMessage || notice}
-            </div>
-          )}
-
-          {canCreateOrder && (
-            <section className={css.section} aria-labelledby="create-order-title">
-              <h2 id="create-order-title" className={css.sectionTitle}>
-                Crear Orden de Compra
-              </h2>
-              <p className={css.helpText}>
-                Registre la orden sin pagos ni datos bancarios. Los artículos
-                disponibles provienen del catálogo compartido con Bodega.
-              </p>
-              <div className={css.orderControls}>
-                <label className={css.field}>
-                  <span>Número de orden *</span>
-                  <input
-                    className={css.input}
-                    onChange={(event) => setNumeroOrden(event.target.value)}
-                    placeholder="Ej.: OC-2026-001"
-                    value={numeroOrden}
-                  />
-                </label>
-                <label className={css.field}>
-                  <span>Proveedor *</span>
-                  <select
-                    className={css.input}
-                    onChange={(event) => setProveedorId(event.target.value)}
-                    value={proveedorId}
-                  >
-                    <option value="">Selecciona un proveedor</option>
-                    {proveedores.map((proveedor) => (
-                      <option key={proveedor.id} value={proveedor.id ?? ""}>
-                        {proveedor.razon_social} · {proveedor.rut}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <div className={css.orderControls}>
-                <label className={css.field}>
-                  <span>Artículo *</span>
-                  <select
-                    className={css.input}
-                    onChange={(event) => {
-                      const selectedId = event.target.value;
-                      setArticuloId(selectedId);
-                      const articulo = catalogos?.articulos.find(
-                        (item) => String(item.id) === selectedId,
-                      );
-                      setPrecioUnitario(
-                        articulo?.precio_lista == null
-                          ? ""
-                          : String(articulo.precio_lista),
-                      );
-                    }}
-                    value={articuloId}
-                  >
-                    <option value="">Selecciona un artículo existente</option>
-                    {(catalogos?.articulos ?? []).map((articulo) => (
-                      <option key={articulo.id} value={articulo.id}>
-                        {articulo.codigo_sku || "Sin SKU"} · {articulo.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className={css.field}>
-                  <span>Cantidad solicitada *</span>
-                  <input
-                    className={css.input}
-                    min={1}
-                    onChange={(event) =>
-                      setCantidadSolicitada(event.target.value)
-                    }
-                    type="number"
-                    value={cantidadSolicitada}
-                  />
-                </label>
-                <label className={css.field}>
-                  <span>Costo unitario estimado *</span>
-                  <input
-                    className={css.input}
-                    min={0.01}
-                    onChange={(event) => setPrecioUnitario(event.target.value)}
-                    step="0.01"
-                    type="number"
-                    value={precioUnitario}
-                  />
-                </label>
-                <div className={css.actions}>
-                  <Btn
-                    disabled={isCreatingOrder}
-                    onClick={agregarDetalleOrden}
-                  >
-                    Agregar artículo
-                  </Btn>
-                </div>
-              </div>
-              <div className={css.tableWrap}>
-                <table className={css.table}>
-                  <thead>
-                    <tr>
-                      <th>Artículo</th>
-                      <th>SKU</th>
-                      <th>Cantidad</th>
-                      <th>Costo unitario estimado</th>
-                      <th>Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {detallesOrden.length ? (
-                      detallesOrden.map((detalle) => (
-                        <tr key={detalle.articulo_id}>
-                          <td>{detalle.nombre}</td>
-                          <td>{detalle.sku || "—"}</td>
-                          <td>{detalle.cantidad_solicitada}</td>
-                          <td>
-                            ${detalle.precio_unitario.toLocaleString("es-CL")}
-                          </td>
-                          <td>
-                            <Btn
-                              warning
-                              disabled={isCreatingOrder}
-                              onClick={() =>
-                                setDetallesOrden((current) =>
-                                  current.filter(
-                                    (item) =>
-                                      item.articulo_id !== detalle.articulo_id,
-                                  ),
-                                )
-                              }
-                            >
-                              Quitar
-                            </Btn>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5}>
-                          Agregue artículos para formar la orden.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div className={`${css.actions} ${css.noPrint}`}>
-                <Btn
-                  disabled={
-                    isCreatingOrder ||
-                    !numeroOrden.trim() ||
-                    !proveedorId ||
-                    !detallesOrden.length
-                  }
-                  onClick={() => void crearOrden()}
-                >
-                  {isCreatingOrder ? "Creando orden..." : "Crear orden"}
-                </Btn>
-              </div>
-            </section>
-          )}
-
           {canReceive && (
             <section className={css.section} aria-labelledby="receive-title">
               <h2 id="receive-title" className={css.sectionTitle}>
@@ -906,7 +735,9 @@ export function RecepcionCompras() {
                 </div>
                 <div>
                   <span>Fecha</span>
-                  <strong>{new Date(receipt.fecha).toLocaleString("es-CL")}</strong>
+                  <strong>
+                    {new Date(receipt.fecha).toLocaleString("es-CL")}
+                  </strong>
                 </div>
                 <div>
                   <span>Recibió</span>

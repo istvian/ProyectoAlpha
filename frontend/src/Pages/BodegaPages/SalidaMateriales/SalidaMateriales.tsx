@@ -118,7 +118,10 @@ export function SalidaMateriales() {
       formData.producto.find(
         (item) => item.articulo_id === articuloSeleccionado.id,
       )?.cantidad ?? 0;
-    if (cantidadExistente + selectedProduct.cantidad > articuloSeleccionado.stock_actual) {
+    if (
+      cantidadExistente + selectedProduct.cantidad >
+      articuloSeleccionado.stock_actual
+    ) {
       setErrorMessage(
         `Stock insuficiente para ${articuloSeleccionado.nombre}. Disponible: ${articuloSeleccionado.stock_actual}.`,
       );
@@ -134,7 +137,10 @@ export function SalidaMateriales() {
         producto: existe
           ? previous.producto.map((item) =>
               item.articulo_id === articuloSeleccionado.id
-                ? { ...item, cantidad: item.cantidad + selectedProduct.cantidad }
+                ? {
+                    ...item,
+                    cantidad: item.cantidad + selectedProduct.cantidad,
+                  }
                 : item,
             )
           : [...previous.producto, selectedProduct],
@@ -195,7 +201,9 @@ export function SalidaMateriales() {
       >
         <div className={css.header}>
           <Title>Salida de Materiales</Title>
-          <p>Selecciona una obra y descuenta existencias con registro en Cardex.</p>
+          <p>
+            Selecciona una obra y descuenta existencias con registro en Cardex.
+          </p>
         </div>
 
         {errorMessage && (
@@ -254,7 +262,8 @@ export function SalidaMateriales() {
           </div>
           {obraSeleccionada && (
             <p className={css.helpText}>
-              Responsable de la obra: {obraSeleccionada.tecnico_responsable_nombre}
+              Responsable de la obra:{" "}
+              {obraSeleccionada.tecnico_responsable_nombre}
             </p>
           )}
         </section>
@@ -275,8 +284,8 @@ export function SalidaMateriales() {
                 <option value="">Selecciona un producto</option>
                 {(catalogos?.articulos ?? []).map((articulo) => (
                   <option key={articulo.id} value={articulo.id}>
-                    {articulo.codigo_sku || "Sin SKU"} - {articulo.nombre} ·
-                    {" "}stock {articulo.stock_actual}
+                    {articulo.codigo_sku || "Sin SKU"} - {articulo.nombre} ·{" "}
+                    stock {articulo.stock_actual}
                   </option>
                 ))}
               </select>
@@ -296,12 +305,23 @@ export function SalidaMateriales() {
               type="number"
               value={String(selectedProduct.cantidad)}
               onChange={(value) => {
+                const tmp = catalogos?.articulos?.find(
+                  (item) => item?.id === selectedProduct?.articulo_id,
+                );
                 const cantidad = Number(value);
-                setSelectedProduct((previous) => ({
-                  ...previous,
-                  cantidad:
-                    Number.isInteger(cantidad) && cantidad > 0 ? cantidad : 0,
-                }));
+                if (!tmp) return;
+                if (cantidad > tmp.stock_actual) {
+                  setSelectedProduct((previous) => ({
+                    ...previous,
+                    cantidad: tmp.stock_actual,
+                  }));
+                } else {
+                  setSelectedProduct((previous) => ({
+                    ...previous,
+                    cantidad:
+                      Number.isInteger(cantidad) && cantidad > 0 ? cantidad : 0,
+                  }));
+                }
               }}
               disabled={isLoading || !articuloSeleccionado}
             />
@@ -363,7 +383,9 @@ export function SalidaMateriales() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4}>Agrega productos para preparar la salida.</td>
+                    <td colSpan={4}>
+                      Agrega productos para preparar la salida.
+                    </td>
                   </tr>
                 )}
               </tbody>
