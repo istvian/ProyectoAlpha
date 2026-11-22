@@ -201,6 +201,9 @@ export function Bodega() {
           </Btn>
           <Btn onClick={() => nav("/bodega/conteo")}>Conteo físico</Btn>
           <Btn onClick={() => nav("/bodega/salida")}>Registrar salida</Btn>
+          <Btn onClick={() => nav("/bodega/mermas")}>
+            Mermas y consumo interno
+          </Btn>
         </div>
       </Box>
 
