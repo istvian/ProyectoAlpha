@@ -140,12 +140,11 @@ conciliación.
 ### 7. Consultar movimientos y descargar reportes
 
 Las entradas, entregas y ajustes quedan en el historial del inventario (también
-llamado **Cardex**). Bodega y Supervisión pueden revisar qué artículo se movió,
-en qué fecha, en qué cantidad y, cuando corresponde, a qué obra. También pueden
-filtrar la consulta por fechas, artículo, obra o tipo de movimiento.
+llamado **Cardex**). Administración, Finanzas y Supervisión pueden consultar
+el Cardex y aplicar filtros. Bodega mantiene el historial en su propia vista.
 
-El sistema muestra un resumen de los movimientos. Además, un Supervisor puede
-descargar el reporte en PDF o Excel.
+Administración y Supervisión pueden descargar el reporte en PDF o Excel;
+Finanzas y Bodega no tienen permiso de exportación.
 
 ### Mermas y uso interno
 

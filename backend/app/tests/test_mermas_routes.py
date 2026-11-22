@@ -21,10 +21,13 @@ from models.proveedor import Articulos
 from models.rol import Rol
 from models.user import User
 from routes.mermas_routes import MermaCreateSchema, registrar_merma, router as mermas_router
+from routes.cardex_routes import router as cardex_router
 from routes.uso_interno_routes import (
     UsoInternoCreateSchema,
     registrar_uso_interno,
+    router as uso_interno_router,
 )
+from schemas.roles import Roles
 
 MODELOS = {
     "models": [
@@ -69,6 +72,51 @@ class MermaRouteTests(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         await Tortoise.close_connections()
+
+    async def test_permisos_cardex_consulta_y_exportacion(self):
+        app = FastAPI()
+        app.include_router(cardex_router, prefix="/cardex")
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            for rol in (Roles.admin, Roles.bodega, Roles.finanzas, Roles.supervisor, Roles.tecnico):
+                client.cookies.set("token", generate_jwt("test@example.invalid", rol.value, 15))
+                for endpoint in ("/cardex", "/cardex/filtros", "/cardex/resumen"):
+                    with self.subTest(rol=rol, endpoint=endpoint):
+                        response = await client.get(endpoint)
+                        self.assertEqual(response.status_code, 403 if rol == Roles.tecnico else 200)
+                for formato in ("pdf", "excel"):
+                    with self.subTest(rol=rol, formato=formato):
+                        response = await client.get("/cardex/exportar", params={"formato": formato})
+                        self.assertEqual(
+                            response.status_code,
+                            200 if rol in (Roles.admin, Roles.supervisor) else 403,
+                        )
+            client.cookies.clear()
+            self.assertEqual((await client.get("/cardex")).status_code, 401)
+            self.assertEqual((await client.get("/cardex/exportar", params={"formato": "pdf"})).status_code, 401)
+
+    async def test_registro_mermas_y_uso_interno_por_rol(self):
+        app = FastAPI()
+        app.include_router(mermas_router, prefix="/mermas")
+        app.include_router(uso_interno_router, prefix="/usos-internos")
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            for rol in (Roles.admin, Roles.bodega, Roles.finanzas, Roles.supervisor, Roles.tecnico):
+                correo = f"{rol.name}@example.invalid"
+                if rol in (Roles.admin, Roles.bodega):
+                    rol_db = await Rol.create(id=rol.value, nombre=rol.name)
+                    await User.create(nombre=rol.name, correo=correo, password="test", rol=rol_db)
+                client.cookies.set("token", generate_jwt(correo, rol.value, 15))
+                for endpoint, body in (
+                    ("/mermas", {"articulo_id": 999, "cantidad": 1, "motivo": "Rotura"}),
+                    ("/usos-internos", {"articulo_id": 999, "cantidad": 1, "destino_material": "Bodega", "responsable_solicitud": "Jefe"}),
+                ):
+                    with self.subTest(rol=rol, endpoint=endpoint):
+                        response = await client.post(
+                            endpoint, json=body, headers={"Idempotency-Key": str(uuid4())}
+                        )
+                        self.assertEqual(
+                            response.status_code,
+                            404 if rol in (Roles.admin, Roles.bodega) else 403,
+                        )
 
     def test_motivo_rechaza_nulo_vacio_o_solo_espacios(self):
         for motivo in (None, "", "   "):

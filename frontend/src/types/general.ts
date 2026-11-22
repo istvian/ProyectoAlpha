@@ -312,6 +312,13 @@ export const Rol = {
 } as const;
 export type Rol = (typeof Rol)[keyof typeof Rol];
 
+export const ROLES_CONSULTA_CARDEX: Rol[] = [
+  Rol.admin,
+  Rol.finanzas,
+  Rol.supervisor,
+];
+export const ROLES_EXPORTACION_CARDEX: Rol[] = [Rol.admin, Rol.supervisor];
+
 export interface Articulo {
   codigo: string;
   nombre: string;
