@@ -147,6 +147,26 @@ filtrar la consulta por fechas, artículo, obra o tipo de movimiento.
 El sistema muestra un resumen de los movimientos. Además, un Supervisor puede
 descargar el reporte en PDF o Excel.
 
+### Mermas y uso interno
+
+Bodega y Administración pueden registrar una merma o consumo interno con una
+obra activa opcional. Las cantidades son enteras. Cada operación nueva se vincula
+con su movimiento en Cardex y devuelve ambos identificadores y el saldo resultante.
+
+Los endpoints `POST /api/v1/mermas` y `POST /api/v1/usos-internos` requieren
+el encabezado `Idempotency-Key` con un UUID. Repetir la solicitud con la misma
+clave, usuario y datos devuelve la respuesta original; reutilizarla con otros
+datos o usuario devuelve `409`. El frontend conserva temporalmente la solicitud
+pendiente en la pestaña para permitir su reintento tras perder la respuesta.
+Si se cierra la pestaña, no está garantizada su recuperación.
+
+Al iniciar con una base SQLite existente, el esquema de mermas y uso interno
+se adapta conservando los registros. Los movimientos antiguos no se enlazan
+automáticamente con Cardex porque no existe una relación histórica inequívoca.
+Respalde la base antes de actualizar. Esta adaptación y los triggers existentes
+son específicos de SQLite; PostgreSQL/Supabase requiere una migración y pruebas
+propias antes de utilizarlo.
+
 ### 8. Revisar indicadores y administrar usuarios
 
 El Administrador puede consultar un resumen con la cantidad de artículos, el

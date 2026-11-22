@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import axios from "axios";
 import { Box } from "../../../Components/Box/Box";
 import { Frame } from "../../../Components/Frame/Frame";
 import { Title } from "../../../Components/Title/Title";
@@ -6,6 +7,7 @@ import {
   CreateMerma,
   CreateUsoInterno,
   GetEgresoCatalogos,
+  GetUserData,
 } from "../../../Helpers/APIConnector";
 import useValidateRol from "../../../Hooks/useValidateRol";
 import {
@@ -27,6 +29,51 @@ interface Formulario {
   responsable: string;
 }
 
+interface Pendiente {
+  clave: string;
+  usuario: string;
+  tipo: TipoOperacion;
+  formulario: Formulario;
+}
+
+const PENDIENTE_KEY = "mermas-consumo-pendiente";
+
+function cargarPendiente(): Pendiente | null {
+  const texto = sessionStorage.getItem(PENDIENTE_KEY);
+  if (!texto) return null;
+  const valor: unknown = JSON.parse(texto);
+  if (typeof valor !== "object" || valor === null) throw new Error("Datos pendientes inválidos.");
+  if (!("clave" in valor) || typeof valor.clave !== "string" ||
+      !("usuario" in valor) || typeof valor.usuario !== "string" ||
+      !("tipo" in valor) || (valor.tipo !== "merma" && valor.tipo !== "usoInterno") ||
+      !("formulario" in valor) || typeof valor.formulario !== "object" ||
+      valor.formulario === null) throw new Error("Datos pendientes inválidos.");
+  const f = valor.formulario;
+  if (!("articuloId" in f) || typeof f.articuloId !== "string" ||
+      !("cantidad" in f) || typeof f.cantidad !== "string" ||
+      !("obraId" in f) || typeof f.obraId !== "string" ||
+      !("motivo" in f) || typeof f.motivo !== "string" ||
+      !("destino" in f) || typeof f.destino !== "string" ||
+      !("responsable" in f) || typeof f.responsable !== "string") {
+    throw new Error("Datos pendientes inválidos.");
+  }
+  return {
+    clave: valor.clave, usuario: valor.usuario, tipo: valor.tipo,
+    formulario: {
+      articuloId: f.articuloId, cantidad: f.cantidad, obraId: f.obraId,
+      motivo: f.motivo, destino: f.destino, responsable: f.responsable,
+    },
+  };
+}
+
+function nuevaClave(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 const FORMULARIO_VACIO: Formulario = {
   articuloId: "",
   cantidad: "",
@@ -37,6 +84,13 @@ const FORMULARIO_VACIO: Formulario = {
 };
 
 function mensajeDeError(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const detail: unknown = error.response?.data?.detail;
+    if (typeof detail === "string") return detail;
+    if (typeof detail === "object" && detail !== null &&
+        "mensaje" in detail && typeof detail.mensaje === "string") return detail.mensaje;
+    return error.response ? error.message : "No se recibió respuesta del servidor.";
+  }
   return error instanceof Error
     ? error.message
     : "Ocurrió un error inesperado.";
@@ -52,18 +106,45 @@ export function RegistroMermasConsumo() {
   const [errorMessage, setErrorMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [motivoIntentado, setMotivoIntentado] = useState(false);
+  const [usuario, setUsuario] = useState("");
+  const [pendiente, setPendiente] = useState<Pendiente | null>(null);
+  const [storageError, setStorageError] = useState("");
+  const [aplicaObra, setAplicaObra] = useState(false);
+  const guardando = useRef(false);
 
   useEffect(() => {
     if (!isAllowed) return;
     let active = true;
-    GetEgresoCatalogos()
-      .then((response) => {
+    Promise.all([GetEgresoCatalogos(), GetUserData()])
+      .then(([response, user]) => {
         if (!response || response.error || !response.data) {
           throw new Error(
             response?.mensaje || "No se pudieron cargar los artículos y obras.",
           );
         }
-        if (active) setCatalogos(response.data);
+        if (!user || user.error || !user.correo) {
+          throw new Error("No se pudo identificar al usuario actual.");
+        }
+        if (active) {
+          setCatalogos(response.data);
+          setUsuario(user.correo);
+          try {
+            const guardado = cargarPendiente();
+            if (guardado && guardado.usuario !== user.correo) {
+              throw new Error("Hay una operación pendiente de otro usuario en esta pestaña.");
+            }
+            if (guardado) {
+              setPendiente(guardado);
+              setTipoOperacion(guardado.tipo);
+              setFormulario(guardado.formulario);
+              setAplicaObra(Boolean(guardado.formulario.obraId));
+            }
+          } catch (error: unknown) {
+            setStorageError(
+              `No se puede recuperar la operación pendiente: ${mensajeDeError(error)} Contacte a soporte antes de registrar otra operación.`,
+            );
+          }
+        }
       })
       .catch((error: unknown) => {
         if (active) setErrorMessage(mensajeDeError(error));
@@ -90,6 +171,7 @@ export function RegistroMermasConsumo() {
     if (tipo === tipoOperacion) return;
     setTipoOperacion(tipo);
     setFormulario(FORMULARIO_VACIO);
+    setAplicaObra(false);
     setMotivoIntentado(false);
     setErrorMessage("");
     setNotice("");
@@ -103,13 +185,16 @@ export function RegistroMermasConsumo() {
 
   async function guardarMovimiento(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (guardando.current) return;
     if (tipoOperacion === "merma") setMotivoIntentado(true);
 
-    const articuloId = Number(formulario.articuloId);
-    const cantidad = Number(formulario.cantidad);
+    const datos = pendiente?.formulario ?? formulario;
+    const tipo = pendiente?.tipo ?? tipoOperacion;
+    const articuloId = Number(datos.articuloId);
+    const cantidad = Number(datos.cantidad);
     const articulo = catalogos?.articulos.find((item) => item.id === articuloId);
 
-    if (!articulo) {
+    if (!pendiente && !articulo) {
       setErrorMessage("Seleccione un artículo.");
       return;
     }
@@ -117,23 +202,27 @@ export function RegistroMermasConsumo() {
       setErrorMessage("Ingrese una cantidad entera mayor que cero.");
       return;
     }
-    if (cantidad > articulo.stock_actual) {
+    if (!pendiente && articulo && cantidad > articulo.stock_actual) {
       setErrorMessage(
         `No hay suficientes existencias. Disponible: ${articulo.stock_actual}.`,
       );
       return;
     }
-    if (tipoOperacion === "merma" && !formulario.obraId) {
+    if (!pendiente && aplicaObra && !datos.obraId) {
       setErrorMessage("Seleccione la obra relacionada.");
       return;
     }
-    if (tipoOperacion === "merma" && !formulario.motivo.trim()) {
+    if (!pendiente && datos.obraId && !catalogos?.obras.some((obra) => String(obra.id) === datos.obraId)) {
+      setErrorMessage("Seleccione una obra activa.");
+      return;
+    }
+    if (tipo === "merma" && !datos.motivo.trim()) {
       setErrorMessage("El motivo o justificación es obligatorio.");
       return;
     }
     if (
-      tipoOperacion === "usoInterno" &&
-      (!formulario.destino.trim() || !formulario.responsable.trim())
+      tipo === "usoInterno" &&
+      (!datos.destino.trim() || !datos.responsable.trim())
     ) {
       setErrorMessage(
         "Indique para qué se usará el material y quién lo solicita.",
@@ -141,34 +230,45 @@ export function RegistroMermasConsumo() {
       return;
     }
 
+    guardando.current = true;
     setIsSaving(true);
     setErrorMessage("");
     setNotice("");
     try {
+      const operacion = pendiente ?? {
+        clave: nuevaClave(), usuario, tipo, formulario: { ...datos },
+      };
+      if (!pendiente) {
+        sessionStorage.setItem(PENDIENTE_KEY, JSON.stringify(operacion));
+        setPendiente(operacion);
+      }
       const response =
-        tipoOperacion === "merma"
+        tipo === "merma"
           ? await CreateMerma({
               articulo_id: articuloId,
               cantidad,
-              obra_id: Number(formulario.obraId),
-              motivo: formulario.motivo.trim(),
-            } satisfies MermaCreate)
+              ...(datos.obraId ? { obra_id: Number(datos.obraId) } : {}),
+              motivo: datos.motivo.trim(),
+            } satisfies MermaCreate, operacion.clave)
           : await CreateUsoInterno({
               articulo_id: articuloId,
               cantidad,
-              destino_material: formulario.destino.trim(),
-              responsable_solicitud: formulario.responsable.trim(),
-            } satisfies UsoInternoCreate);
+              ...(datos.obraId ? { obra_id: Number(datos.obraId) } : {}),
+              destino_material: datos.destino.trim(),
+              responsable_solicitud: datos.responsable.trim(),
+            } satisfies UsoInternoCreate, operacion.clave);
 
       if (!response || response.error || !response.data) {
-        setErrorMessage(response?.mensaje || "No se pudo guardar el movimiento.");
-        return;
+        throw new Error(response?.mensaje || "No se pudo confirmar el movimiento.");
       }
 
       setNotice(
-        `${response.mensaje} Stock disponible ahora: ${response.data.stock_resultante}.`,
+        `${response.mensaje} Comprobante: registro #${response.data.id}, movimiento Cardex #${response.data.cardex_id}, stock resultante: ${response.data.stock_resultante}.`,
       );
+      sessionStorage.removeItem(PENDIENTE_KEY);
+      setPendiente(null);
       setFormulario(FORMULARIO_VACIO);
+      setAplicaObra(false);
       setMotivoIntentado(false);
 
       const refreshedCatalogos = await GetEgresoCatalogos();
@@ -180,8 +280,19 @@ export function RegistroMermasConsumo() {
         setCatalogos(refreshedCatalogos.data);
       }
     } catch (error: unknown) {
-      setErrorMessage(mensajeDeError(error));
+      if (axios.isAxiosError(error) && (error.response?.status === 400 || error.response?.status === 404)) {
+        try {
+          sessionStorage.removeItem(PENDIENTE_KEY);
+          setPendiente(null);
+        } catch {
+          setStorageError("No se pudo limpiar la operación pendiente. Contacte a soporte.");
+        }
+      }
+      setErrorMessage(
+        `${mensajeDeError(error)}${axios.isAxiosError(error) && (error.response?.status === 400 || error.response?.status === 404) ? "" : " Reintente la misma operación para confirmar su resultado."}`,
+      );
     } finally {
+      guardando.current = false;
       setIsSaving(false);
     }
   }
@@ -208,6 +319,7 @@ export function RegistroMermasConsumo() {
                   : css.operationButton
               }
               aria-pressed={tipoOperacion === "merma"}
+              disabled={isSaving || !!pendiente || !!storageError}
               onClick={() => cambiarTipoOperacion("merma")}
             >
               Registrar una merma
@@ -220,6 +332,7 @@ export function RegistroMermasConsumo() {
                   : css.operationButton
               }
               aria-pressed={tipoOperacion === "usoInterno"}
+              disabled={isSaving || !!pendiente || !!storageError}
               onClick={() => cambiarTipoOperacion("usoInterno")}
             >
               Registrar uso interno
@@ -229,6 +342,12 @@ export function RegistroMermasConsumo() {
           {errorMessage && (
             <p className={css.error} role="alert">
               {errorMessage}
+            </p>
+          )}
+          {storageError && <p className={css.error} role="alert">{storageError}</p>}
+          {pendiente && (
+            <p className={css.notice} role="status">
+              Hay una operación pendiente. Reintente sin cambiar sus datos para evitar un descuento duplicado.
             </p>
           )}
           {notice && (
@@ -254,7 +373,7 @@ export function RegistroMermasConsumo() {
                     onChange={(event) =>
                       actualizarCampo("articuloId", event.target.value)
                     }
-                    disabled={isLoading || !catalogos}
+                    disabled={isLoading || !catalogos || isSaving || !!pendiente}
                     required
                   >
                     <option value="">
@@ -286,6 +405,7 @@ export function RegistroMermasConsumo() {
                     step={1}
                     inputMode="numeric"
                     value={formulario.cantidad}
+                    disabled={isSaving || !!pendiente}
                     onChange={(event) =>
                       actualizarCampo("cantidad", event.target.value)
                     }
@@ -297,10 +417,23 @@ export function RegistroMermasConsumo() {
                   </small>
                 </label>
 
-                {tipoOperacion === "merma" ? (
-                  <>
+                <label className={css.field}>
+                  <span>
+                    <input
+                      type="checkbox"
+                      checked={aplicaObra}
+                      disabled={isSaving || !!pendiente}
+                      onChange={(event) => {
+                        setAplicaObra(event.target.checked);
+                        if (!event.target.checked) actualizarCampo("obraId", "");
+                      }}
+                    />{" "}
+                    Asociar a una obra
+                  </span>
+                </label>
+                {aplicaObra && (
                     <label className={css.field} htmlFor="obra">
-                      Obra relacionada
+                      Obra activa
                       <select
                         id="obra"
                         className={css.input}
@@ -308,7 +441,7 @@ export function RegistroMermasConsumo() {
                         onChange={(event) =>
                           actualizarCampo("obraId", event.target.value)
                         }
-                        disabled={isLoading || !catalogos}
+                        disabled={isLoading || !catalogos || isSaving || !!pendiente}
                         required
                       >
                         <option value="">
@@ -321,7 +454,9 @@ export function RegistroMermasConsumo() {
                         ))}
                       </select>
                     </label>
-
+                )}
+                {tipoOperacion === "merma" ? (
+                  <>
                     <label className={css.field} htmlFor="motivo">
                       Motivo / Justificación (obligatorio)
                       <textarea
@@ -330,6 +465,7 @@ export function RegistroMermasConsumo() {
                           motivoInvalido ? css.invalidInput : ""
                         }`}
                         value={formulario.motivo}
+                        disabled={isSaving || !!pendiente}
                         onChange={(event) =>
                           actualizarCampo("motivo", event.target.value)
                         }
@@ -362,6 +498,7 @@ export function RegistroMermasConsumo() {
                         className={css.input}
                         type="text"
                         value={formulario.destino}
+                        disabled={isSaving || !!pendiente}
                         onChange={(event) =>
                           actualizarCampo("destino", event.target.value)
                         }
@@ -378,6 +515,7 @@ export function RegistroMermasConsumo() {
                         className={css.input}
                         type="text"
                         value={formulario.responsable}
+                        disabled={isSaving || !!pendiente}
                         onChange={(event) =>
                           actualizarCampo("responsable", event.target.value)
                         }
@@ -395,11 +533,13 @@ export function RegistroMermasConsumo() {
               <button
                 className={css.submit}
                 type="submit"
-                disabled={isLoading || isSaving || !catalogos}
+                disabled={isLoading || isSaving || !catalogos || !!storageError}
               >
                 {isSaving
                   ? "Guardando..."
-                  : tipoOperacion === "merma"
+                  : pendiente
+                    ? "Reintentar operación"
+                    : tipoOperacion === "merma"
                     ? "Guardar merma"
                     : "Guardar consumo interno"}
               </button>

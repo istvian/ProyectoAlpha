@@ -1,6 +1,8 @@
 import os
+import re
 
 from tortoise import Tortoise
+from tortoise.transactions import in_transaction
 from models.rol import Rol
 from models.user import User
 from middlewares.bcript_helper import encriptar_contraseña
@@ -34,6 +36,7 @@ async def SetupDB():
     await PrepareArticuloPMP()
     await PrepareLegacyConteoSchema()
     await PrepareRecepcionSchema()
+    await PrepareMermasUsoInternoSchema()
     await Tortoise.generate_schemas()
     await EnsureArticuloJsonFields()
     await EnsureDocumentoTipoConstraint()
@@ -42,6 +45,103 @@ async def SetupDB():
     await CreateRoles()
     await SetupAccounts()
     await SeedDemoDataInDevelopment()
+
+
+async def PrepareMermasUsoInternoSchema():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+
+    tables = await connection.execute_query_dict(
+        "SELECT name FROM sqlite_master WHERE type = 'table'"
+    )
+    names = {row["name"] for row in tables}
+    if "mermas" in names:
+        columns = await connection.execute_query_dict('PRAGMA table_info("mermas")')
+        obra = next((column for column in columns if column["name"] == "obra_id"), None)
+        if obra is None:
+            raise RuntimeError("La tabla mermas no contiene la columna obra_id.")
+        if obra["notnull"]:
+            for name in names:
+                escaped = name.replace('"', '""')
+                references = await connection.execute_query_dict(
+                    f'PRAGMA foreign_key_list("{escaped}")'
+                )
+                if any(row["table"] == "mermas" for row in references):
+                    raise RuntimeError(
+                        "No se puede migrar mermas automáticamente: otra tabla la referencia."
+                    )
+            definition = await connection.execute_query_dict(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='mermas'"
+            )
+            sql = definition[0]["sql"]
+            sql, count = re.subn(
+                r'("?obra_id"?\s+\w+)\s+NOT\s+NULL', r"\1", sql, count=1,
+                flags=re.IGNORECASE,
+            )
+            if count != 1 or "mermas_migracion" in names:
+                raise RuntimeError("No se reconoce el esquema de mermas para migrarlo.")
+            sql, count = re.subn(
+                r'^CREATE\s+TABLE\s+"?mermas"?',
+                'CREATE TABLE "mermas_migracion"', sql, count=1, flags=re.IGNORECASE,
+            )
+            if count != 1:
+                raise RuntimeError("No se reconoce la definición de la tabla mermas.")
+            objects = await connection.execute_query_dict(
+                "SELECT sql FROM sqlite_master WHERE tbl_name='mermas' "
+                "AND type IN ('index', 'trigger') AND sql IS NOT NULL"
+            )
+            sequence = (
+                await connection.execute_query_dict(
+                    "SELECT seq FROM sqlite_sequence WHERE name='mermas'"
+                )
+                if "sqlite_sequence" in names else []
+            )
+            column_names = ", ".join(
+                '"' + column["name"].replace('"', '""') + '"' for column in columns
+            )
+            async with in_transaction() as transaction:
+                await transaction.execute_query(sql)
+                await transaction.execute_query(
+                    f'INSERT INTO "mermas_migracion" ({column_names}) '
+                    f'SELECT {column_names} FROM "mermas"'
+                )
+                await transaction.execute_query('DROP TABLE "mermas"')
+                await transaction.execute_query(
+                    'ALTER TABLE "mermas_migracion" RENAME TO "mermas"'
+                )
+                for item in objects:
+                    await transaction.execute_query(item["sql"])
+                if sequence:
+                    await transaction.execute_query(
+                        "UPDATE sqlite_sequence SET seq = ? WHERE name = 'mermas'",
+                        [sequence[0]["seq"]],
+                    )
+
+    for table in ("mermas", "uso_interno"):
+        if table not in names:
+            continue
+        columns = {
+            column["name"]
+            for column in await connection.execute_query_dict(
+                f'PRAGMA table_info("{table}")'
+            )
+        }
+        async with in_transaction() as transaction:
+            if table == "uso_interno" and "obra_id" not in columns:
+                await transaction.execute_query(
+                    'ALTER TABLE "uso_interno" ADD COLUMN "obra_id" '
+                    'INT REFERENCES "obras" ("id") ON DELETE RESTRICT'
+                )
+            if "cardex_id" not in columns:
+                await transaction.execute_query(
+                    f'ALTER TABLE "{table}" ADD COLUMN "cardex_id" '
+                    'INT REFERENCES "cardex_logs" ("id") ON DELETE RESTRICT'
+                )
+            await transaction.execute_query(
+                f'CREATE UNIQUE INDEX IF NOT EXISTS "{table}_cardex_id_unique" '
+                f'ON "{table}" ("cardex_id")'
+            )
 
 
 async def SeedDemoDataInDevelopment():

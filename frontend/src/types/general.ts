@@ -237,17 +237,18 @@ export interface EgresoCreate {
 export interface MermaCreate {
   articulo_id: number;
   cantidad: number;
-  obra_id: number;
+  obra_id?: number;
   motivo: string;
 }
 export interface MermaRegistro {
   id: number;
+  cardex_id: number;
   articulo_id: number;
   articulo: string;
   cantidad: number;
   motivo: string;
-  obra_id: number;
-  obra: string;
+  obra_id: number | null;
+  obra: string | null;
   usuario: string;
   stock_resultante: number;
   fecha: string;
@@ -255,16 +256,20 @@ export interface MermaRegistro {
 export interface UsoInternoCreate {
   articulo_id: number;
   cantidad: number;
+  obra_id?: number;
   destino_material: string;
   responsable_solicitud: string;
 }
 export interface UsoInternoRegistro {
   id: number;
+  cardex_id: number;
   articulo_id: number;
   articulo: string;
   cantidad: number;
   destino_material: string;
   responsable_solicitud: string;
+  obra_id: number | null;
+  obra: string | null;
   stock_resultante: number;
   fecha: string;
 }

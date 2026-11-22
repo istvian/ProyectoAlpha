@@ -373,41 +373,22 @@ export async function CreateEgreso(
 
 export async function CreateMerma(
   formData: MermaCreate,
-): Promise<ResponseBase<MermaRegistro> | null> {
-  try {
-    const response = await api.post<ResponseBase<MermaRegistro>>(
-      "/mermas",
-      formData,
-    );
-    return response.data;
-  } catch (error) {
-    console.error(error);
-    return {
-      error: true,
-      mensaje: mensajeErrorApi(error, "No se pudo registrar la merma."),
-    };
-  }
+  clave: string,
+): Promise<ResponseBase<MermaRegistro>> {
+  const response = await api.post<ResponseBase<MermaRegistro>>(
+    "/mermas", formData, { headers: { "Idempotency-Key": clave } },
+  );
+  return response.data;
 }
 
 export async function CreateUsoInterno(
   formData: UsoInternoCreate,
-): Promise<ResponseBase<UsoInternoRegistro> | null> {
-  try {
-    const response = await api.post<ResponseBase<UsoInternoRegistro>>(
-      "/usos-internos",
-      formData,
-    );
-    return response.data;
-  } catch (error) {
-    console.error(error);
-    return {
-      error: true,
-      mensaje: mensajeErrorApi(
-        error,
-        "No se pudo registrar el consumo interno.",
-      ),
-    };
-  }
+  clave: string,
+): Promise<ResponseBase<UsoInternoRegistro>> {
+  const response = await api.post<ResponseBase<UsoInternoRegistro>>(
+    "/usos-internos", formData, { headers: { "Idempotency-Key": clave } },
+  );
+  return response.data;
 }
 
 export async function GetConteoCatalogo(): Promise<ResponseBase<

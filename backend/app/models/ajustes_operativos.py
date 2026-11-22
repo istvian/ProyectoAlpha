@@ -13,6 +13,13 @@ class Merma(models.Model):
     obra = fields.ForeignKeyField(
         "models.Obra",
         related_name="mermas",
+        null=True,
+        on_delete=fields.RESTRICT,
+    )
+    cardex = fields.OneToOneField(
+        "models.CardexLog",
+        related_name="merma_origen",
+        null=True,
         on_delete=fields.RESTRICT,
     )
     usuario = fields.ForeignKeyField(
@@ -56,7 +63,31 @@ class UsoInterno(models.Model):
         on_delete=fields.RESTRICT,
     )
     cantidad = fields.IntField()
+    obra = fields.ForeignKeyField(
+        "models.Obra",
+        related_name="usos_internos",
+        null=True,
+        on_delete=fields.RESTRICT,
+    )
+    cardex = fields.OneToOneField(
+        "models.CardexLog",
+        related_name="uso_interno_origen",
+        null=True,
+        on_delete=fields.RESTRICT,
+    )
     fecha = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "uso_interno"
+
+
+class OperacionIdempotente(models.Model):
+    clave = fields.CharField(pk=True, max_length=36)
+    usuario = fields.ForeignKeyField(
+        "models.User", related_name="operaciones_idempotentes", on_delete=fields.RESTRICT
+    )
+    huella = fields.CharField(max_length=64)
+    respuesta = fields.JSONField(null=True)
+
+    class Meta:
+        table = "operaciones_idempotentes"
