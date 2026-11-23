@@ -28,6 +28,73 @@ los registros.
 Antes de iniciar el backend en producción, defina `APP_ENV=production`; así se
 omite la carga de datos demo.
 
+## Arranque y pruebas de mermas y uso interno
+
+Estos pasos son para desarrollo en Windows, desde la raíz del repositorio. Use
+datos demo o un entorno aislado: registrar una operación modifica el inventario.
+
+1. Prepare el backend e inícielo en una terminal:
+
+   ```powershell
+   py -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   Set-Location backend\app
+   python -m pip install -r requirements.txt
+   $env:APP_ENV = "development"
+   fastapi dev
+   ```
+
+   La API está en `http://127.0.0.1:8000` y su documentación en `/docs`.
+   Al iniciar desde `backend\app` se utiliza `db.sqlite3` de esa carpeta.
+2. En otra terminal, desde la raíz, prepare e inicie el frontend:
+
+   ```powershell
+   Set-Location frontend
+   npm ci
+   $env:VITE_BASE_URL = "http://127.0.0.1:8000"
+   npm run dev
+   ```
+
+   Abra la dirección indicada por Vite. Con una cuenta de prueba de Bodega o
+   Administrador, entre a Bodega > Mermas y consumo interno, registre una
+   merma o uso interno y compruebe el ID del registro, el ID del Cardex y el
+   stock del comprobante. Se puede asociar una obra activa. Consulte después
+   el movimiento con un rol autorizado. No use datos reales para esta prueba.
+
+Para ejecutar las pruebas automáticas del backend, en una terminal con el
+entorno virtual activo:
+
+```powershell
+Set-Location backend\app
+python -m unittest tests.test_mermas_routes -v
+```
+
+Para probar la interfaz y la API juntas mediante Chromium, desde la raíz y con
+el entorno virtual Python activo (con las dependencias del backend ya instaladas):
+
+```powershell
+Set-Location frontend
+npm ci
+Set-Location ..\playwright
+npm ci
+npx playwright install chromium
+npx playwright test --config mermas.config.js
+```
+
+Las pruebas integrales levantan Vite y una API de pruebas en `127.0.0.1`,
+puertos `5188` y `8027`; deben estar libres. Usan SQLite en memoria con datos
+ficticios y un inicio de sesión de prueba exclusivo de ese servidor: no prueban
+el formulario de autenticación ni modifican la base local. Verifican el
+comprobante, la obra, el reintento tras perder una respuesta y la visibilidad
+de exportación. Las pruebas del backend también cubren validaciones,
+permisos, idempotencia, rollback y protección del Cardex. El conflicto de
+stock `409` se simula; no es una prueba de carga concurrente real.
+
+La configuración y los triggers verificados corresponden a SQLite. El uso de
+PostgreSQL/Supabase requiere preparar y probar sus migraciones, protección del
+Cardex y concurrencia antes de considerarlo listo para producción. Consulte
+también el [manual técnico de despliegue](../../docs/Manual-Tecnico-de-Despliegue.md).
+
 ## Situación actual del proyecto
 
 Proyecto Alpha es un MVP web para controlar compras, inventario y movimientos de

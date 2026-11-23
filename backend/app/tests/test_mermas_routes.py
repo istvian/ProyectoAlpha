@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 from decimal import Decimal
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -72,6 +72,134 @@ class MermaRouteTests(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         await Tortoise.close_connections()
+
+    async def preparar_api_operaciones(self):
+        rol = await Rol.create(id=2, nombre="Bodega")
+        usuario = await User.create(
+            nombre="Bodega", correo="bodega@example.invalid", password="test", rol=rol
+        )
+        articulo = await Articulos.create(nombre="Artículo", stock_actual=10)
+        obra = await Obra.create(
+            codigo_obra="OB-TEST", nombre_obra="Obra", tipo_servicio="Prueba",
+            tecnico_responsable=usuario,
+        )
+        app = FastAPI()
+        app.include_router(mermas_router, prefix="/mermas")
+        app.include_router(uso_interno_router, prefix="/usos-internos")
+        client = AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
+        client.cookies.set("token", generate_jwt(usuario.correo, rol.id, 15))
+        return client, articulo, obra
+
+    async def test_http_comprobantes_y_relaciones_con_y_sin_obra(self):
+        client, articulo, obra = await self.preparar_api_operaciones()
+        async with client:
+            for endpoint, body, modelo, tipo in (
+                ("/mermas", {"motivo": "Rotura"}, Merma, TipoMovimiento.MERMA),
+                ("/usos-internos", {"destino_material": "Reparación", "responsable_solicitud": "Jefe"}, UsoInterno, TipoMovimiento.USO_INTERNO),
+            ):
+                for obra_id in (None, obra.id):
+                    with self.subTest(endpoint=endpoint, obra_id=obra_id):
+                        response = await client.post(
+                            endpoint,
+                            json={"articulo_id": articulo.id, "cantidad": 2, "obra_id": obra_id, **body},
+                            headers={"Idempotency-Key": str(uuid4())},
+                        )
+                        self.assertEqual(response.status_code, 201)
+                        data = response.json()["data"]
+                        registro = await modelo.get(id=data["id"])
+                        movimiento = await CardexLog.get(id=data["cardex_id"])
+                        self.assertEqual(registro.cardex_id, movimiento.id)
+                        self.assertEqual(registro.obra_id, obra_id)
+                        self.assertEqual(movimiento.obra_id, obra_id)
+                        self.assertEqual(movimiento.tipo_movimiento, tipo)
+                        self.assertEqual(movimiento.cantidad, 2)
+                        self.assertEqual(data["stock_resultante"], movimiento.saldo_resultante)
+                        self.assertEqual(data["stock_resultante"], (await Articulos.get(id=articulo.id)).stock_actual)
+
+    async def test_http_validaciones_sin_efectos_en_inventario(self):
+        client, articulo, _ = await self.preparar_api_operaciones()
+        async with client:
+            for endpoint, body, fields in (
+                ("/mermas", {"motivo": "Rotura"}, ("motivo",)),
+                ("/usos-internos", {"destino_material": "Reparación", "responsable_solicitud": "Jefe"}, ("destino_material", "responsable_solicitud")),
+            ):
+                base = {"articulo_id": articulo.id, "cantidad": 1, **body}
+                for cantidad in (0, -1, 1.5, 1.0, True, "2", None):
+                    with self.subTest(endpoint=endpoint, cantidad=cantidad):
+                        response = await client.post(
+                            endpoint, json={**base, "cantidad": cantidad},
+                            headers={"Idempotency-Key": str(uuid4())},
+                        )
+                        self.assertEqual(response.status_code, 422)
+                for field in fields:
+                    for valor in (None, "", "   "):
+                        with self.subTest(endpoint=endpoint, field=field, valor=valor):
+                            response = await client.post(
+                                endpoint, json={**base, field: valor},
+                                headers={"Idempotency-Key": str(uuid4())},
+                            )
+                            self.assertEqual(response.status_code, 422)
+                    sin_campo = {key: value for key, value in base.items() if key != field}
+                    response = await client.post(
+                        endpoint, json=sin_campo, headers={"Idempotency-Key": str(uuid4())}
+                    )
+                    self.assertEqual(response.status_code, 422)
+        self.assertEqual((await Articulos.get(id=articulo.id)).stock_actual, 10)
+        self.assertEqual(await CardexLog.all().count(), 0)
+        self.assertEqual(await OperacionIdempotente.all().count(), 0)
+
+    async def test_http_stock_insuficiente_y_conflicto_revierten(self):
+        client, articulo, _ = await self.preparar_api_operaciones()
+        async with client:
+            for endpoint, body in (
+                ("/mermas", {"motivo": "Rotura"}),
+                ("/usos-internos", {"destino_material": "Reparación", "responsable_solicitud": "Jefe"}),
+            ):
+                articulo = await Articulos.create(nombre=f"Artículo {endpoint}", stock_actual=10)
+                claves_anteriores = await OperacionIdempotente.all().count()
+                movimientos_anteriores = await CardexLog.all().count()
+                with self.subTest(endpoint=endpoint, caso="insuficiente"):
+                    response = await client.post(
+                        endpoint, json={"articulo_id": articulo.id, "cantidad": 11, **body},
+                        headers={"Idempotency-Key": str(uuid4())},
+                    )
+                    self.assertEqual(response.status_code, 400)
+                    self.assertIn("Stock insuficiente", response.json()["detail"])
+                with self.subTest(endpoint=endpoint, caso="conflicto"):
+                    headers = {"Idempotency-Key": str(uuid4())}
+                    payload = {"articulo_id": articulo.id, "cantidad": 1, **body}
+                    with patch("tortoise.queryset.QuerySet.update", new_callable=AsyncMock, return_value=0):
+                        response = await client.post(endpoint, json=payload, headers=headers)
+                    self.assertEqual(response.status_code, 409)
+                    self.assertEqual((await Articulos.get(id=articulo.id)).stock_actual, 10)
+                    self.assertEqual(await OperacionIdempotente.all().count(), claves_anteriores)
+                    self.assertEqual(await CardexLog.all().count(), movimientos_anteriores)
+                    response = await client.post(endpoint, json=payload, headers=headers)
+                    self.assertEqual(response.status_code, 201)
+
+    async def test_http_reintento_y_reuso_de_clave_en_ambos_tipos(self):
+        client, articulo, _ = await self.preparar_api_operaciones()
+        async with client:
+            for endpoint, body in (
+                ("/mermas", {"motivo": "Rotura"}),
+                ("/usos-internos", {"destino_material": "Reparación", "responsable_solicitud": "Jefe"}),
+            ):
+                with self.subTest(endpoint=endpoint):
+                    headers = {"Idempotency-Key": str(uuid4())}
+                    payload = {"articulo_id": articulo.id, "cantidad": 5, **body}
+                    primera = await client.post(endpoint, json=payload, headers=headers)
+                    repetida = await client.post(endpoint, json=payload, headers=headers)
+                    conflicto = await client.post(
+                        endpoint, json={**payload, "cantidad": 1}, headers=headers
+                    )
+                    self.assertEqual(primera.status_code, 201)
+                    self.assertEqual(repetida.status_code, 201)
+                    self.assertEqual(repetida.json(), primera.json())
+                    self.assertEqual(conflicto.status_code, 409)
+        self.assertEqual((await Articulos.get(id=articulo.id)).stock_actual, 0)
+        self.assertEqual(await Merma.all().count(), 1)
+        self.assertEqual(await UsoInterno.all().count(), 1)
+        self.assertEqual(await CardexLog.all().count(), 2)
 
     async def test_permisos_cardex_consulta_y_exportacion(self):
         app = FastAPI()
@@ -307,19 +435,20 @@ class MermaRouteTests(unittest.IsolatedAsyncioTestCase):
         )
         articulo = await Articulos.create(nombre="Artículo", stock_actual=5)
         request = crear_solicitud(usuario.correo)
-        for funcion, body in (
-            (registrar_merma, MermaCreateSchema(articulo_id=articulo.id, cantidad=1, motivo="Rotura", obra_id=obra.id)),
-            (registrar_uso_interno, UsoInternoCreateSchema(articulo_id=articulo.id, cantidad=1, destino_material="Bodega", responsable_solicitud="Encargado", obra_id=obra.id)),
+        for funcion, body, modelo, ruta_create in (
+            (registrar_merma, MermaCreateSchema(articulo_id=articulo.id, cantidad=1, motivo="Rotura", obra_id=obra.id), Merma, "routes.mermas_routes.Merma.create"),
+            (registrar_uso_interno, UsoInternoCreateSchema(articulo_id=articulo.id, cantidad=1, destino_material="Bodega", responsable_solicitud="Encargado", obra_id=obra.id), UsoInterno, "routes.uso_interno_routes.UsoInterno.create"),
         ):
-            with self.assertRaises(HTTPException) as error:
-                await funcion(body, request, uuid4())
-            self.assertEqual(error.exception.status_code, 404)
-        with patch("routes.mermas_routes.Merma.create", side_effect=RuntimeError("fallo")):
-            with self.assertRaisesRegex(RuntimeError, "fallo"):
-                await registrar_merma(
-                    MermaCreateSchema(articulo_id=articulo.id, cantidad=2, motivo="Rotura"),
-                    request, uuid4(),
-                )
+            for obra_id in (obra.id, obra.id + 100):
+                with self.subTest(funcion=funcion.__name__, obra_id=obra_id):
+                    with self.assertRaises(HTTPException) as error:
+                        await funcion(body.model_copy(update={"obra_id": obra_id}), request, uuid4())
+                    self.assertEqual(error.exception.status_code, 404)
+            with self.subTest(funcion=funcion.__name__, caso="fallo tras cardex"):
+                with patch(ruta_create, side_effect=RuntimeError("fallo")):
+                    with self.assertRaisesRegex(RuntimeError, "fallo"):
+                        await funcion(body.model_copy(update={"obra_id": None}), request, uuid4())
+                self.assertEqual(await modelo.all().count(), 0)
         self.assertEqual((await Articulos.get(id=articulo.id)).stock_actual, 5)
         self.assertEqual(await CardexLog.all().count(), 0)
         self.assertEqual(await OperacionIdempotente.all().count(), 0)

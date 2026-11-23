@@ -20,7 +20,7 @@ class UsoInternoCreateSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     articulo_id: int = Field(..., gt=0)
-    cantidad: int = Field(..., gt=0)
+    cantidad: int = Field(..., gt=0, strict=True)
     obra_id: int | None = Field(default=None, gt=0)
     destino_material: str = Field(..., min_length=1, max_length=255, strict=True)
     responsable_solicitud: str = Field(
