@@ -155,7 +155,7 @@ async def _preparar_factura_vinculada(
     orden = await OrdenCompra.get_or_none(id=orden_compra_id)
     if not orden:
         raise HTTPException(404, "Orden de Compra no encontrada")
-    if orden.proveedor_id != proveedor_id:
+    if orden.proveedor_id != proveedor_id: # pyright: ignore[reportAttributeAccessIssue]
         raise HTTPException(
             409,
             "La Orden de Compra no corresponde al proveedor de la factura",
@@ -166,7 +166,7 @@ async def _preparar_factura_vinculada(
     ).select_related("articulo")
     cantidades_facturadas = await _cantidades_facturadas_orden(orden.id)
     detalles_por_articulo = {
-        detalle.articulo_id: detalle for detalle in detalles_orden
+        detalle.articulo_id: detalle for detalle in detalles_orden # type: ignore
     }
     articulos_por_sku: dict[str, Articulos] = {}
     cantidades_solicitadas: dict[int, int] = {}
@@ -215,7 +215,7 @@ async def _tiene_recepcion_sin_facturar(articulo_id: int) -> bool:
     )
     for detalle_orden in detalles_orden:
         facturadas = await _cantidades_facturadas_orden(
-            detalle_orden.orden_compra_id
+            detalle_orden.orden_compra_id # type: ignore
         )
         if facturadas.get(articulo_id, 0) < detalle_orden.cantidad_recibida:
             return True
@@ -364,7 +364,7 @@ async def _create_factura_atomically(
         precio_lista_actualizado = linea["precio_neto"]
         if orden_compra:
             precio_lista_actualizado = (
-                articulo.precio_lista or linea["precio_neto"]
+                articulo.precio_lista or linea["precio_neto"] # type: ignore
             )
         await DetalleDocumento.create(
             documento=documento,
@@ -380,7 +380,7 @@ async def _create_factura_atomically(
             descuento3=body.descuento3 or 0,
         )
         await registrar_costo_compra(
-            articulo=articulo,
+            articulo=articulo, # type: ignore
             costo_unitario=linea["costo_neto_unitario"],
             fecha=documento.emision,
             folio=documento.folio,
@@ -391,15 +391,15 @@ async def _create_factura_atomically(
                 usuario=usuario,
                 tipo_movimiento=TipoMovimiento.ENTRADA_COMPRA,
                 cantidad=producto.stock,
-                saldo_resultante=articulo.stock_actual,
+                saldo_resultante=articulo.stock_actual, # type: ignore
                 obra=None,
                 motivo_justificacion=(
                     f"Ingreso por Factura folio {documento.folio}"
                 ),
                 costo_unitario=linea["costo_neto_unitario"],
                 saldo_valorizado=(
-                    Decimal(articulo.stock_actual)
-                    * articulo.precio_medio_ponderado
+                    Decimal(articulo.stock_actual) # type: ignore
+                    * articulo.precio_medio_ponderado # type: ignore
                 ),
             )
 

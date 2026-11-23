@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, Query, Response
-from tortoise.expressions import F, Q
+from tortoise.expressions import F, Q, RawSQL
 
 from middlewares.jwt_helper import check_user
 from models.proveedor import Articulos
@@ -48,9 +48,14 @@ def _filtrar_inventario(
 
     categoria_termino = (categoria or "").strip()
     if categoria_termino:
-        articulos = articulos.filter(
-            especificaciones_tecnicas__contains={"categoria": categoria_termino}
-        )
+        # El operador `__contains` de Tortoise sobre JSONField no está
+        # implementado para el executor de SQLite, por lo que se consulta la
+        # clave "categoria" directamente con json_extract.
+        articulos = articulos.annotate(
+            categoria_json=RawSQL(
+                "json_extract(especificaciones_tecnicas, '$.categoria')"
+            )
+        ).filter(categoria_json=categoria_termino)
 
     if estado == "SIN_STOCK":
         articulos = articulos.filter(stock_actual__lte=0)
