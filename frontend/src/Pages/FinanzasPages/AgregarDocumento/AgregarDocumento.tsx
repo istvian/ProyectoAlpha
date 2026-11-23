@@ -11,10 +11,7 @@ import type {
   Producto,
   Proveedor,
 } from "../../../types/general";
-import {
-  CreateFactura,
-  GetOrdenesCompra,
-} from "../../../Helpers/APIConnector";
+import { CreateFactura, GetOrdenesCompra } from "../../../Helpers/APIConnector";
 import type { OrdenCompra } from "../../../types/general";
 
 interface AgregarDocumentoProps {
@@ -86,9 +83,11 @@ export function AgregarDocumento({
 
   useEffect(() => {
     GetOrdenesCompra().then((response) => {
+      console.log(response?.data);
       if (response && !response.error && response.data) {
         setOrdenesCompra(response.data);
       } else {
+        console.log("Error");
         setErrorMsg("No se pudieron cargar las Órdenes de Compra.");
       }
     });
@@ -108,8 +107,13 @@ export function AgregarDocumento({
       return;
     }
     if (
-      [formulario.descuento1, formulario.descuento2, formulario.descuento3].some(
-        (descuento) => !Number.isFinite(descuento) || descuento < 0 || descuento > 100,
+      [
+        formulario.descuento1,
+        formulario.descuento2,
+        formulario.descuento3,
+      ].some(
+        (descuento) =>
+          !Number.isFinite(descuento) || descuento < 0 || descuento > 100,
       )
     ) {
       setErrorMsg("Cada descuento debe estar entre 0% y 100%.");
@@ -526,7 +530,9 @@ export function AgregarDocumento({
         }}
       >
         <Title>Descuentos y totales de la factura</Title>
-        <p className={css.infotext}>Cálculo automático - Pesos chilenos (CLP)</p>
+        <p className={css.infotext}>
+          Cálculo automático - Pesos chilenos (CLP)
+        </p>
         <div className={css.row}>
           <p>Importe base neto</p>
           <p>${Number(formulario.importe_base).toLocaleString("es-CL")}</p>

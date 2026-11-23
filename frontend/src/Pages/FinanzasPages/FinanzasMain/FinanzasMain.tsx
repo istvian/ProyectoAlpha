@@ -22,10 +22,12 @@ import {
 import { Popup } from "../../../Components/Popup/Popup";
 import { AgregarProveedor } from "../AgregarProveedor/AgregarProveedor";
 import { AgregarObras } from "../AgregarObras/AgregarObras";
+import { CrearOC } from "../CrearOC/CrearOC";
 
 export function FinanzasMain() {
   const [popupAgregarDocumento, setPopupAgregarDocumento] = useState(false);
   const [popupAgregarProveedor, setPopupAgregarProveedor] = useState(false);
+  const [popupCrearOC, setPopupCrearOC] = useState(false);
   const [popupAgregarObra, setPopupAgregarObra] = useState(false);
   const [agregarProveedorEdit, setAgregarProveedorEdit] = useState(false);
   const [agregarObraEdit, setAgregarObraEdit] = useState(false);
@@ -141,6 +143,13 @@ export function FinanzasMain() {
               reportes financieros.
             </p>
           </div>
+          <Btn
+            onClick={() => {
+              setPopupCrearOC(true);
+            }}
+          >
+            Crear Orden de Compra
+          </Btn>
         </Box>
 
         <Popup isVisible={popupAgregarProveedor}>
@@ -169,6 +178,13 @@ export function FinanzasMain() {
             isEdit={agregarObraEdit}
             onEnd={() => {
               setPopupAgregarObra(false);
+            }}
+          />
+        </Popup>
+        <Popup isVisible={popupCrearOC}>
+          <CrearOC
+            onEnd={() => {
+              setPopupCrearOC(false);
             }}
           />
         </Popup>

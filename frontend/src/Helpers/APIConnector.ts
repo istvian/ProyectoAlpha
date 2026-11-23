@@ -505,6 +505,7 @@ export async function GetOrdenesCompra(): Promise<ResponseBase<
     const response: ResponseBase<OrdenCompra[]> = (
       await api.get("/facturas/ordenes-compra")
     ).data;
+    console.log("Petición GET:" + BASE_URL + API_VERSION + "/facturas/ordenes-compra");
     return response;
   } catch (error) {
     console.error(error);
