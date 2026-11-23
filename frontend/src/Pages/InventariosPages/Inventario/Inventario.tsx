@@ -379,7 +379,7 @@ export function Inventario() {
                       {articulo.estado !== "DISPONIBLE" ? (
                         <Btn
                           onClick={() => {
-                            nav("/bodega/recepcion");
+                            nav("/finanzas?crearOC=1");
                           }}
                         >
                           Solicitar

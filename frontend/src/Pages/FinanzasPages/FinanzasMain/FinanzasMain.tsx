@@ -7,6 +7,7 @@ import { AgregarDocumento } from "../AgregarDocumento/AgregarDocumento";
 import useValidateRol from "../../../Hooks/useValidateRol";
 import {
   Rol,
+  type ArticuloCRUD,
   type DocumentoTributario,
   type Obra,
   type Proveedor,
@@ -15,6 +16,8 @@ import { useEffect, useState } from "react";
 import { InputDate } from "../../../Components/InputDate/InputDate";
 import { Selector } from "../../../Components/Selector/Selector";
 import {
+  EliminarArticulo,
+  GetArticulos,
   GetFacturas,
   GetObras,
   GetProveedores,
@@ -22,20 +25,27 @@ import {
 import { Popup } from "../../../Components/Popup/Popup";
 import { AgregarProveedor } from "../AgregarProveedor/AgregarProveedor";
 import { AgregarObras } from "../AgregarObras/AgregarObras";
+import { AgregarArticulo } from "../AgregarArticulo/AgregarArticulo";
 import { CrearOC } from "../CrearOC/CrearOC";
+import { useSearchParams } from "react-router-dom";
 
 export function FinanzasMain() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [popupAgregarDocumento, setPopupAgregarDocumento] = useState(false);
   const [popupAgregarProveedor, setPopupAgregarProveedor] = useState(false);
   const [popupCrearOC, setPopupCrearOC] = useState(false);
   const [popupAgregarObra, setPopupAgregarObra] = useState(false);
+  const [popupAgregarArticulo, setPopupAgregarArticulo] = useState(false);
   const [agregarProveedorEdit, setAgregarProveedorEdit] = useState(false);
   const [agregarObraEdit, setAgregarObraEdit] = useState(false);
+  const [agregarArticuloEdit, setAgregarArticuloEdit] = useState(false);
   const [currentProveedor, setCurrentProveedor] = useState<Proveedor | null>();
   const [currentObra, setCurrentObra] = useState<Obra | null>();
+  const [currentArticulo, setCurrentArticulo] = useState<ArticuloCRUD | null>();
   const [facturas, setFacturas] = useState<DocumentoTributario[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [obras, setObras] = useState<Obra[]>([]);
+  const [articulos, setArticulos] = useState<ArticuloCRUD[]>([]);
 
   // Estados de filtros
   const [filtroTipo, setFiltroTipo] = useState("");
@@ -48,6 +58,21 @@ export function FinanzasMain() {
   // Estado de paginación
   const [paginaActual, setPaginaActual] = useState(1);
   const elementosPorPagina = 10;
+
+  function cargarArticulos() {
+    GetArticulos().then((res) => {
+      if (!res?.error && res?.data) {
+        setArticulos(res?.data);
+      }
+    });
+  }
+  useEffect(() => {
+    if (searchParams.get("crearOC") === "1") {
+      setPopupCrearOC(true);
+    } else {
+      setPopupCrearOC(false);
+    }
+  }, []);
 
   useEffect(() => {
     GetFacturas().then((res) => {
@@ -65,7 +90,13 @@ export function FinanzasMain() {
         setObras(res?.data);
       }
     });
-  }, [popupAgregarDocumento, popupAgregarProveedor, popupAgregarObra]);
+    cargarArticulos();
+  }, [
+    popupAgregarDocumento,
+    popupAgregarProveedor,
+    popupAgregarObra,
+    popupAgregarArticulo,
+  ]);
 
   // Filtrar facturas
   const toYMD = (date: Date | string) => {
@@ -126,6 +157,18 @@ export function FinanzasMain() {
     setPaginaActual(1);
   };
 
+  function HandleEliminarArticulo(articulo: ArticuloCRUD) {
+    if (!window.confirm(`¿Eliminar el artículo "${articulo.nombre}"?`)) {
+      return;
+    }
+    EliminarArticulo(articulo.id as number).then((res) => {
+      window.alert(res?.mensaje);
+      if (res && !res.error) {
+        cargarArticulos();
+      }
+    });
+  }
+
   if (useValidateRol([Rol.finanzas]))
     return (
       <Frame>
@@ -185,6 +228,15 @@ export function FinanzasMain() {
           <CrearOC
             onEnd={() => {
               setPopupCrearOC(false);
+            }}
+          />
+        </Popup>
+        <Popup isVisible={popupAgregarArticulo}>
+          <AgregarArticulo
+            data={currentArticulo}
+            isEdit={agregarArticuloEdit}
+            onEnd={() => {
+              setPopupAgregarArticulo(false);
             }}
           />
         </Popup>
@@ -316,6 +368,92 @@ export function FinanzasMain() {
             </table>
             <div className={css.row}>
               <p className={css.resumen}>Mostrando {obras.length} obras</p>
+            </div>
+          </div>
+        </Box>
+        <Box>
+          <div className={css.row}>
+            <Title>Listado de artículos</Title>
+            <Btn
+              onClick={() => {
+                setCurrentArticulo(null);
+                setPopupAgregarArticulo(true);
+                setAgregarArticuloEdit(false);
+              }}
+            >
+              Agregar artículo
+            </Btn>
+          </div>
+          <div className={css.tableContainer}>
+            <table className={css.table}>
+              <thead>
+                <tr>
+                  <th>Código SKU</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Ubicación</th>
+                  <th>Stock actual</th>
+                  <th>Stock mínimo</th>
+                  <th>Precio lista</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {articulos.length > 0 ? (
+                  articulos.map((item, index) => {
+                    return (
+                      <tr key={index}>
+                        <td>{item.codigo_sku || "Sin SKU"}</td>
+                        <td>{item.nombre}</td>
+                        <td>{item.categoria || "Sin categoría"}</td>
+                        <td>{item.ubicacion || "Sin ubicación"}</td>
+                        <td>{item.stock_actual}</td>
+                        <td>{item.stock_minimo}</td>
+                        <td>
+                          {item.precio_lista != null
+                            ? `$${Number(item.precio_lista).toLocaleString("es-CL")}`
+                            : "-"}
+                        </td>
+                        <td>
+                          <div className={css.actions}>
+                            <Btn
+                              onClick={() => {
+                                setAgregarArticuloEdit(true);
+                                setPopupAgregarArticulo(true);
+                                setCurrentArticulo(item);
+                              }}
+                            >
+                              Modificar
+                            </Btn>
+                            <Btn
+                              warning
+                              onClick={() => {
+                                HandleEliminarArticulo(item);
+                              }}
+                            >
+                              Eliminar
+                            </Btn>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      style={{ textAlign: "center", padding: "1.5rem" }}
+                    >
+                      No se encontraron artículos
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <div className={css.row}>
+              <p className={css.resumen}>
+                Mostrando {articulos.length} artículos
+              </p>
             </div>
           </div>
         </Box>
