@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Box } from "../../../Components/Box/Box";
 import { Frame } from "../../../Components/Frame/Frame";
 import { Title } from "../../../Components/Title/Title";
+import { SolicitudItemsLista } from "../../../Components/SolicitudItems/SolicitudItemsLista";
 import { GetSolicitudesFinanzas, ResolverSolicitud } from "../../../Helpers/APIConnector";
 import useValidateRol from "../../../Hooks/useValidateRol";
 import { Rol, type EstadoSolicitudMaterial, type SolicitudMaterial, type TipoSolicitudMaterial } from "../../../types/general";
@@ -117,17 +118,17 @@ export function BandejaSolicitudes() {
               {solicitudes.map((item) => (
                 <li key={item.id} className={css.historialItem}>
                   <article aria-label={`Solicitud ${item.id}`}>
-                    <h2>#{item.id} · {item.articulo_id === null && item.tipo_solicitud === "MATERIAL_TECNICO" ? item.descripcion_articulo : item.nombre_articulo}</h2>
+                    <h2>Solicitud #{item.id}</h2>
                     <p>{item.tipo_solicitud === "COMPRA_BODEGA" ? "Compra de Bodega" : "Material de Técnico"} · {item.estado} · Prioridad: {item.prioridad}</p>
-                    <p>Solicitó: {item.solicitante_nombre} · Obra: {item.obra || "Sin obra"} · Cantidad: {item.cantidad}</p>
-                    {item.codigo_sku && <p>SKU: {item.codigo_sku}</p>}
-                    {item.descripcion_articulo && <p>Descripción: {item.descripcion_articulo}</p>}
+                    <p>Solicitó: {item.solicitante_nombre} · Obra: {item.obra || "Sin obra"}</p>
+                    <SolicitudItemsLista items={item.items} />
                     <p>Motivo: {item.motivo}</p>
                     <p>Fecha: <time dateTime={item.fecha_creacion}>{new Date(item.fecha_creacion).toLocaleString("es-CL")}</time></p>
                     {item.revisado_por_nombre && <p>Revisó: {item.revisado_por_nombre}{item.fecha_revision && ` · ${new Date(item.fecha_revision).toLocaleString("es-CL")}`}</p>}
                     {item.comentario_revision && <p>Respuesta: {item.comentario_revision}</p>}
                     {item.estado === "PENDIENTE" && (
                       <>
+                        <p>La decisión se aplica a todos los artículos de esta solicitud.</p>
                         <label className={css.field}>Comentario de resolución (obligatorio para rechazar)
                           <textarea className={`${css.input} ${css.textarea}`} maxLength={2000} value={comentarios[item.id] || ""} onChange={(e) => setComentarios((actuales) => ({ ...actuales, [item.id]: e.target.value }))} />
                         </label>

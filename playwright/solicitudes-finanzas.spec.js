@@ -13,6 +13,12 @@ test("Bodega y Técnico consultan las decisiones de Finanzas sin movimientos ni 
   await page.goto("/bodega/solicitudes");
   await page.getByRole("combobox", { name: "Artículo", exact: true }).selectOption({ label: "E2E-BAJO · Artículo bajo E2E" });
   await page.getByLabel("Cantidad", { exact: true }).fill("2");
+  await page.getByRole("button", { name: "Agregar artículo" }).click();
+  const compraExtra = page.getByRole("group", { name: "Artículo 2" });
+  await compraExtra.getByLabel("Tipo de artículo").selectOption("nuevo");
+  await compraExtra.getByLabel("Nombre del artículo").fill("Casco financiero");
+  await compraExtra.getByLabel("Descripción").fill("Casco azul");
+  await compraExtra.getByLabel("Cantidad").fill("4");
   await page.getByLabel("Motivo", { exact: true }).fill("Compra para revisar");
   await page.getByRole("button", { name: "Enviar solicitud" }).click();
   await expect(page.getByRole("region", { name: "Mis solicitudes" })).toContainText("Compra para revisar");
@@ -23,6 +29,10 @@ test("Bodega y Técnico consultan las decisiones de Finanzas sin movimientos ni 
   await page.getByLabel("Tipo de material").selectOption("nuevo");
   await page.getByLabel("Descripción del material").fill("Material especial para revisar");
   await page.getByLabel("Cantidad").fill("1");
+  await page.getByRole("button", { name: "Agregar material" }).click();
+  const materialExtra = page.getByRole("group", { name: "Material 2" });
+  await materialExtra.getByRole("combobox", { name: "Material", exact: true }).selectOption({ label: "E2E-MERMAS · Artículo E2E" });
+  await materialExtra.getByLabel("Cantidad").fill("3");
   await page.getByLabel("Prioridad").selectOption("ALTA");
   await page.getByLabel("Justificación").fill("Necesario en terreno");
   await page.getByRole("button", { name: "Enviar solicitud" }).click();
@@ -36,7 +46,15 @@ test("Bodega y Técnico consultan las decisiones de Finanzas sin movimientos ni 
   const compra = page.getByRole("article").filter({ hasText: "Compra para revisar" });
   const material = page.getByRole("article").filter({ hasText: "Necesario en terreno" });
   await expect(compra).toContainText("Solicitó: Bodega");
+  await expect(compra).toContainText("Catálogo: Artículo bajo E2E");
+  await expect(compra).toContainText("No catalogado: Casco financiero");
+  await expect(compra).toContainText("Casco azul");
+  await expect(compra).toContainText("Cantidad: 4");
   await expect(material).toContainText("Solicitó: Tecnico");
+  await expect(material).toContainText("Material especial para revisar");
+  await expect(material).toContainText("Catálogo: Artículo E2E");
+  await expect(material).toContainText("Cantidad: 3");
+  await expect(material).toContainText("Obra: Obra E2E");
   await expect(material).toContainText("Prioridad: ALTA");
   await page.getByRole("combobox", { name: "Tipo", exact: true }).selectOption("MATERIAL_TECNICO");
   await expect(compra).toHaveCount(0);
@@ -56,6 +74,7 @@ test("Bodega y Técnico consultan las decisiones de Finanzas sin movimientos ni 
   await page.getByRole("combobox", { name: "Estado", exact: true }).selectOption("APROBADA");
   await expect(compra).toContainText("Revisó: Finanzas");
   await expect(compra).toContainText("Gestionar compra");
+  await expect(compra).toContainText("Casco financiero");
   await expect(compra.getByRole("button", { name: "Aprobar" })).toHaveCount(0);
 
   await page.goto(`${API}/__test__/login/2`);
@@ -64,6 +83,8 @@ test("Bodega y Técnico consultan las decisiones de Finanzas sin movimientos ni 
   await expect(historialBodega).toContainText("APROBADA");
   await expect(historialBodega).toContainText("Revisó: Finanzas");
   await expect(historialBodega).toContainText("Gestionar compra");
+  await expect(historialBodega).toContainText("Casco financiero");
+  await expect(historialBodega).toContainText("Cantidad: 4");
   await expect(historialBodega).not.toContainText("Necesario en terreno");
   const inventarioDespues = await (await page.request.get(`${API}/api/v1/egresos/catalogos`)).json();
   const cardexDespues = await (await page.request.get(`${API}/api/v1/cardex`)).json();
@@ -78,6 +99,8 @@ test("Bodega y Técnico consultan las decisiones de Finanzas sin movimientos ni 
   await expect(historialTecnico).toContainText("RECHAZADA");
   await expect(historialTecnico).toContainText("Revisó: Finanzas");
   await expect(historialTecnico).toContainText("Sin presupuesto");
+  await expect(historialTecnico).toContainText("Material especial para revisar");
+  await expect(historialTecnico).toContainText("Artículo E2E");
 });
 
 test("solo Finanzas y Administrador acceden a la bandeja", async ({ page }) => {
@@ -95,12 +118,12 @@ test("solo Finanzas y Administrador acceden a la bandeja", async ({ page }) => {
 test("Administrador puede decidir y se informa un conflicto de revisión", async ({ page }) => {
   await page.goto(`${API}/__test__/login/2`);
   const creada = await page.request.post(`${API}/api/v1/solicitudes-material`, {
-    data: { nombre_articulo: "Material para conflicto", cantidad: 1, motivo: "Prueba de revisión" },
+    data: { items: [{ nombre_articulo: "Material para conflicto", cantidad: 1 }], motivo: "Prueba de revisión" },
   });
   expect(creada.status()).toBe(201);
   const id = (await creada.json()).data.id;
   const creadaAdmin = await page.request.post(`${API}/api/v1/solicitudes-material`, {
-    data: { nombre_articulo: "Material para administrador", cantidad: 1, motivo: "Decisión de administrador" },
+    data: { items: [{ nombre_articulo: "Material para administrador", cantidad: 1 }], motivo: "Decisión de administrador" },
   });
   expect(creadaAdmin.status()).toBe(201);
   const idAdmin = (await creadaAdmin.json()).data.id;

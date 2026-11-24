@@ -3,6 +3,8 @@ import { Navigate } from "react-router-dom";
 import { Box } from "../../Components/Box/Box";
 import { Frame } from "../../Components/Frame/Frame";
 import { SolicitudHistorial } from "../../Components/SolicitudHistorial/SolicitudHistorial";
+import { SolicitudItemsFormulario } from "../../Components/SolicitudItems/SolicitudItemsFormulario";
+import { nuevaFila, validarFilas, type FilaSolicitud } from "../../Components/SolicitudItems/solicitudItems";
 import { Title } from "../../Components/Title/Title";
 import { CreateSolicitudTecnico, GetContextoSolicitudTecnico, GetMisSolicitudes } from "../../Helpers/APIConnector";
 import { useRolAutorizado } from "../../Hooks/useValidateRol";
@@ -14,10 +16,7 @@ export function SolicitarMaterial() {
   const [contexto, setContexto] = useState<ContextoSolicitudTecnico | null>(null);
   const [solicitudes, setSolicitudes] = useState<SolicitudMaterial[]>([]);
   const [obraId, setObraId] = useState("");
-  const [tipo, setTipo] = useState<"existente" | "nuevo">("existente");
-  const [articuloId, setArticuloId] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [cantidad, setCantidad] = useState("");
+  const [filas, setFilas] = useState<FilaSolicitud[]>([nuevaFila()]);
   const [prioridad, setPrioridad] = useState<SolicitudTecnicoCreate["prioridad"]>("NORMAL");
   const [motivo, setMotivo] = useState("");
   const [cargando, setCargando] = useState(true);
@@ -45,18 +44,21 @@ export function SolicitarMaterial() {
 
   async function guardar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const unidades = Number(cantidad);
-    if (!obraId || !Number.isSafeInteger(unidades) || unidades <= 0 || unidades > 2147483647 ||
-        !motivo.trim() || (tipo === "existente" ? !articuloId : !descripcion.trim())) {
-      setError("Indique una obra, material, cantidad entera positiva y justificación.");
+    const errorFilas = validarFilas(filas, true);
+    if (errorFilas || !obraId || !motivo.trim()) {
+      setError(errorFilas || "Indique una obra asignada y una justificación.");
       return;
     }
     const body: SolicitudTecnicoCreate = {
       obra_id: Number(obraId),
-      cantidad: unidades,
       prioridad,
       motivo: motivo.trim(),
-      ...(tipo === "existente" ? { articulo_id: Number(articuloId) } : { descripcion_articulo: descripcion.trim() }),
+      items: filas.map((fila) => ({
+        cantidad: Number(fila.cantidad),
+        ...(fila.tipo === "existente"
+          ? { articulo_id: Number(fila.articuloId) }
+          : { descripcion_articulo: fila.descripcion.trim() }),
+      })),
     };
     setGuardando(true);
     setError("");
@@ -67,9 +69,8 @@ export function SolicitarMaterial() {
       const solicitud = resultado.data;
       setSolicitudes((actuales) => [solicitud, ...actuales]);
       setAviso(`Solicitud #${solicitud.id} registrada. El inventario no fue modificado.`);
-      setCantidad("");
+      setFilas([nuevaFila()]);
       setMotivo("");
-      setDescripcion("");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "No se pudo registrar la solicitud.");
     } finally {
@@ -94,34 +95,14 @@ export function SolicitarMaterial() {
             {contexto.obras.length === 0 && <p>No tienes obras activas asignadas. Contacta a Finanzas.</p>}
             <form className={css.form} onSubmit={(event) => void guardar(event)}>
               <label className={css.field}>Obra asignada
-                <select className={css.input} required value={obraId} onChange={(e) => setObraId(e.target.value)}>
+                <select className={css.input} disabled={guardando} required value={obraId} onChange={(e) => setObraId(e.target.value)}>
                   <option value="">Seleccione una obra</option>
                   {contexto.obras.map((obra) => <option key={obra.id} value={obra.id}>{obra.codigo_obra} · {obra.nombre_obra}</option>)}
                 </select>
               </label>
-              <label className={css.field}>Tipo de material
-                <select className={css.input} value={tipo} onChange={(e) => setTipo(e.target.value === "nuevo" ? "nuevo" : "existente")}>
-                  <option value="existente">Material existente</option>
-                  <option value="nuevo">Material no catalogado</option>
-                </select>
-              </label>
-              {tipo === "existente" ? (
-                <label className={css.field}>Material
-                  <select className={css.input} required value={articuloId} onChange={(e) => setArticuloId(e.target.value)}>
-                    <option value="">Seleccione un material</option>
-                    {contexto.articulos.map((item) => <option key={item.id} value={item.id}>{item.codigo_sku || "Sin SKU"} · {item.nombre}</option>)}
-                  </select>
-                </label>
-              ) : (
-                <label className={css.field}>Descripción del material
-                  <textarea className={`${css.input} ${css.textarea}`} required maxLength={255} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
-                </label>
-              )}
-              <label className={css.field}>Cantidad
-                <input className={css.input} type="number" min="1" max="2147483647" step="1" required value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
-              </label>
+              <SolicitudItemsFormulario filas={filas} setFilas={setFilas} articulos={contexto.articulos} tecnico disabled={guardando} />
               <label className={css.field}>Prioridad
-                <select className={css.input} value={prioridad} onChange={(e) => {
+                <select className={css.input} disabled={guardando} value={prioridad} onChange={(e) => {
                   const valor = e.target.value;
                   if (valor === "BAJA" || valor === "NORMAL" || valor === "ALTA") setPrioridad(valor);
                 }}>
@@ -131,7 +112,7 @@ export function SolicitarMaterial() {
                 </select>
               </label>
               <label className={css.field}>Justificación
-                <textarea className={`${css.input} ${css.textarea}`} required maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+                <textarea className={`${css.input} ${css.textarea}`} disabled={guardando} required maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
               </label>
               <div className={css.actions}>
                 <button className={css.submit} type="submit" disabled={guardando || contexto.obras.length === 0}>

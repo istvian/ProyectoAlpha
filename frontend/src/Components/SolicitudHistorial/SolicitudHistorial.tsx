@@ -1,4 +1,5 @@
 import type { SolicitudMaterial } from "../../types/general";
+import { SolicitudItemsLista } from "../SolicitudItems/SolicitudItemsLista";
 import css from "../../Pages/BodegaPages/RegistroMermasConsumo/RegistroMermasConsumo.module.css";
 
 export function SolicitudHistorial({ solicitudes, cargando, disponible, mostrarPrioridad = false }: {
@@ -14,9 +15,10 @@ export function SolicitudHistorial({ solicitudes, cargando, disponible, mostrarP
       <ul className={css.historialLista}>
         {solicitudes.map((item) => (
           <li className={css.historialItem} key={item.id}>
-            <strong>#{item.id} · {item.articulo_id === null && item.tipo_solicitud === "MATERIAL_TECNICO" ? item.descripcion_articulo : item.nombre_articulo}</strong>
-            <p>Estado: {item.estado} · Cantidad: {item.cantidad}{mostrarPrioridad && ` · Prioridad: ${item.prioridad}`}</p>
+            <strong>Solicitud #{item.id} · {item.tipo_solicitud === "COMPRA_BODEGA" ? "Compra de Bodega" : "Material de Técnico"}</strong>
+            <p>Estado: {item.estado}{mostrarPrioridad && ` · Prioridad: ${item.prioridad}`}</p>
             <p>Obra: {item.obra || "Sin obra"} · Motivo: {item.motivo}</p>
+            <SolicitudItemsLista items={item.items} />
             {item.revisado_por_nombre && (
               <p>Revisó: {item.revisado_por_nombre}{item.fecha_revision && ` · ${new Date(item.fecha_revision).toLocaleString("es-CL")}`}</p>
             )}

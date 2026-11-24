@@ -141,16 +141,16 @@ Las alertas aparecen cuando hay artículos con un mínimo configurado mayor que 
 ### 6.7.1 Solicitar una compra desde Bodega
 
 1. Con una cuenta de Bodega o Administrador, abra **Operaciones de bodega > Solicitar compra**. También puede usar **Solicitar compra** en una fila del inventario o en una alerta de stock.
-2. Seleccione un artículo existente o ingrese el nombre y la descripción de uno nuevo. Si accedió desde inventario o una alerta, el artículo y una cantidad sugerida se precargan; puede modificar la cantidad.
-3. Indique una cantidad entera positiva, una obra activa si corresponde y el motivo. Envíe la solicitud y consulte su estado en **Mis solicitudes**.
+2. Seleccione un artículo existente o ingrese el nombre y la descripción de uno nuevo. Indique su cantidad entera positiva. Si accedió desde inventario o una alerta, el primer artículo y una cantidad sugerida se precargan; puede modificarlos.
+3. Use **Agregar artículo** o **Quitar artículo** para completar la lista. No puede repetir un artículo del catálogo. Indique una obra activa si corresponde y el motivo. Envíe la solicitud y consulte sus artículos y estado en **Mis solicitudes**.
 
 La solicitud queda pendiente. No crea el artículo nuevo, no modifica existencias y no registra movimientos en el Cardex. En **Mis solicitudes** verá la decisión, la persona que revisó y el comentario, si corresponde.
 
 ### 6.7.2 Solicitar material desde terreno
 
 1. Ingrese con una cuenta de Técnico y abra **Solicitar material**.
-2. Seleccione una de sus obras activas y un material del catálogo. Si no está catalogado, seleccione **Material no catalogado** y describa lo necesario.
-3. Indique una cantidad entera positiva, prioridad y justificación; envíe la solicitud.
+2. Seleccione una de sus obras activas y un material del catálogo. Si no está catalogado, seleccione **Material no catalogado** y describa lo necesario. Indique una cantidad entera positiva para cada material.
+3. Use **Agregar material** o **Quitar material** para completar la lista, sin repetir materiales del catálogo. Indique prioridad y justificación; envíe la solicitud.
 4. Consulte el estado y la respuesta, cuando exista, en **Mis solicitudes**. Si no aparece ninguna obra, solicite a Finanzas que verifique su asignación.
 
 La solicitud queda pendiente y no modifica el inventario ni el Cardex. En **Mis solicitudes** verá la decisión, la persona que revisó y el comentario, si corresponde.
@@ -159,7 +159,7 @@ La solicitud queda pendiente y no modifica el inventario ni el Cardex. En **Mis 
 
 1. Con una cuenta de Finanzas o Administrador, abra **Finanzas > Solicitudes de material**.
 2. Filtre por estado y tipo para revisar las solicitudes de Bodega o Técnico.
-3. Apruebe o rechace las solicitudes pendientes. Para rechazar debe indicar un motivo; al aprobar el comentario es opcional.
+3. Revise todos los artículos de cada solicitud y apruebe o rechace la solicitud completa. Para rechazar debe indicar un motivo; al aprobar el comentario es opcional.
 
 La decisión queda registrada con la persona revisora y la fecha. Una solicitud resuelta no puede decidirse nuevamente. Aprobar o rechazar no modifica existencias, no registra movimientos en el Cardex ni genera una orden de compra; el abastecimiento debe gestionarse por el flujo de compras correspondiente.
 

@@ -163,9 +163,8 @@ decisiones siguen afectando a la solicitud completa y no generan stock,
 Cardex ni órdenes de compra. SQLite migra cada solicitud anterior a una
 cabecera con un ítem al iniciar el backend.
 
-**Compatibilidad temporal:** el frontend existente todavía usa el formato
-anterior de un artículo; no debe utilizarse para crear o revisar solicitudes
-hasta adaptarlo al nuevo contrato de `items`.
+El frontend permite agregar y quitar ítems en una solicitud y muestra la lista
+completa en el historial y en la bandeja de Finanzas.
 
 ### 1. Ingreso y permisos
 

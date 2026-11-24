@@ -4,6 +4,8 @@ import { Box } from "../../../Components/Box/Box";
 import { Frame } from "../../../Components/Frame/Frame";
 import { Title } from "../../../Components/Title/Title";
 import { SolicitudHistorial } from "../../../Components/SolicitudHistorial/SolicitudHistorial";
+import { SolicitudItemsFormulario } from "../../../Components/SolicitudItems/SolicitudItemsFormulario";
+import { nuevaFila, validarFilas, type FilaSolicitud } from "../../../Components/SolicitudItems/solicitudItems";
 import { CreateSolicitudCompra, GetEgresoCatalogos, GetMisSolicitudes } from "../../../Helpers/APIConnector";
 import useValidateRol from "../../../Hooks/useValidateRol";
 import { Rol, type EgresoCatalogos, type SolicitudCompraCreate, type SolicitudMaterial } from "../../../types/general";
@@ -14,11 +16,7 @@ export function SolicitudesCompra() {
   const { search } = useLocation();
   const [catalogos, setCatalogos] = useState<EgresoCatalogos | null>(null);
   const [solicitudes, setSolicitudes] = useState<SolicitudMaterial[]>([]);
-  const [tipo, setTipo] = useState<"existente" | "nuevo">("existente");
-  const [articuloId, setArticuloId] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [cantidad, setCantidad] = useState("");
+  const [filas, setFilas] = useState<FilaSolicitud[]>([nuevaFila()]);
   const [obraId, setObraId] = useState("");
   const [motivo, setMotivo] = useState("");
   const [cargando, setCargando] = useState(true);
@@ -43,9 +41,8 @@ export function SolicitudesCompra() {
         if (id) {
           const articulo = catalogo.data.articulos.find((item) => String(item.id) === id);
           if (!articulo) throw new Error("No se encontró el artículo seleccionado.");
-          setTipo("existente");
-          setArticuloId(String(articulo.id));
-          setCantidad(String(Math.max(1, articulo.stock_minimo - articulo.stock_actual)));
+          setFilas([{ ...nuevaFila(), articuloId: String(articulo.id),
+            cantidad: String(Math.max(1, articulo.stock_minimo - articulo.stock_actual)) }]);
         }
       })
       .catch((e: unknown) => {
@@ -57,19 +54,20 @@ export function SolicitudesCompra() {
 
   async function guardar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const unidades = Number(cantidad);
-    if (!Number.isSafeInteger(unidades) || unidades <= 0 || unidades > 2147483647 ||
-        !motivo.trim() || (tipo === "existente" ? !articuloId : !nombre.trim())) {
-      setError("Indique el artículo, una cantidad entera positiva y el motivo.");
+    const errorFilas = validarFilas(filas, false);
+    if (errorFilas || !motivo.trim()) {
+      setError(errorFilas || "Indique el motivo.");
       return;
     }
     const body: SolicitudCompraCreate = {
-      cantidad: unidades,
       obra_id: obraId ? Number(obraId) : null,
       motivo: motivo.trim(),
-      ...(tipo === "existente"
-        ? { articulo_id: Number(articuloId) }
-        : { nombre_articulo: nombre.trim(), descripcion_articulo: descripcion.trim() }),
+      items: filas.map((fila) => ({
+        cantidad: Number(fila.cantidad),
+        ...(fila.tipo === "existente"
+          ? { articulo_id: Number(fila.articuloId) }
+          : { nombre_articulo: fila.nombre.trim(), descripcion_articulo: fila.descripcion.trim() }),
+      })),
     };
     setGuardando(true);
     setError("");
@@ -80,10 +78,8 @@ export function SolicitudesCompra() {
       const solicitud = resultado.data;
       setSolicitudes((actuales) => [solicitud, ...actuales]);
       setAviso(`Solicitud #${solicitud.id} registrada. El inventario no fue modificado.`);
-      setCantidad("");
+      setFilas([nuevaFila()]);
       setMotivo("");
-      setNombre("");
-      setDescripcion("");
       setObraId("");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "No se pudo registrar la solicitud.");
@@ -93,7 +89,6 @@ export function SolicitudesCompra() {
   }
 
   if (!permitido) return null;
-  const articulo = catalogos?.articulos.find((item) => String(item.id) === articuloId);
   return (
     <Frame>
       <Box style={{ flexFlow: "column nowrap", alignItems: "stretch" }}>
@@ -105,45 +100,15 @@ export function SolicitudesCompra() {
         {aviso && <p className={css.notice} role="status">{aviso}</p>}
         {cargando ? <p>Cargando datos...</p> : catalogos && (
           <form className={css.form} onSubmit={(event) => void guardar(event)}>
-            <label className={css.field}>
-              Tipo de artículo
-              <select className={css.input} value={tipo} onChange={(e) => setTipo(e.target.value === "nuevo" ? "nuevo" : "existente")}>
-                <option value="existente">Artículo existente</option>
-                <option value="nuevo">Artículo nuevo</option>
-              </select>
-            </label>
-            {tipo === "existente" ? (
-              <>
-                <label className={css.field}>
-                  Artículo
-                  <select className={css.input} required value={articuloId} onChange={(e) => setArticuloId(e.target.value)} aria-describedby={articulo ? "stock-articulo" : undefined}>
-                    <option value="">Seleccione un artículo</option>
-                    {catalogos.articulos.map((item) => <option key={item.id} value={item.id}>{item.codigo_sku || "Sin SKU"} · {item.nombre}</option>)}
-                  </select>
-                </label>
-                {articulo && <small id="stock-articulo">Stock actual: {articulo.stock_actual} · Mínimo: {articulo.stock_minimo}</small>}
-              </>
-            ) : (
-              <>
-                <label className={css.field}>Nombre del artículo
-                  <input className={css.input} required maxLength={150} value={nombre} onChange={(e) => setNombre(e.target.value)} />
-                </label>
-                <label className={css.field}>Descripción
-                  <textarea className={`${css.input} ${css.textarea}`} maxLength={255} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
-                </label>
-              </>
-            )}
-            <label className={css.field}>Cantidad
-              <input className={css.input} type="number" min="1" max="2147483647" step="1" required value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
-            </label>
+            <SolicitudItemsFormulario filas={filas} setFilas={setFilas} articulos={catalogos.articulos} tecnico={false} disabled={guardando} />
             <label className={css.field}>Obra (opcional)
-              <select className={css.input} value={obraId} onChange={(e) => setObraId(e.target.value)}>
+              <select className={css.input} disabled={guardando} value={obraId} onChange={(e) => setObraId(e.target.value)}>
                 <option value="">Sin obra</option>
                 {catalogos.obras.map((obra) => <option key={obra.id} value={obra.id}>{obra.codigo_obra} · {obra.nombre_obra}</option>)}
               </select>
             </label>
             <label className={css.field}>Motivo
-              <textarea className={`${css.input} ${css.textarea}`} required maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+              <textarea className={`${css.input} ${css.textarea}`} disabled={guardando} required maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
             </label>
             <div className={css.actions}>
               <button className={css.submit} type="submit" disabled={guardando}>{guardando ? "Guardando..." : "Enviar solicitud"}</button>

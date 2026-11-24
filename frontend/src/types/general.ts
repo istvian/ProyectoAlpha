@@ -238,16 +238,21 @@ export interface EgresoCreate {
 export type EstadoSolicitudMaterial = "PENDIENTE" | "APROBADA" | "RECHAZADA";
 export type TipoSolicitudMaterial = "COMPRA_BODEGA" | "MATERIAL_TECNICO";
 
-export interface SolicitudMaterial {
+export interface SolicitudMaterialItem {
   id: number;
-  tipo_solicitud: TipoSolicitudMaterial;
-  prioridad: "BAJA" | "NORMAL" | "ALTA";
-  estado: EstadoSolicitudMaterial;
   articulo_id: number | null;
   codigo_sku: string | null;
   nombre_articulo: string;
   descripcion_articulo: string | null;
   cantidad: number;
+}
+
+export interface SolicitudMaterial {
+  id: number;
+  tipo_solicitud: TipoSolicitudMaterial;
+  prioridad: "BAJA" | "NORMAL" | "ALTA";
+  estado: EstadoSolicitudMaterial;
+  items: SolicitudMaterialItem[];
   obra_id: number | null;
   obra: string | null;
   motivo: string;
@@ -260,29 +265,37 @@ export interface SolicitudMaterial {
   comentario_revision: string | null;
 }
 
-export type SolicitudCompraCreate = {
+export type SolicitudCompraItemCreate = {
   cantidad: number;
-  obra_id: number | null;
-  motivo: string;
 } & (
   | { articulo_id: number }
   | { nombre_articulo: string; descripcion_articulo: string }
 );
+
+export type SolicitudCompraCreate = {
+  items: SolicitudCompraItemCreate[];
+  obra_id: number | null;
+  motivo: string;
+};
 
 export interface ContextoSolicitudTecnico {
   obras: { id: number; codigo_obra: string; nombre_obra: string }[];
   articulos: { id: number; codigo_sku: string | null; nombre: string }[];
 }
 
-export type SolicitudTecnicoCreate = {
+export type SolicitudTecnicoItemCreate = {
   cantidad: number;
-  obra_id: number;
-  motivo: string;
-  prioridad: "BAJA" | "NORMAL" | "ALTA";
 } & (
   | { articulo_id: number }
   | { descripcion_articulo: string }
 );
+
+export type SolicitudTecnicoCreate = {
+  items: SolicitudTecnicoItemCreate[];
+  obra_id: number;
+  motivo: string;
+  prioridad: "BAJA" | "NORMAL" | "ALTA";
+};
 export interface MermaCreate {
   articulo_id: number;
   cantidad: number;
