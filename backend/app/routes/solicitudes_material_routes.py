@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -6,39 +7,34 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from middlewares.jwt_helper import check_user, check_user_any
 from models.obra import Obra
 from models.proveedor import Articulos
-from models.solicitud_material import EstadoSolicitud, PrioridadSolicitud, SolicitudMaterial, TipoSolicitud
+from models.solicitud_material import (
+    EstadoSolicitud, PrioridadSolicitud, SolicitudMaterial, SolicitudMaterialItem, TipoSolicitud,
+)
 from models.user import User
 from schemas.roles import Roles
+from tortoise.query_utils import Prefetch
 from tortoise.transactions import atomic
 
 router = APIRouter(tags=["Solicitudes de material"])
 
 
-class SolicitudBase(BaseModel):
+class SolicitudItemBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     articulo_id: int | None = Field(default=None, gt=0, le=2147483647, strict=True)
     nombre_articulo: str | None = Field(default=None, max_length=150, strict=True)
     descripcion_articulo: str | None = Field(default=None, max_length=255, strict=True)
     cantidad: int = Field(gt=0, le=2147483647, strict=True)
-    obra_id: int | None = Field(default=None, gt=0, le=2147483647, strict=True)
-    motivo: str = Field(min_length=1, max_length=2000, strict=True)
 
-    @field_validator("nombre_articulo", "descripcion_articulo", "motivo")
+    @field_validator("nombre_articulo", "descripcion_articulo")
     @classmethod
     def limpiar_texto(cls, value: str | None) -> str | None:
         return value.strip() if value is not None else None
 
-    @model_validator(mode="after")
-    def validar_motivo(self) -> "SolicitudBase":
-        if not self.motivo:
-            raise ValueError("El motivo es obligatorio.")
-        return self
 
-
-class SolicitudCompraCreate(SolicitudBase):
+class SolicitudCompraItem(SolicitudItemBase):
     @model_validator(mode="after")
-    def validar_articulo(self) -> "SolicitudCompraCreate":
+    def validar_articulo(self) -> "SolicitudCompraItem":
         if self.articulo_id is not None:
             if self.nombre_articulo is not None or self.descripcion_articulo is not None:
                 raise ValueError("Indique un artículo existente o uno nuevo, no ambos.")
@@ -47,12 +43,9 @@ class SolicitudCompraCreate(SolicitudBase):
         return self
 
 
-class SolicitudTecnicoCreate(SolicitudBase):
-    obra_id: int = Field(gt=0, le=2147483647, strict=True)
-    prioridad: PrioridadSolicitud
-
+class SolicitudTecnicoItem(SolicitudItemBase):
     @model_validator(mode="after")
-    def validar_material(self) -> "SolicitudTecnicoCreate":
+    def validar_material(self) -> "SolicitudTecnicoItem":
         if self.nombre_articulo is not None:
             raise ValueError("Indique una descripción para el material no catalogado.")
         if self.articulo_id is not None:
@@ -60,6 +53,47 @@ class SolicitudTecnicoCreate(SolicitudBase):
                 raise ValueError("Indique un material existente o una descripción, no ambos.")
         elif not self.descripcion_articulo:
             raise ValueError("Indique la descripción del material no catalogado.")
+        return self
+
+
+class SolicitudBase(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    obra_id: int | None = Field(default=None, gt=0, le=2147483647, strict=True)
+    motivo: str = Field(min_length=1, max_length=2000, strict=True)
+
+    @field_validator("motivo")
+    @classmethod
+    def limpiar_motivo(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("El motivo es obligatorio.")
+        return value
+
+    @staticmethod
+    def validar_articulos_unicos(items: Sequence[SolicitudItemBase]) -> None:
+        ids = [item.articulo_id for item in items if item.articulo_id is not None]
+        if len(ids) != len(set(ids)):
+            raise ValueError("No se puede repetir un artículo del catálogo en la misma solicitud.")
+
+
+class SolicitudCompraCreate(SolicitudBase):
+    items: list[SolicitudCompraItem] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validar_items(self) -> "SolicitudCompraCreate":
+        self.validar_articulos_unicos(self.items)
+        return self
+
+
+class SolicitudTecnicoCreate(SolicitudBase):
+    obra_id: int = Field(gt=0, le=2147483647, strict=True)
+    prioridad: PrioridadSolicitud
+    items: list[SolicitudTecnicoItem] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validar_items(self) -> "SolicitudTecnicoCreate":
+        self.validar_articulos_unicos(self.items)
         return self
 
 
@@ -83,13 +117,24 @@ async def _usuario_actual(request: Request, roles: tuple[Roles, ...]) -> User:
     return usuario
 
 
-async def _buscar_articulo(articulo_id: int | None) -> Articulos | None:
-    if articulo_id is None:
-        return None
-    articulo = await Articulos.get_or_none(id=articulo_id)
-    if not articulo:
-        raise HTTPException(status_code=404, detail="El artículo no existe.")
-    return articulo
+async def _guardar_items(
+    solicitud: SolicitudMaterial, items: Sequence[SolicitudItemBase], tipo: TipoSolicitud
+) -> None:
+    ids = [item.articulo_id for item in items if item.articulo_id is not None]
+    articulos = {articulo.id: articulo for articulo in await Articulos.filter(id__in=ids)}
+    if any(articulo_id not in articulos for articulo_id in ids):
+        raise HTTPException(status_code=404, detail="Uno de los artículos no existe.")
+    for item in items:
+        articulo = articulos.get(item.articulo_id)
+        await SolicitudMaterialItem.create(
+            solicitud=solicitud,
+            articulo=articulo,
+            nombre_articulo=articulo.nombre if articulo else (
+                item.nombre_articulo if tipo == TipoSolicitud.COMPRA_BODEGA else "Material no catalogado"
+            ),
+            descripcion_articulo=articulo.descripcion if articulo else item.descripcion_articulo or None,
+            cantidad=item.cantidad,
+        )
 
 
 def _serializar(solicitud: SolicitudMaterial) -> dict:
@@ -98,11 +143,17 @@ def _serializar(solicitud: SolicitudMaterial) -> dict:
         "tipo_solicitud": solicitud.tipo_solicitud.value,
         "prioridad": solicitud.prioridad.value,
         "estado": solicitud.estado.value,
-        "articulo_id": solicitud.articulo_id,
-        "codigo_sku": solicitud.articulo.codigo_sku if solicitud.articulo else None,
-        "nombre_articulo": solicitud.nombre_articulo,
-        "descripcion_articulo": solicitud.descripcion_articulo,
-        "cantidad": solicitud.cantidad,
+        "items": [
+            {
+                "id": item.id,
+                "articulo_id": item.articulo_id,
+                "codigo_sku": item.articulo.codigo_sku if item.articulo else None,
+                "nombre_articulo": item.nombre_articulo,
+                "descripcion_articulo": item.descripcion_articulo,
+                "cantidad": item.cantidad,
+            }
+            for item in solicitud.items
+        ],
         "obra_id": solicitud.obra_id,
         "obra": solicitud.obra.nombre_obra if solicitud.obra else None,
         "motivo": solicitud.motivo,
@@ -117,13 +168,15 @@ def _serializar(solicitud: SolicitudMaterial) -> dict:
 
 
 def _con_relaciones():
-    return SolicitudMaterial.all().select_related("articulo", "obra", "solicitante", "revisado_por")
+    return SolicitudMaterial.all().select_related("obra", "solicitante", "revisado_por").prefetch_related(
+        Prefetch("items", queryset=SolicitudMaterialItem.all().select_related("articulo").order_by("id"))
+    )
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(check_user(Roles.bodega))])
+@atomic()
 async def crear_solicitud(body: SolicitudCompraCreate, request: Request):
     usuario = await _usuario_actual(request, (Roles.bodega, Roles.admin))
-    articulo = await _buscar_articulo(body.articulo_id)
     obra = None
     if body.obra_id is not None:
         obra = await Obra.get_or_none(id=body.obra_id, enabled=True)
@@ -133,13 +186,10 @@ async def crear_solicitud(body: SolicitudCompraCreate, request: Request):
     solicitud = await SolicitudMaterial.create(
         tipo_solicitud=TipoSolicitud.COMPRA_BODEGA,
         solicitante=usuario,
-        articulo=articulo,
-        nombre_articulo=articulo.nombre if articulo else body.nombre_articulo,
-        descripcion_articulo=articulo.descripcion if articulo else body.descripcion_articulo or None,
-        cantidad=body.cantidad,
         obra=obra,
         motivo=body.motivo,
     )
+    await _guardar_items(solicitud, body.items, TipoSolicitud.COMPRA_BODEGA)
     solicitud = await _con_relaciones().get(id=solicitud.id)
     return {"error": False, "mensaje": "Solicitud registrada.", "data": _serializar(solicitud)}
 
@@ -165,18 +215,14 @@ async def crear_solicitud_tecnico(body: SolicitudTecnicoCreate, request: Request
     ).select_for_update().first()
     if not obra:
         raise HTTPException(status_code=404, detail="La obra no existe, está inactiva o no está asignada a usted.")
-    articulo = await _buscar_articulo(body.articulo_id)
     solicitud = await SolicitudMaterial.create(
         tipo_solicitud=TipoSolicitud.MATERIAL_TECNICO,
         prioridad=body.prioridad,
         solicitante=usuario,
-        articulo=articulo,
-        nombre_articulo=articulo.nombre if articulo else "Material no catalogado",
-        descripcion_articulo=articulo.descripcion if articulo else body.descripcion_articulo,
-        cantidad=body.cantidad,
         obra=obra,
         motivo=body.motivo,
     )
+    await _guardar_items(solicitud, body.items, TipoSolicitud.MATERIAL_TECNICO)
     solicitud = await _con_relaciones().get(id=solicitud.id)
     return {"error": False, "mensaje": "Solicitud registrada.", "data": _serializar(solicitud)}
 

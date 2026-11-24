@@ -47,13 +47,16 @@ class SolicitudesFinanzasTests(unittest.IsolatedAsyncioTestCase):
     async def crear_solicitudes(self):
         self.login(self.usuarios[Roles.bodega], Roles.bodega)
         compra = await self.client.post("/solicitudes-material", json={
-            "articulo_id": self.articulo.id, "cantidad": 2, "motivo": "Reposición",
+            "items": [{"articulo_id": self.articulo.id, "cantidad": 2},
+                      {"nombre_articulo": "Casco", "cantidad": 1}], "motivo": "Reposición",
         })
         self.assertEqual(compra.status_code, 201, compra.text)
         self.login(self.usuarios[Roles.tecnico], Roles.tecnico)
         material = await self.client.post("/solicitudes-material/tecnico", json={
-            "obra_id": self.obra.id, "descripcion_articulo": "Cable especial",
-            "cantidad": 3, "prioridad": "ALTA", "motivo": "Instalación",
+            "obra_id": self.obra.id, "items": [
+                {"descripcion_articulo": "Cable especial", "cantidad": 3},
+                {"articulo_id": self.articulo.id, "cantidad": 1},
+            ], "prioridad": "ALTA", "motivo": "Instalación",
         })
         self.assertEqual(material.status_code, 201, material.text)
         return compra.json()["data"]["id"], material.json()["data"]["id"]
@@ -72,7 +75,8 @@ class SolicitudesFinanzasTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual({s["id"] for s in lista.json()["data"]}, {compra, material})
         tecnico = next(s for s in lista.json()["data"] if s["id"] == material)
         self.assertEqual(tecnico["solicitante_nombre"], "tecnico")
-        self.assertEqual(tecnico["descripcion_articulo"], "Cable especial")
+        self.assertEqual(tecnico["items"][0]["descripcion_articulo"], "Cable especial")
+        self.assertEqual(len(tecnico["items"]), 2)
         self.assertEqual(tecnico["obra"], "Obra")
         filtrada = await self.client.get("/solicitudes-material/finanzas", params={
             "estado": "PENDIENTE", "tipo_solicitud": "MATERIAL_TECNICO",
@@ -90,11 +94,13 @@ class SolicitudesFinanzasTests(unittest.IsolatedAsyncioTestCase):
                          ("APROBADA", self.usuarios[Roles.finanzas].id, "finanzas"))
         self.assertEqual(data["comentario_revision"], "Aprobado para gestionar")
         self.assertIsNotNone(data["fecha_revision"])
+        self.assertEqual([item["nombre_articulo"] for item in data["items"]], ["Guantes", "Casco"])
         rechazada = await self.client.post(f"/solicitudes-material/{material}/rechazar", json={
             "comentario_revision": "Sin presupuesto",
         })
         self.assertEqual(rechazada.status_code, 200, rechazada.text)
         self.assertEqual(rechazada.json()["data"]["estado"], "RECHAZADA")
+        self.assertEqual(len(rechazada.json()["data"]["items"]), 2)
         for estado, esperado in (("PENDIENTE", []), ("APROBADA", [compra]), ("RECHAZADA", [material])):
             respuesta = await self.client.get("/solicitudes-material/finanzas", params={"estado": estado})
             self.assertEqual([s["id"] for s in respuesta.json()["data"]], esperado)
@@ -107,6 +113,7 @@ class SolicitudesFinanzasTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual([s["id"] for s in mis], [esperado])
             self.assertEqual((mis[0]["estado"], mis[0]["revisado_por_nombre"], mis[0]["comentario_revision"]),
                              (decision, "finanzas", comentario))
+            self.assertEqual(len(mis[0]["items"]), 2)
         self.login(self.otro, Roles.bodega)
         self.assertEqual((await self.client.get("/solicitudes-material")).json()["data"], [])
         self.assertEqual((await Articulos.get(id=self.articulo.id)).stock_actual, stock)

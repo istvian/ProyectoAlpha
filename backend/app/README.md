@@ -135,6 +135,38 @@ backend en ejecución, se puede consultar y probar en `/docs`.
 Las funciones se presentan en el orden habitual del trabajo: preparar una
 compra, recibirla, controlar los materiales y revisar lo ocurrido.
 
+### API de solicitudes de material
+
+`POST /api/v1/solicitudes-material` (Bodega/Administrador) y
+`POST /api/v1/solicitudes-material/tecnico` (Técnico) reciben una cabecera y un
+arreglo obligatorio `items` no vacío. Cada ítem contiene `cantidad` entera
+positiva y un `articulo_id` del catálogo, o datos del material no catalogado.
+No se puede repetir un mismo `articulo_id` dentro de la solicitud.
+
+Ejemplo para Bodega:
+
+```json
+{
+  "obra_id": null,
+  "motivo": "Reposición",
+  "items": [
+    {"articulo_id": 1, "cantidad": 2},
+    {"nombre_articulo": "Casco", "descripcion_articulo": "Azul", "cantidad": 1}
+  ]
+}
+```
+
+Para Técnico se requiere una obra activa asignada, `prioridad` y, para cada
+material no catalogado, `descripcion_articulo` en vez de `nombre_articulo`.
+Las consultas y respuestas de aprobación/rechazo devuelven `items`; las
+decisiones siguen afectando a la solicitud completa y no generan stock,
+Cardex ni órdenes de compra. SQLite migra cada solicitud anterior a una
+cabecera con un ítem al iniciar el backend.
+
+**Compatibilidad temporal:** el frontend existente todavía usa el formato
+anterior de un artículo; no debe utilizarse para crear o revisar solicitudes
+hasta adaptarlo al nuevo contrato de `items`.
+
 ### 1. Ingreso y permisos
 
 Cada persona inicia sesión con su cuenta. Puede cerrar la sesión y mantenerla

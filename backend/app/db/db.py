@@ -38,6 +38,7 @@ async def SetupDB():
     await PrepareLegacyConteoSchema()
     await PrepareRecepcionSchema()
     await PrepareMermasUsoInternoSchema()
+    await PrepareSolicitudesMaterialItemsSchema()
     await Tortoise.generate_schemas()
     await EnsureArticuloJsonFields()
     await EnsureDocumentoTipoConstraint()
@@ -46,6 +47,110 @@ async def SetupDB():
     await CreateRoles()
     await SetupAccounts()
     await SeedDemoDataInDevelopment()
+
+
+async def PrepareSolicitudesMaterialItemsSchema():
+    connection = Tortoise.get_connection("default")
+    if connection.capabilities.dialect != "sqlite":
+        return
+    names = {
+        row["name"] for row in await connection.execute_query_dict(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+    if "solicitudes_material" not in names:
+        return
+    columns = {
+        row["name"] for row in await connection.execute_query_dict(
+            'PRAGMA table_info("solicitudes_material")'
+        )
+    }
+    legacy = {"articulo_id", "nombre_articulo", "descripcion_articulo", "cantidad"}
+    header = {
+        "id", "tipo_solicitud", "prioridad", "estado", "solicitante_id", "obra_id",
+        "motivo", "fecha_creacion", "revisado_por_id", "fecha_revision", "comentario_revision",
+    }
+    if not columns.intersection(legacy):
+        if columns != header:
+            raise RuntimeError("No se reconoce el esquema de solicitudes de material.")
+        if "solicitudes_material_items" not in names:
+            rows = await connection.execute_query_dict('SELECT COUNT(*) AS n FROM "solicitudes_material"')
+            if rows[0]["n"]:
+                raise RuntimeError("Falta la tabla de ítems para solicitudes existentes.")
+        return
+    if columns != header | legacy or {
+        "solicitudes_material_items", "solicitudes_material_migracion",
+        "solicitudes_material_items_migracion",
+    }.intersection(names):
+        raise RuntimeError("No se reconoce el esquema anterior de solicitudes de material.")
+
+    for name in names:
+        escaped = name.replace('"', '""')
+        references = await connection.execute_query_dict(f'PRAGMA foreign_key_list("{escaped}")')
+        if any(row["table"] == "solicitudes_material" for row in references):
+            raise RuntimeError("Otra tabla referencia las solicitudes; no se puede migrar automáticamente.")
+    objects = await connection.execute_query_dict(
+        "SELECT sql FROM sqlite_master WHERE tbl_name='solicitudes_material' "
+        "AND type IN ('index', 'trigger') AND sql IS NOT NULL"
+    )
+    for item in objects:
+        if re.search(r"\b(?:articulo_id|nombre_articulo|descripcion_articulo|cantidad)\b", item["sql"], re.IGNORECASE):
+            raise RuntimeError("Un índice o trigger depende de columnas antiguas de solicitudes.")
+    sequence = await connection.execute_query_dict(
+        "SELECT seq FROM sqlite_sequence WHERE name='solicitudes_material'"
+    ) if "sqlite_sequence" in names else []
+    async with in_transaction() as transaction:
+        await transaction.execute_query(
+            'CREATE TABLE "solicitudes_material_migracion" ('
+            '"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
+            '"tipo_solicitud" VARCHAR(16) NOT NULL, "prioridad" VARCHAR(6) NOT NULL, '
+            '"estado" VARCHAR(9) NOT NULL, "motivo" TEXT NOT NULL, '
+            '"fecha_creacion" TIMESTAMP NOT NULL, "fecha_revision" TIMESTAMP, '
+            '"comentario_revision" TEXT, '
+            '"obra_id" INT REFERENCES "obras" ("id") ON DELETE RESTRICT, '
+            '"revisado_por_id" INT REFERENCES "user" ("id") ON DELETE RESTRICT, '
+            '"solicitante_id" INT NOT NULL REFERENCES "user" ("id") ON DELETE RESTRICT)'
+        )
+        header_names = ", ".join(f'"{name}"' for name in sorted(header))
+        await transaction.execute_query(
+            f'INSERT INTO "solicitudes_material_migracion" ({header_names}) '
+            f'SELECT {header_names} FROM "solicitudes_material"'
+        )
+        await transaction.execute_query(
+            'CREATE TABLE "solicitudes_material_items_migracion" AS '
+            'SELECT id AS solicitud_id, articulo_id, nombre_articulo, '
+            'descripcion_articulo, cantidad FROM "solicitudes_material"'
+        )
+        await transaction.execute_query('DROP TABLE "solicitudes_material"')
+        await transaction.execute_query(
+            'ALTER TABLE "solicitudes_material_migracion" RENAME TO "solicitudes_material"'
+        )
+        for item in objects:
+            await transaction.execute_query(item["sql"])
+        if sequence:
+            await transaction.execute_query(
+                "DELETE FROM sqlite_sequence WHERE name = 'solicitudes_material'"
+            )
+            await transaction.execute_query(
+                "INSERT INTO sqlite_sequence (name, seq) VALUES ('solicitudes_material', ?)",
+                [sequence[0]["seq"]],
+            )
+        await transaction.execute_query(
+            'CREATE TABLE "solicitudes_material_items" ('
+            '"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, '
+            '"nombre_articulo" VARCHAR(150) NOT NULL, "descripcion_articulo" VARCHAR(255), '
+            '"cantidad" INT NOT NULL, '
+            '"articulo_id" INT REFERENCES "articulos" ("id") ON DELETE RESTRICT, '
+            '"solicitud_id" INT NOT NULL REFERENCES "solicitudes_material" ("id") ON DELETE CASCADE, '
+            'CONSTRAINT "uid_solicitudes_solicit_articul" UNIQUE ("solicitud_id", "articulo_id"))'
+        )
+        await transaction.execute_query(
+            'INSERT INTO "solicitudes_material_items" '
+            '(solicitud_id, articulo_id, nombre_articulo, descripcion_articulo, cantidad) '
+            'SELECT solicitud_id, articulo_id, nombre_articulo, descripcion_articulo, cantidad '
+            'FROM "solicitudes_material_items_migracion"'
+        )
+        await transaction.execute_query('DROP TABLE "solicitudes_material_items_migracion"')
 
 
 async def PrepareMermasUsoInternoSchema():

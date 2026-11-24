@@ -28,13 +28,6 @@ class SolicitudMaterial(models.Model):
     solicitante = fields.ForeignKeyField(
         "models.User", related_name="solicitudes_material", on_delete=fields.RESTRICT
     )
-    articulo = fields.ForeignKeyField(
-        "models.Articulos", related_name="solicitudes_material",
-        null=True, on_delete=fields.RESTRICT,
-    )
-    nombre_articulo = fields.CharField(max_length=150)
-    descripcion_articulo = fields.CharField(max_length=255, null=True)
-    cantidad = fields.IntField()
     obra = fields.ForeignKeyField(
         "models.Obra", related_name="solicitudes_material",
         null=True, on_delete=fields.RESTRICT,
@@ -50,3 +43,21 @@ class SolicitudMaterial(models.Model):
 
     class Meta:
         table = "solicitudes_material"
+
+
+class SolicitudMaterialItem(models.Model):
+    id = fields.IntField(pk=True)
+    solicitud = fields.ForeignKeyField(
+        "models.SolicitudMaterial", related_name="items", on_delete=fields.CASCADE,
+    )
+    articulo = fields.ForeignKeyField(
+        "models.Articulos", related_name="items_solicitudes_material",
+        null=True, on_delete=fields.RESTRICT,
+    )
+    nombre_articulo = fields.CharField(max_length=150)
+    descripcion_articulo = fields.CharField(max_length=255, null=True)
+    cantidad = fields.IntField()
+
+    class Meta:
+        table = "solicitudes_material_items"
+        unique_together = (("solicitud", "articulo"),)

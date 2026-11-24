@@ -60,45 +60,51 @@ class SolicitudesTecnicoTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(datos["articulos"], [{"id": self.articulo.id, "codigo_sku": "GUANTES", "nombre": "Guantes"}])
 
     async def test_crea_solicitudes_y_lista_solo_las_propias_sin_movimientos(self):
-        base = {"obra_id": self.obra.id, "cantidad": 2, "motivo": " Trabajo ", "prioridad": "ALTA"}
-        existente = await self.client.post("/solicitudes-material/tecnico", json={**base, "articulo_id": self.articulo.id})
+        base = {"obra_id": self.obra.id, "motivo": " Trabajo ", "prioridad": "ALTA"}
+        existente = await self.client.post("/solicitudes-material/tecnico", json={**base, "items": [
+            {"articulo_id": self.articulo.id, "cantidad": 2},
+            {"descripcion_articulo": " Material especial ", "cantidad": 3},
+        ]})
         self.assertEqual(existente.status_code, 201, existente.text)
         data = existente.json()["data"]
         self.assertEqual((data["tipo_solicitud"], data["estado"], data["prioridad"], data["motivo"]),
                          ("MATERIAL_TECNICO", "PENDIENTE", "ALTA", "Trabajo"))
-        nuevo = await self.client.post("/solicitudes-material/tecnico", json={**base, "descripcion_articulo": " Material especial "})
-        self.assertEqual(nuevo.status_code, 201, nuevo.text)
-        self.assertEqual(nuevo.json()["data"]["descripcion_articulo"], "Material especial")
-        self.assertIsNone(nuevo.json()["data"]["articulo_id"])
+        self.assertEqual(len(data["items"]), 2)
+        self.assertEqual(data["items"][1]["descripcion_articulo"], "Material especial")
+        self.assertIsNone(data["items"][1]["articulo_id"])
         self.login(self.otro, Roles.tecnico)
-        ajena = await self.client.post("/solicitudes-material/tecnico", json={**base, "obra_id": self.obra_ajena.id, "articulo_id": self.articulo.id})
+        ajena = await self.client.post("/solicitudes-material/tecnico", json={**base, "obra_id": self.obra_ajena.id, "items": [{"articulo_id": self.articulo.id, "cantidad": 1}]})
         self.assertEqual(ajena.status_code, 201)
         self.login(self.tecnico, Roles.tecnico)
         lista = (await self.client.get("/solicitudes-material")).json()["data"]
-        self.assertEqual({item["id"] for item in lista}, {data["id"], nuevo.json()["data"]["id"]})
+        self.assertEqual({item["id"] for item in lista}, {data["id"]})
+        self.assertEqual(len(lista[0]["items"]), 2)
         self.assertEqual((await SolicitudMaterial.get(id=data["id"])).solicitante_id, self.tecnico.id)
         self.assertEqual((await Articulos.get(id=self.articulo.id)).stock_actual, 4)
         self.assertEqual(await Articulos.all().count(), 1)
         self.assertEqual(await CardexLog.all().count(), 0)
 
     async def test_rechaza_obras_no_asignadas_y_entradas_invalidas(self):
-        base = {"obra_id": self.obra.id, "cantidad": 1, "motivo": "Necesario", "prioridad": "NORMAL", "articulo_id": self.articulo.id}
+        item = {"articulo_id": self.articulo.id, "cantidad": 1}
+        base = {"obra_id": self.obra.id, "motivo": "Necesario", "prioridad": "NORMAL", "items": [item]}
         for obra in (self.obra_inactiva, self.obra_ajena):
             self.assertEqual((await self.client.post("/solicitudes-material/tecnico", json={**base, "obra_id": obra.id})).status_code, 404)
         for cambio in (
-            {"obra_id": None}, {"cantidad": 0}, {"cantidad": 1.5},
-            {"cantidad": True}, {"prioridad": "URGENTE"}, {"motivo": "  "},
-            {"articulo_id": None}, {"descripcion_articulo": "Ambos"},
+            {"obra_id": None}, {"items": []}, {"items": [{**item, "cantidad": 0}]},
+            {"items": [{**item, "cantidad": 1.5}]}, {"items": [{**item, "cantidad": True}]},
+            {"prioridad": "URGENTE"}, {"motivo": "  "},
+            {"items": [{**item, "articulo_id": None}]},
+            {"items": [{**item, "descripcion_articulo": "Ambos"}]}, {"items": [item, item]},
             {"solicitante_id": self.otro.id}, {"estado": "APROBADA"},
         ):
             with self.subTest(cambio=cambio):
                 self.assertEqual((await self.client.post("/solicitudes-material/tecnico", json={**base, **cambio})).status_code, 422)
-        self.assertEqual((await self.client.post("/solicitudes-material/tecnico", json={**base, "articulo_id": 999})).status_code, 404)
+        self.assertEqual((await self.client.post("/solicitudes-material/tecnico", json={**base, "items": [item, {"articulo_id": 999, "cantidad": 1}]})).status_code, 404)
         self.assertEqual(await SolicitudMaterial.all().count(), 0)
         self.assertEqual(await CardexLog.all().count(), 0)
 
     async def test_permisos_y_cuenta_deshabilitada(self):
-        base = {"obra_id": self.obra.id, "cantidad": 1, "motivo": "Necesario", "prioridad": "BAJA", "articulo_id": self.articulo.id}
+        base = {"obra_id": self.obra.id, "motivo": "Necesario", "prioridad": "BAJA", "items": [{"articulo_id": self.articulo.id, "cantidad": 1}]}
         for rol in (Roles.bodega, Roles.finanzas, Roles.supervisor):
             self.login(self.usuarios[rol], rol)
             self.assertEqual((await self.client.get("/solicitudes-material/tecnico/contexto")).status_code, 403)
@@ -133,7 +139,7 @@ class SolicitudesTecnicoTests(unittest.IsolatedAsyncioTestCase):
         self.login(self.tecnico, Roles.tecnico)
         self.assertEqual((await self.client.get("/solicitudes-material/tecnico/contexto")).json()["data"]["obras"], [])
         intento = await self.client.post("/solicitudes-material/tecnico", json={
-            "obra_id": self.obra.id, "cantidad": 1, "motivo": "Necesario",
-            "prioridad": "NORMAL", "articulo_id": self.articulo.id,
+            "obra_id": self.obra.id, "motivo": "Necesario",
+            "prioridad": "NORMAL", "items": [{"articulo_id": self.articulo.id, "cantidad": 1}],
         })
         self.assertEqual(intento.status_code, 404)
