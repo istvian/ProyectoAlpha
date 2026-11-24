@@ -12,6 +12,7 @@ from routes.conteo_inventario_routes import router as conteo_inventario_router
 from routes.mermas_routes import router as mermas_router
 from routes.uso_interno_routes import router as uso_interno_router
 from routes.alertas_routes import router as alertas_router
+from routes.solicitudes_material_routes import router as solicitudes_material_router
 
 api_router = APIRouter()
 api_router.include_router(user_router, prefix="/users", tags=["Users"])
@@ -39,3 +40,4 @@ api_router.include_router(
     tags=["Uso interno"],
 )
 api_router.include_router(alertas_router, prefix="/alertas", tags=["Alertas"])
+api_router.include_router(solicitudes_material_router, prefix="/solicitudes-material")

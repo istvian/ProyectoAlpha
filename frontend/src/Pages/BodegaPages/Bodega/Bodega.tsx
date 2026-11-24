@@ -201,6 +201,7 @@ export function Bodega() {
           </Btn>
           <Btn onClick={() => nav("/bodega/conteo")}>Conteo físico</Btn>
           <Btn onClick={() => nav("/bodega/salida")}>Registrar salida</Btn>
+          <Btn onClick={() => nav("/bodega/solicitudes")}>Solicitar compra</Btn>
           <Btn onClick={() => nav("/bodega/mermas")}>
             Mermas y consumo interno
           </Btn>
@@ -254,7 +255,7 @@ export function Bodega() {
         />
       </CardContainer>
 
-      <StockMinimoAlertas />
+      <StockMinimoAlertas permitirSolicitud />
 
       {errorResumen && (
         <p className={css.error} role="alert">

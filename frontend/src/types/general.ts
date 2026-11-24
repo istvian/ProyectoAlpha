@@ -234,6 +234,33 @@ export interface EgresoCreate {
     cantidad: number;
   }[];
 }
+
+export interface SolicitudMaterial {
+  id: number;
+  tipo_solicitud: "COMPRA_BODEGA" | "MATERIAL_TECNICO";
+  prioridad: "BAJA" | "NORMAL" | "ALTA";
+  estado: "PENDIENTE" | "APROBADA" | "RECHAZADA";
+  articulo_id: number | null;
+  codigo_sku: string | null;
+  nombre_articulo: string;
+  descripcion_articulo: string | null;
+  cantidad: number;
+  obra_id: number | null;
+  obra: string | null;
+  motivo: string;
+  fecha_creacion: string;
+  fecha_revision: string | null;
+  comentario_revision: string | null;
+}
+
+export type SolicitudCompraCreate = {
+  cantidad: number;
+  obra_id: number | null;
+  motivo: string;
+} & (
+  | { articulo_id: number }
+  | { nombre_articulo: string; descripcion_articulo: string }
+);
 export interface MermaCreate {
   articulo_id: number;
   cantidad: number;

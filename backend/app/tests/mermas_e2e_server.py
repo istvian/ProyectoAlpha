@@ -13,7 +13,7 @@ from models.proveedor import Articulos
 from models.rol import Rol
 from models.user import User
 from routes.api import api_router
-from tests.test_mermas_routes import MODELOS
+from tests.test_solicitudes_material import MODELOS
 
 
 @asynccontextmanager
@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
             nombre=name, correo=f"e2e-{role}@example.invalid", password="no-login", rol=rol
         )
     await Articulos.create(codigo_sku="E2E-MERMAS", nombre="Artículo E2E", stock_actual=30)
+    await Articulos.create(codigo_sku="E2E-BAJO", nombre="Artículo bajo E2E", stock_actual=2, stock_minimo=5)
     await Obra.create(
         codigo_obra="E2E-OBRA", nombre_obra="Obra E2E", tipo_servicio="Prueba",
         tecnico_responsable=usuarios[5],

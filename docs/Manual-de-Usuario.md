@@ -137,6 +137,14 @@ Confirme que los datos describen el movimiento real antes de guardar. Estas oper
 
 Las alertas aparecen cuando hay artículos con un mínimo configurado mayor que cero y su stock está en o por debajo de ese mínimo. No sustituyen la verificación física de bodega.
 
+### 6.7.1 Solicitar una compra desde Bodega
+
+1. Con una cuenta de Bodega o Administrador, abra **Operaciones de bodega > Solicitar compra**. También puede usar **Solicitar compra** en una fila del inventario o en una alerta de stock.
+2. Seleccione un artículo existente o ingrese el nombre y la descripción de uno nuevo. Si accedió desde inventario o una alerta, el artículo y una cantidad sugerida se precargan; puede modificar la cantidad.
+3. Indique una cantidad entera positiva, una obra activa si corresponde y el motivo. Envíe la solicitud y consulte su estado en **Mis solicitudes**.
+
+La solicitud queda pendiente. No crea el artículo nuevo, no modifica existencias y no registra movimientos en el Cardex. La revisión de solicitudes por Finanzas aún no está disponible.
+
 ### 6.8 Consultar y exportar el Cardex
 
 1. Abra **Consultas y Cardex** con un rol autorizado.

@@ -30,6 +30,8 @@ import type {
   RecepcionCompra,
   RecepcionCompraCreate,
   ResponseBase,
+  SolicitudCompraCreate,
+  SolicitudMaterial,
   SystemLog,
   UsoInternoCreate,
   UsoInternoRegistro,
@@ -335,6 +337,24 @@ export async function GetEgresoCatalogos(): Promise<ResponseBase<EgresoCatalogos
   } catch (error) {
     console.error(error);
     return null;
+  }
+}
+
+export async function GetMisSolicitudes(): Promise<ResponseBase<SolicitudMaterial[]>> {
+  try {
+    return (await api.get<ResponseBase<SolicitudMaterial[]>>("/solicitudes-material")).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudieron consultar las solicitudes."));
+  }
+}
+
+export async function CreateSolicitudCompra(
+  body: SolicitudCompraCreate,
+): Promise<ResponseBase<SolicitudMaterial>> {
+  try {
+    return (await api.post<ResponseBase<SolicitudMaterial>>("/solicitudes-material", body)).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudo registrar la solicitud."));
   }
 }
 

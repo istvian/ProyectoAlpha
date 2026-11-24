@@ -27,6 +27,7 @@ import { SalidaMateriales } from "./Pages/BodegaPages/SalidaMateriales/SalidaMat
 import { RecepcionCompras } from "./Pages/BodegaPages/RecepcionCompras/RecepcionCompras";
 import { ConteoInventarioPage } from "./Pages/BodegaPages/ConteoInventario/ConteoInventario";
 import { RegistroMermasConsumo } from "./Pages/BodegaPages/RegistroMermasConsumo/RegistroMermasConsumo";
+import { SolicitudesCompra } from "./Pages/BodegaPages/SolicitudesCompra/SolicitudesCompra";
 
 function ProtectedRoute() {
   const status = useIsLogin();
@@ -105,6 +106,7 @@ function App() {
                   path="/bodega/conteo"
                 />
                 <Route element={<SalidaMateriales />} path="/bodega/salida" />
+                <Route element={<SolicitudesCompra />} path="/bodega/solicitudes" />
                 <Route
                   element={<RegistroMermasConsumo />}
                   path="/bodega/mermas"

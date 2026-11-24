@@ -26,6 +26,7 @@ async def SetupDB():
                 "models.ajustes_operativos",
                 "models.recepcion_compra",
                 "models.conteo_inventario",
+                "models.solicitud_material",
             ]
         },
     )

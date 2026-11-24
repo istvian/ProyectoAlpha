@@ -31,6 +31,7 @@ register_tortoise(
             "models.ajustes_operativos",
             "models.recepcion_compra",
             "models.conteo_inventario",
+            "models.solicitud_material",
         ]
     },
     generate_schemas=True,

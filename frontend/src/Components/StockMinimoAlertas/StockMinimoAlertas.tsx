@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { GetStockMinimoAlerts } from "../../Helpers/APIConnector";
 import type { AlertaStockMinimo } from "../../types/general";
 import css from "./StockMinimoAlertas.module.css";
 
-export function StockMinimoAlertas() {
+export function StockMinimoAlertas({ permitirSolicitud = false }: { permitirSolicitud?: boolean }) {
   const [alertas, setAlertas] = useState<AlertaStockMinimo[] | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -38,14 +39,15 @@ export function StockMinimoAlertas() {
 
   return (
     <section className={css.alertas} aria-labelledby="stock-alertas-title">
-      <summary>
-        <div className={css.encabezado}>
-          <h2 id="stock-alertas-title">Alertas de stock mínimo</h2>
-          {alertas !== null && (
-            <span className={css.total}>{alertas.length}</span>
-          )}
-        </div>
-        <details>
+      <details>
+        <summary>
+          <div className={css.encabezado}>
+            <h2 id="stock-alertas-title">Alertas de stock mínimo</h2>
+            {alertas !== null && (
+              <span className={css.total}>{alertas.length}</span>
+            )}
+          </div>
+        </summary>
           <p>La lista se actualiza automáticamente cada 30 segundos.</p>
           {error && (
             <p className={css.error} role="alert">
@@ -79,12 +81,16 @@ export function StockMinimoAlertas() {
                     Disponible: <strong>{articulo.stock_actual}</strong> ·
                     Mínimo: {articulo.stock_minimo}
                   </p>
+                  {permitirSolicitud && (
+                    <Link to={`/bodega/solicitudes?articulo=${articulo.id}`}>
+                      Solicitar compra
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
           ) : null}
-        </details>
-      </summary>
+      </details>
     </section>
   );
 }
