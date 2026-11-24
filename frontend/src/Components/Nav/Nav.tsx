@@ -36,6 +36,11 @@ export function Nav() {
       roles: [Rol.admin, Rol.finanzas],
     },
     {
+      nombre: "Solicitar material",
+      ruta: "/tecnico/solicitudes",
+      roles: [Rol.tecnico],
+    },
+    {
       nombre: "Consultas y Cardex",
       ruta: "/cardex",
       roles: ROLES_CONSULTA_CARDEX,

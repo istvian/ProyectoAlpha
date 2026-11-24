@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Box } from "../../../Components/Box/Box";
 import { Frame } from "../../../Components/Frame/Frame";
 import { Title } from "../../../Components/Title/Title";
+import { SolicitudHistorial } from "../../../Components/SolicitudHistorial/SolicitudHistorial";
 import { CreateSolicitudCompra, GetEgresoCatalogos, GetMisSolicitudes } from "../../../Helpers/APIConnector";
 import useValidateRol from "../../../Hooks/useValidateRol";
 import { Rol, type EgresoCatalogos, type SolicitudCompraCreate, type SolicitudMaterial } from "../../../types/general";
@@ -149,21 +150,7 @@ export function SolicitudesCompra() {
             </div>
           </form>
         )}
-        <section className={css.historial} aria-label="Mis solicitudes">
-          <h2>Mis solicitudes</h2>
-          {!cargando && catalogos && solicitudes.length === 0 && <p>No tienes solicitudes registradas.</p>}
-          <ul className={css.historialLista}>
-            {solicitudes.map((item) => (
-              <li className={css.historialItem} key={item.id}>
-                <strong>#{item.id} · {item.nombre_articulo}</strong>
-                <p>Estado: {item.estado} · Cantidad: {item.cantidad}</p>
-                <p>Obra: {item.obra || "Sin obra"} · Motivo: {item.motivo}</p>
-                {item.comentario_revision && <p>Respuesta: {item.comentario_revision}</p>}
-                <time dateTime={item.fecha_creacion}>{new Date(item.fecha_creacion).toLocaleString("es-CL")}</time>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <SolicitudHistorial solicitudes={solicitudes} cargando={cargando} disponible={catalogos !== null} />
       </Box>
     </Frame>
   );

@@ -9,6 +9,7 @@ import type {
   ConteoInventario,
   ConteoInventarioArticulo,
   ConteoInventarioCreate,
+  ContextoSolicitudTecnico,
   DocumentoTributario,
   EgresoCatalogos,
   EgresoCreate,
@@ -32,6 +33,7 @@ import type {
   ResponseBase,
   SolicitudCompraCreate,
   SolicitudMaterial,
+  SolicitudTecnicoCreate,
   SystemLog,
   UsoInternoCreate,
   UsoInternoRegistro,
@@ -353,6 +355,24 @@ export async function CreateSolicitudCompra(
 ): Promise<ResponseBase<SolicitudMaterial>> {
   try {
     return (await api.post<ResponseBase<SolicitudMaterial>>("/solicitudes-material", body)).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudo registrar la solicitud."));
+  }
+}
+
+export async function GetContextoSolicitudTecnico(): Promise<ResponseBase<ContextoSolicitudTecnico>> {
+  try {
+    return (await api.get<ResponseBase<ContextoSolicitudTecnico>>("/solicitudes-material/tecnico/contexto")).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudieron cargar las obras y materiales."));
+  }
+}
+
+export async function CreateSolicitudTecnico(
+  body: SolicitudTecnicoCreate,
+): Promise<ResponseBase<SolicitudMaterial>> {
+  try {
+    return (await api.post<ResponseBase<SolicitudMaterial>>("/solicitudes-material/tecnico", body)).data;
   } catch (error) {
     throw new Error(mensajeErrorApi(error, "No se pudo registrar la solicitud."));
   }

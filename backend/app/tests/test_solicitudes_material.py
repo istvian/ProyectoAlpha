@@ -117,10 +117,12 @@ class SolicitudesMaterialTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_permisos_y_usuario_deshabilitado(self):
         body = {"articulo_id": self.articulo.id, "cantidad": 1, "motivo": "Falta"}
-        for rol in (Roles.finanzas, Roles.supervisor, Roles.tecnico):
+        for rol in (Roles.finanzas, Roles.supervisor):
             self.login(f"{rol.name}@example.invalid", rol)
             self.assertEqual((await self.client.post("/solicitudes-material", json=body)).status_code, 403)
             self.assertEqual((await self.client.get("/solicitudes-material")).status_code, 403)
+        self.login("tecnico@example.invalid", Roles.tecnico)
+        self.assertEqual((await self.client.post("/solicitudes-material", json=body)).status_code, 403)
         self.client.cookies.clear()
         self.assertEqual((await self.client.get("/solicitudes-material")).status_code, 401)
         self.login(self.usuario.correo)

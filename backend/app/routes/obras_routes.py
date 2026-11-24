@@ -52,11 +52,11 @@ async def get_obras(request: Request, response: Response):
 @router.post("", dependencies=[Depends(check_user(Roles.finanzas))])
 async def insert_obra(body: ObraBaseModel, request: Request, response: Response):
     try:
-        user = await User.get_or_none(correo=body.tecnico_responsable_mail)
+        user = await User.get_or_none(correo=body.tecnico_responsable_mail, rol_id=Roles.tecnico.value, enabled=True)
         if not user:
             return {
                 "error": True,
-                "mensaje": "No existe el técnico",
+                "mensaje": "El técnico no existe o está deshabilitado",
             }
         ultimaObra = await Obra.all().last()
         id = ultimaObra.id + 1 if ultimaObra is not None else 1
@@ -85,11 +85,11 @@ async def insert_obra(body: ObraBaseModel, request: Request, response: Response)
 @router.patch("", dependencies=[Depends(check_user(Roles.finanzas))])
 async def update_proveedor(body: ObraBaseModel, request: Request, response: Response):
     try:
-        user = await User.get_or_none(correo=body.tecnico_responsable_mail)
+        user = await User.get_or_none(correo=body.tecnico_responsable_mail, rol_id=Roles.tecnico.value, enabled=True)
         if not user:
             return {
                 "error": True,
-                "mensaje": "No existe el técnico",
+                "mensaje": "El técnico no existe o está deshabilitado",
             }
         obra = await Obra.get(id=body.id)
         obra.codigo_obra = body.codigo_obra

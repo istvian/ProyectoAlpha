@@ -33,9 +33,10 @@ La URL y las credenciales se entregan por el canal definido por la organización
 | Finanzas | Administra proveedores y obras; crea y consulta facturas; participa en la gestión y revisión de órdenes y recepciones según los permisos habilitados. |
 | Bodega | Consulta inventario y órdenes; registra recepciones, entregas a obras, conteos físicos, mermas y consumos internos. |
 | Supervisor | Consulta inventario y Cardex; revisa diferencias y aprueba o rechaza recepciones y conteos cuando corresponda; puede exportar reportes de Cardex. |
-| Técnico | Puede ser asignado a una obra o registrado como responsable/receptor de materiales. No dispone de un menú operativo propio en la navegación actual. |
+| Técnico | Puede ser asignado a una obra, figurar como receptor de materiales y solicitar material para sus obras activas. |
 
 Los permisos efectivos se aplican en el backend. Si una opción no aparece o se muestra un aviso de acceso denegado, solicite al administrador verificar el rol de la cuenta.
+La vista y la creación de solicitudes de Técnico requieren una cuenta de Técnico habilitada y no permiten actuar en nombre de otra persona.
 
 ## 4. Ingreso y cierre de sesión
 
@@ -144,6 +145,15 @@ Las alertas aparecen cuando hay artículos con un mínimo configurado mayor que 
 3. Indique una cantidad entera positiva, una obra activa si corresponde y el motivo. Envíe la solicitud y consulte su estado en **Mis solicitudes**.
 
 La solicitud queda pendiente. No crea el artículo nuevo, no modifica existencias y no registra movimientos en el Cardex. La revisión de solicitudes por Finanzas aún no está disponible.
+
+### 6.7.2 Solicitar material desde terreno
+
+1. Ingrese con una cuenta de Técnico y abra **Solicitar material**.
+2. Seleccione una de sus obras activas y un material del catálogo. Si no está catalogado, seleccione **Material no catalogado** y describa lo necesario.
+3. Indique una cantidad entera positiva, prioridad y justificación; envíe la solicitud.
+4. Consulte el estado y la respuesta, cuando exista, en **Mis solicitudes**. Si no aparece ninguna obra, solicite a Finanzas que verifique su asignación.
+
+La solicitud queda pendiente y no modifica el inventario ni el Cardex. La revisión por Finanzas todavía no está disponible.
 
 ### 6.8 Consultar y exportar el Cardex
 

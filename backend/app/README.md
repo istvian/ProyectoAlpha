@@ -149,8 +149,8 @@ de su cargo:
   anota los conteos físicos.
 - **Supervisor:** revisa diferencias en las recepciones y los conteos, consulta
   los movimientos y puede descargar reportes.
-- **Técnico:** puede figurar como responsable de una obra o como la persona que
-  recibe materiales.
+- **Técnico:** puede figurar como responsable de una obra o receptor de materiales
+  y solicitar materiales para sus obras activas asignadas, sin modificar stock.
 
 ### 2. Preparar compras y mantener los datos al día
 

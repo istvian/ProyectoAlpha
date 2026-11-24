@@ -261,6 +261,21 @@ export type SolicitudCompraCreate = {
   | { articulo_id: number }
   | { nombre_articulo: string; descripcion_articulo: string }
 );
+
+export interface ContextoSolicitudTecnico {
+  obras: { id: number; codigo_obra: string; nombre_obra: string }[];
+  articulos: { id: number; codigo_sku: string | null; nombre: string }[];
+}
+
+export type SolicitudTecnicoCreate = {
+  cantidad: number;
+  obra_id: number;
+  motivo: string;
+  prioridad: "BAJA" | "NORMAL" | "ALTA";
+} & (
+  | { articulo_id: number }
+  | { descripcion_articulo: string }
+);
 export interface MermaCreate {
   articulo_id: number;
   cantidad: number;
