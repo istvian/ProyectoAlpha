@@ -218,6 +218,8 @@ Finanzas y Bodega no tienen permiso de exportación.
 Bodega y Administración pueden registrar una merma o consumo interno con una
 obra activa opcional. Las cantidades son enteras. Cada operación nueva se vincula
 con su movimiento en Cardex y devuelve ambos identificadores y el saldo resultante.
+Debajo del formulario se muestran los últimos diez movimientos del tipo
+seleccionado, en solo lectura; el historial se actualiza al guardar.
 
 Los endpoints `POST /api/v1/mermas` y `POST /api/v1/usos-internos` requieren
 el encabezado `Idempotency-Key` con un UUID. Repetir la solicitud con la misma

@@ -275,7 +275,7 @@ export function Inventario() {
       ) : null}
       <CardContainer>
         <Card
-          title="Artículos registrados"
+          title="Artículos"
           icon="fa-solid fa-boxes-stacked"
           content={String(paginacion.total)}
           footer="Según filtros aplicados"

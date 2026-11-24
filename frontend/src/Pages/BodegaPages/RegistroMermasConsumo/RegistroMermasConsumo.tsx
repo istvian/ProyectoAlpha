@@ -6,12 +6,14 @@ import { Title } from "../../../Components/Title/Title";
 import {
   CreateMerma,
   CreateUsoInterno,
+  GetCardex,
   GetEgresoCatalogos,
   GetUserData,
 } from "../../../Helpers/APIConnector";
 import useValidateRol from "../../../Hooks/useValidateRol";
 import {
   Rol,
+  type CardexMovimiento,
   type EgresoCatalogos,
   type MermaCreate,
   type UsoInternoCreate,
@@ -110,6 +112,11 @@ export function RegistroMermasConsumo() {
   const [pendiente, setPendiente] = useState<Pendiente | null>(null);
   const [storageError, setStorageError] = useState("");
   const [aplicaObra, setAplicaObra] = useState(false);
+  const [historial, setHistorial] = useState<CardexMovimiento[]>([]);
+  const [tipoHistorial, setTipoHistorial] = useState<TipoOperacion | null>(null);
+  const [historialCargando, setHistorialCargando] = useState(true);
+  const [historialError, setHistorialError] = useState("");
+  const [revisionHistorial, setRevisionHistorial] = useState(0);
   const guardando = useRef(false);
 
   useEffect(() => {
@@ -156,6 +163,34 @@ export function RegistroMermasConsumo() {
       active = false;
     };
   }, [isAllowed]);
+
+  useEffect(() => {
+    if (!isAllowed) return;
+    let active = true;
+    setHistorialCargando(true);
+    setHistorialError("");
+    GetCardex({
+      tipo_movimiento: tipoOperacion === "merma" ? "MERMA" : "USO_INTERNO",
+      pagina: 1,
+      cantidad: 10,
+    })
+      .then((response) => {
+        if (response.error) throw new Error(response.mensaje);
+        if (active) {
+          setHistorial(response.data);
+          setTipoHistorial(tipoOperacion);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) setHistorialError(mensajeDeError(error));
+      })
+      .finally(() => {
+        if (active) setHistorialCargando(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isAllowed, tipoOperacion, revisionHistorial]);
 
   if (!isAllowed) return null;
 
@@ -270,6 +305,7 @@ export function RegistroMermasConsumo() {
       setFormulario(FORMULARIO_VACIO);
       setAplicaObra(false);
       setMotivoIntentado(false);
+      setRevisionHistorial((revision) => revision + 1);
 
       const refreshedCatalogos = await GetEgresoCatalogos();
       if (!refreshedCatalogos || refreshedCatalogos.error || !refreshedCatalogos.data) {
@@ -545,6 +581,54 @@ export function RegistroMermasConsumo() {
               </button>
             </div>
           </form>
+
+          <section className={`${css.section} ${css.historial}`} aria-labelledby="historial-titulo">
+            <h2 id="historial-titulo" className={css.sectionTitle}>
+              {tipoOperacion === "merma" ? "Mermas recientes" : "Usos internos recientes"}
+            </h2>
+            <p className={css.historialAyuda}>Últimos 10 movimientos registrados en Cardex.</p>
+            {historialCargando ? (
+              <p role="status">Cargando historial...</p>
+            ) : historialError ? (
+              <p className={css.error} role="alert">
+                No se pudo cargar el historial: {historialError}
+              </p>
+            ) : tipoHistorial === tipoOperacion && historial.length === 0 ? (
+              <p>No hay movimientos registrados.</p>
+            ) : tipoHistorial === tipoOperacion ? (
+              <ul className={css.historialLista}>
+                {historial.map((movimiento) => (
+                  <li key={movimiento.id} className={css.historialItem}>
+                    <strong>{movimiento.producto.nombre} · Cantidad: {movimiento.cantidad}</strong>
+                    <dl className={css.historialDetalles}>
+                      <div>
+                        <dt>Fecha y hora</dt>
+                        <dd>
+                          <time dateTime={movimiento.fecha_hora}>
+                            {new Date(movimiento.fecha_hora).toLocaleString("es-CL")}
+                          </time>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Registrado por</dt>
+                        <dd>{movimiento.usuario.nombre}</dd>
+                      </div>
+                      {movimiento.obra && (
+                        <div>
+                          <dt>Obra</dt>
+                          <dd>{movimiento.obra.codigo_obra} — {movimiento.obra.nombre_obra}</dd>
+                        </div>
+                      )}
+                      <div className={css.historialMotivo}>
+                        <dt>{tipoOperacion === "merma" ? "Motivo / Justificación" : "Destino y persona solicitante"}</dt>
+                        <dd>{movimiento.motivo_justificacion}</dd>
+                      </div>
+                    </dl>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
         </div>
       </Box>
     </Frame>

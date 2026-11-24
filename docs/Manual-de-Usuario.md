@@ -135,7 +135,7 @@ Confirme que los datos describen el movimiento real antes de guardar. Estas oper
 3. Revise el stock actual, el mínimo y la información de valorización que presente la pantalla.
 4. Atienda los artículos bajo el mínimo conforme al procedimiento interno de abastecimiento.
 
-Las alertas muestran artículos cuyo stock está en o por debajo del mínimo configurado. No sustituyen la verificación física de bodega.
+Las alertas aparecen cuando hay artículos con un mínimo configurado mayor que cero y su stock está en o por debajo de ese mínimo. No sustituyen la verificación física de bodega.
 
 ### 6.8 Consultar y exportar el Cardex
 

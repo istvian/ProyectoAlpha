@@ -34,6 +34,8 @@ export function StockMinimoAlertas() {
     };
   }, []);
 
+  if (alertas !== null && alertas.length === 0 && !error) return null;
+
   return (
     <section className={css.alertas} aria-labelledby="stock-alertas-title">
       <summary>
@@ -52,7 +54,7 @@ export function StockMinimoAlertas() {
           )}
           {cargando && alertas === null ? (
             <p>Consultando existencias…</p>
-          ) : alertas && alertas.length > 0 ? (
+          ) : alertas !== null && alertas.length > 0 ? (
             <ul className={css.lista}>
               {alertas.map((articulo) => (
                 <li key={articulo.id} className={css.articulo}>
@@ -80,11 +82,7 @@ export function StockMinimoAlertas() {
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className={css.sinAlertas}>
-              No hay artículos en o bajo su stock mínimo.
-            </p>
-          )}
+          ) : null}
         </details>
       </summary>
     </section>

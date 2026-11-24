@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 
 const API = "http://127.0.0.1:8027";
 
@@ -48,11 +49,27 @@ test("reintenta una merma tras perder la respuesta sin descontar dos veces", asy
   expect(actualizado.data.articulos.find((item) => item.id === articulo.id).stock_actual).toBe(articulo.stock_actual - 3);
   const cardex = await (await page.request.get(`${API}/api/v1/cardex`, { params: { producto_id: articulo.id, tipo_movimiento: "MERMA" } })).json();
   expect(cardex.data.filter((movimiento) => movimiento.id === data.cardex_id)).toHaveLength(1);
+  const historial = page.getByRole("region", { name: "Mermas recientes" });
+  const registro = historial.locator("li").filter({ hasText: "Rotura de prueba" });
+  await expect(registro).toHaveCount(1);
+  await expect(registro).toContainText("Artículo E2E");
+  await expect(registro).toContainText("Cantidad: 3");
+  await expect(registro).toContainText("Bodega");
+  const movimiento = cardex.data.find((item) => item.id === data.cardex_id);
+  await expect(registro.locator("time")).toHaveAttribute("datetime", movimiento.fecha_hora);
+  await expect(historial.getByRole("button")).toHaveCount(0);
 });
 
 test("registra uso interno con obra y comprueba su movimiento", async ({ page }) => {
   await entrar(page, 2);
-  const catalogo = await (await page.request.get(`${API}/api/v1/egresos/catalogos`)).json();
+  let catalogo = await (await page.request.get(`${API}/api/v1/egresos/catalogos`)).json();
+  const productoId = catalogo.data.articulos.find((item) => item.codigo_sku === "E2E-MERMAS").id;
+  const merma = await page.request.post(`${API}/api/v1/mermas`, {
+    headers: { "Idempotency-Key": randomUUID() },
+    data: { articulo_id: productoId, cantidad: 1, motivo: "Merma distinta del consumo" },
+  });
+  expect(merma.status()).toBe(201);
+  catalogo = await (await page.request.get(`${API}/api/v1/egresos/catalogos`)).json();
   const articulo = catalogo.data.articulos.find((item) => item.codigo_sku === "E2E-MERMAS");
   const obra = catalogo.data.obras.find((item) => item.codigo_obra === "E2E-OBRA");
   expect(articulo).toBeTruthy();
@@ -82,6 +99,62 @@ test("registra uso interno con obra y comprueba su movimiento", async ({ page })
   const movimiento = cardex.data.find((item) => item.id === data.cardex_id);
   expect(movimiento.obra.id).toBe(obra.id);
   expect(movimiento.cantidad).toBe(2);
+  const historial = page.getByRole("region", { name: "Usos internos recientes" });
+  const registro = historial.locator("li").filter({ hasText: "Reparación" });
+  await expect(registro).toHaveCount(1);
+  await expect(registro).toContainText("Artículo E2E");
+  await expect(registro).toContainText("Cantidad: 2");
+  await expect(registro).toContainText("Obra E2E");
+  await expect(registro).toContainText("Solicitado por Encargado");
+  await expect(registro).toContainText("Bodega");
+  await expect(registro.locator("time")).toHaveAttribute("datetime", movimiento.fecha_hora);
+  await expect(historial).not.toContainText("Merma distinta del consumo");
+  await expect(historial.getByRole("button")).toHaveCount(0);
+  await page.getByRole("button", { name: "Registrar una merma" }).click();
+  const historialMermas = page.getByRole("region", { name: "Mermas recientes" });
+  await expect(historialMermas).toContainText("Merma distinta del consumo");
+  await expect(historialMermas).not.toContainText("Reparación");
+});
+
+test("informa errores del historial sin bloquear el formulario de administrador", async ({ page }) => {
+  await entrar(page, 1);
+  await page.route("**/api/v1/cardex?*", async (route) => {
+    await route.fulfill({ status: 503, json: { detail: "Historial no disponible" } });
+  });
+  await page.goto("/bodega/mermas");
+  const historial = page.getByRole("region", { name: "Mermas recientes" });
+  await expect(historial).toContainText("No se pudo cargar el historial: Historial no disponible");
+  await expect(page.locator("#articulo")).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Guardar merma" })).toBeEnabled();
+});
+
+test("muestra las diez mermas más recientes y se actualiza al guardar", async ({ page }) => {
+  await entrar(page, 1);
+  const catalogo = await (await page.request.get(`${API}/api/v1/egresos/catalogos`)).json();
+  const articulo = catalogo.data.articulos.find((item) => item.codigo_sku === "E2E-MERMAS");
+  for (let i = 0; i < 11; i++) {
+    const response = await page.request.post(`${API}/api/v1/mermas`, {
+      headers: { "Idempotency-Key": randomUUID() },
+      data: { articulo_id: articulo.id, cantidad: 1, motivo: `Historial de prueba ${i}` },
+    });
+    expect(response.status()).toBe(201);
+  }
+  await page.goto("/bodega/mermas");
+  const historial = page.getByRole("region", { name: "Mermas recientes" });
+  const registros = historial.locator("li");
+  await expect(registros).toHaveCount(10);
+  await expect(registros.first()).toContainText("Historial de prueba 10");
+  await expect(registros.last()).toContainText("Historial de prueba 1");
+
+  await page.locator("#articulo").selectOption(String(articulo.id));
+  await page.locator("#cantidad").fill("1");
+  await page.locator("#motivo").fill("Merma agregada desde formulario");
+  await page.getByRole("button", { name: "Guardar merma" }).click();
+  await expect(registros.first()).toContainText("Merma agregada desde formulario");
+  await expect(registros.first()).toContainText("Admin");
+  await expect(registros).toHaveCount(10);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await historial.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
 });
 
 test("Cardex muestra exportación solo a roles autorizados", async ({ page }) => {
