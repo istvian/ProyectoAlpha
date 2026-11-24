@@ -235,11 +235,14 @@ export interface EgresoCreate {
   }[];
 }
 
+export type EstadoSolicitudMaterial = "PENDIENTE" | "APROBADA" | "RECHAZADA";
+export type TipoSolicitudMaterial = "COMPRA_BODEGA" | "MATERIAL_TECNICO";
+
 export interface SolicitudMaterial {
   id: number;
-  tipo_solicitud: "COMPRA_BODEGA" | "MATERIAL_TECNICO";
+  tipo_solicitud: TipoSolicitudMaterial;
   prioridad: "BAJA" | "NORMAL" | "ALTA";
-  estado: "PENDIENTE" | "APROBADA" | "RECHAZADA";
+  estado: EstadoSolicitudMaterial;
   articulo_id: number | null;
   codigo_sku: string | null;
   nombre_articulo: string;
@@ -248,7 +251,11 @@ export interface SolicitudMaterial {
   obra_id: number | null;
   obra: string | null;
   motivo: string;
+  solicitante_id: number;
+  solicitante_nombre: string;
   fecha_creacion: string;
+  revisado_por_id: number | null;
+  revisado_por_nombre: string | null;
   fecha_revision: string | null;
   comentario_revision: string | null;
 }

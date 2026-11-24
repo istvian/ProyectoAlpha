@@ -1,10 +1,12 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from middlewares.jwt_helper import check_user, check_user_any
 from models.obra import Obra
 from models.proveedor import Articulos
-from models.solicitud_material import PrioridadSolicitud, SolicitudMaterial, TipoSolicitud
+from models.solicitud_material import EstadoSolicitud, PrioridadSolicitud, SolicitudMaterial, TipoSolicitud
 from models.user import User
 from schemas.roles import Roles
 from tortoise.transactions import atomic
@@ -61,6 +63,19 @@ class SolicitudTecnicoCreate(SolicitudBase):
         return self
 
 
+class DecisionSolicitud(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    comentario_revision: str | None = Field(default=None, max_length=2000, strict=True)
+
+    @field_validator("comentario_revision")
+    @classmethod
+    def limpiar_comentario(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
+
+
 async def _usuario_actual(request: Request, roles: tuple[Roles, ...]) -> User:
     usuario = await User.get_or_none(correo=request.state.usuario, enabled=True)
     if not usuario or usuario.rol_id not in tuple(rol.value for rol in roles):
@@ -77,8 +92,7 @@ async def _buscar_articulo(articulo_id: int | None) -> Articulos | None:
     return articulo
 
 
-async def _serializar(solicitud: SolicitudMaterial) -> dict:
-    await solicitud.fetch_related("articulo", "obra")
+def _serializar(solicitud: SolicitudMaterial) -> dict:
     return {
         "id": solicitud.id,
         "tipo_solicitud": solicitud.tipo_solicitud.value,
@@ -92,10 +106,18 @@ async def _serializar(solicitud: SolicitudMaterial) -> dict:
         "obra_id": solicitud.obra_id,
         "obra": solicitud.obra.nombre_obra if solicitud.obra else None,
         "motivo": solicitud.motivo,
+        "solicitante_id": solicitud.solicitante_id,
+        "solicitante_nombre": solicitud.solicitante.nombre,
         "fecha_creacion": solicitud.fecha_creacion.isoformat(),
+        "revisado_por_id": solicitud.revisado_por_id,
+        "revisado_por_nombre": solicitud.revisado_por.nombre if solicitud.revisado_por else None,
         "fecha_revision": solicitud.fecha_revision.isoformat() if solicitud.fecha_revision else None,
         "comentario_revision": solicitud.comentario_revision,
     }
+
+
+def _con_relaciones():
+    return SolicitudMaterial.all().select_related("articulo", "obra", "solicitante", "revisado_por")
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(check_user(Roles.bodega))])
@@ -118,7 +140,8 @@ async def crear_solicitud(body: SolicitudCompraCreate, request: Request):
         obra=obra,
         motivo=body.motivo,
     )
-    return {"error": False, "mensaje": "Solicitud registrada.", "data": await _serializar(solicitud)}
+    solicitud = await _con_relaciones().get(id=solicitud.id)
+    return {"error": False, "mensaje": "Solicitud registrada.", "data": _serializar(solicitud)}
 
 
 @router.get("/tecnico/contexto", dependencies=[Depends(check_user(Roles.tecnico))])
@@ -154,15 +177,70 @@ async def crear_solicitud_tecnico(body: SolicitudTecnicoCreate, request: Request
         obra=obra,
         motivo=body.motivo,
     )
-    return {"error": False, "mensaje": "Solicitud registrada.", "data": await _serializar(solicitud)}
+    solicitud = await _con_relaciones().get(id=solicitud.id)
+    return {"error": False, "mensaje": "Solicitud registrada.", "data": _serializar(solicitud)}
 
 
 @router.get("", dependencies=[Depends(check_user_any((Roles.bodega, Roles.tecnico)))])
 async def listar_mis_solicitudes(request: Request):
     usuario = await _usuario_actual(request, (Roles.bodega, Roles.tecnico, Roles.admin))
-    solicitudes = await SolicitudMaterial.filter(solicitante_id=usuario.id).order_by("-fecha_creacion", "-id")
+    solicitudes = await _con_relaciones().filter(solicitante_id=usuario.id).order_by("-fecha_creacion", "-id")
     return {
         "error": False,
         "mensaje": "Solicitudes consultadas.",
-        "data": [await _serializar(solicitud) for solicitud in solicitudes],
+        "data": [_serializar(solicitud) for solicitud in solicitudes],
     }
+
+
+@router.get("/finanzas", dependencies=[Depends(check_user(Roles.finanzas))])
+async def listar_solicitudes_finanzas(
+    request: Request,
+    estado: EstadoSolicitud | None = None,
+    tipo_solicitud: TipoSolicitud | None = None,
+):
+    await _usuario_actual(request, (Roles.finanzas, Roles.admin))
+    consulta = _con_relaciones()
+    if estado is not None:
+        consulta = consulta.filter(estado=estado)
+    if tipo_solicitud is not None:
+        consulta = consulta.filter(tipo_solicitud=tipo_solicitud)
+    solicitudes = await consulta.order_by("-fecha_creacion", "-id")
+    return {
+        "error": False,
+        "mensaje": "Solicitudes consultadas.",
+        "data": [_serializar(solicitud) for solicitud in solicitudes],
+    }
+
+
+@atomic()
+async def _resolver_solicitud(
+    solicitud_id: int, body: DecisionSolicitud, usuario: User, estado: EstadoSolicitud
+) -> dict:
+    if estado == EstadoSolicitud.RECHAZADA and not body.comentario_revision:
+        raise HTTPException(status_code=422, detail="El motivo del rechazo es obligatorio.")
+    actualizado = await SolicitudMaterial.filter(
+        id=solicitud_id, estado=EstadoSolicitud.PENDIENTE
+    ).update(
+        estado=estado,
+        revisado_por_id=usuario.id,
+        fecha_revision=datetime.now(timezone.utc),
+        comentario_revision=body.comentario_revision,
+    )
+    if not actualizado:
+        if not await SolicitudMaterial.filter(id=solicitud_id).exists():
+            raise HTTPException(status_code=404, detail="La solicitud no existe.")
+        raise HTTPException(status_code=409, detail="La solicitud ya fue resuelta.")
+    solicitud = await _con_relaciones().get(id=solicitud_id)
+    return {"error": False, "mensaje": "Solicitud resuelta.", "data": _serializar(solicitud)}
+
+
+@router.post("/{solicitud_id}/aprobar", dependencies=[Depends(check_user(Roles.finanzas))])
+async def aprobar_solicitud(solicitud_id: int, body: DecisionSolicitud, request: Request):
+    usuario = await _usuario_actual(request, (Roles.finanzas, Roles.admin))
+    return await _resolver_solicitud(solicitud_id, body, usuario, EstadoSolicitud.APROBADA)
+
+
+@router.post("/{solicitud_id}/rechazar", dependencies=[Depends(check_user(Roles.finanzas))])
+async def rechazar_solicitud(solicitud_id: int, body: DecisionSolicitud, request: Request):
+    usuario = await _usuario_actual(request, (Roles.finanzas, Roles.admin))
+    return await _resolver_solicitud(solicitud_id, body, usuario, EstadoSolicitud.RECHAZADA)

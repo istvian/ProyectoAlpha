@@ -12,6 +12,7 @@ import {
   type Proveedor,
 } from "../../../types/general";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { InputDate } from "../../../Components/InputDate/InputDate";
 import { Selector } from "../../../Components/Selector/Selector";
 import {
@@ -24,6 +25,7 @@ import { AgregarProveedor } from "../AgregarProveedor/AgregarProveedor";
 import { AgregarObras } from "../AgregarObras/AgregarObras";
 
 export function FinanzasMain() {
+  const nav = useNavigate();
   const [popupAgregarDocumento, setPopupAgregarDocumento] = useState(false);
   const [popupAgregarProveedor, setPopupAgregarProveedor] = useState(false);
   const [popupAgregarObra, setPopupAgregarObra] = useState(false);
@@ -141,6 +143,7 @@ export function FinanzasMain() {
               reportes financieros.
             </p>
           </div>
+          <Btn onClick={() => nav("/finanzas/solicitudes")}>Solicitudes de material</Btn>
         </Box>
 
         <Popup isVisible={popupAgregarProveedor}>

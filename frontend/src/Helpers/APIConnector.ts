@@ -13,6 +13,7 @@ import type {
   DocumentoTributario,
   EgresoCatalogos,
   EgresoCreate,
+  EstadoSolicitudMaterial,
   FacturaCreate,
   InventarioConsulta,
   InventarioFiltrosRespuesta,
@@ -34,6 +35,7 @@ import type {
   SolicitudCompraCreate,
   SolicitudMaterial,
   SolicitudTecnicoCreate,
+  TipoSolicitudMaterial,
   SystemLog,
   UsoInternoCreate,
   UsoInternoRegistro,
@@ -347,6 +349,34 @@ export async function GetMisSolicitudes(): Promise<ResponseBase<SolicitudMateria
     return (await api.get<ResponseBase<SolicitudMaterial[]>>("/solicitudes-material")).data;
   } catch (error) {
     throw new Error(mensajeErrorApi(error, "No se pudieron consultar las solicitudes."));
+  }
+}
+
+export async function GetSolicitudesFinanzas(
+  estado: EstadoSolicitudMaterial | "",
+  tipo: TipoSolicitudMaterial | "",
+): Promise<ResponseBase<SolicitudMaterial[]>> {
+  try {
+    return (await api.get<ResponseBase<SolicitudMaterial[]>>("/solicitudes-material/finanzas", {
+      params: { ...(estado && { estado }), ...(tipo && { tipo_solicitud: tipo }) },
+    })).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudieron consultar las solicitudes."));
+  }
+}
+
+export async function ResolverSolicitud(
+  id: number,
+  decision: "aprobar" | "rechazar",
+  comentario: string,
+): Promise<ResponseBase<SolicitudMaterial>> {
+  try {
+    return (await api.post<ResponseBase<SolicitudMaterial>>(
+      `/solicitudes-material/${id}/${decision}`,
+      { comentario_revision: comentario.trim() || null },
+    )).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudo resolver la solicitud."));
   }
 }
 

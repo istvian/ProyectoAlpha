@@ -17,6 +17,9 @@ export function SolicitudHistorial({ solicitudes, cargando, disponible, mostrarP
             <strong>#{item.id} · {item.articulo_id === null && item.tipo_solicitud === "MATERIAL_TECNICO" ? item.descripcion_articulo : item.nombre_articulo}</strong>
             <p>Estado: {item.estado} · Cantidad: {item.cantidad}{mostrarPrioridad && ` · Prioridad: ${item.prioridad}`}</p>
             <p>Obra: {item.obra || "Sin obra"} · Motivo: {item.motivo}</p>
+            {item.revisado_por_nombre && (
+              <p>Revisó: {item.revisado_por_nombre}{item.fecha_revision && ` · ${new Date(item.fecha_revision).toLocaleString("es-CL")}`}</p>
+            )}
             {item.comentario_revision && <p>Respuesta: {item.comentario_revision}</p>}
             <time dateTime={item.fecha_creacion}>{new Date(item.fecha_creacion).toLocaleString("es-CL")}</time>
           </li>

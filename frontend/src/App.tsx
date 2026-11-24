@@ -29,6 +29,7 @@ import { ConteoInventarioPage } from "./Pages/BodegaPages/ConteoInventario/Conte
 import { RegistroMermasConsumo } from "./Pages/BodegaPages/RegistroMermasConsumo/RegistroMermasConsumo";
 import { SolicitudesCompra } from "./Pages/BodegaPages/SolicitudesCompra/SolicitudesCompra";
 import { SolicitarMaterial } from "./Pages/Tecnico/SolicitarMaterial";
+import { BandejaSolicitudes } from "./Pages/FinanzasPages/BandejaSolicitudes/BandejaSolicitudes";
 import { Rol } from "./types/general";
 
 function ProtectedRoute() {
@@ -120,6 +121,7 @@ function App() {
                 <Route element={<Inicio />} path="/" />
                 <Route element={<Inventario />} path="/inventario" />
                 <Route element={<FinanzasMain />} path="/finanzas" />
+                <Route element={<BandejaSolicitudes />} path="/finanzas/solicitudes" />
                 <Route element={<CardexMain />} path="/cardex" />
                 <Route element={<PanelAdmin />} path="/admin" />
                 <Route element={<Bodega />} path="/bodega" />
