@@ -1,0 +1,54 @@
+info:
+  name: "[Sin permisos] Crear orden de compra"
+  type: http
+  seq: 3
+  tags:
+    - sin-permisos
+    - seguridad
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/facturas/ordenes-compra"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("bodega@mail.cl");
+        req.setHeader("Cookie", cookie);
+        const adminCookie = await loginCookie("admin@mail.cl");
+
+        const provs = await axios.get(BASE + "/api/v1/proveedor", { headers: { Cookie: adminCookie } });
+        const arts = await axios.get(BASE + "/api/v1/articulos", { headers: { Cookie: adminCookie } });
+        const pid = provs.data.data.find(p => !p.deleted).id;
+        const aid = arts.data.data[0].id;
+        req.setBody({ numero_orden: "BRU-OC-" + Date.now(), proveedor_id: pid, detalles: [{ articulo_id: aid, cantidad_solicitada: 1, precio_unitario: "1000.00" }] });
+    - type: tests
+      code: |-
+        test("Rol sin permisos es rechazado con 403", function() {
+          expect(res.status).to.equal(403);
+        });
+        test("Mensaje de error es Sin permisos", function() {
+          expect(res.body.detail.mensaje).to.equal("Sin permisos");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

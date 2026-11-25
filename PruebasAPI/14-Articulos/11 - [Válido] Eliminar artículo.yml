@@ -1,0 +1,55 @@
+info:
+  name: "[Válido] Eliminar artículo"
+  type: http
+  seq: 11
+  tags:
+    - valido
+    - integracion
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/v1/articulos"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("finanzas@mail.cl");
+        req.setHeader("Cookie", cookie);
+        const adminCookie = await loginCookie("admin@mail.cl");
+
+        const sku = "BRU-ART-" + Date.now();
+        await axios.post(BASE + "/api/v1/articulos", { nombre: "Articulo Bruno Delete", codigo_sku: sku, stock_actual: 0, stock_minimo: 0, precio_lista: 100 }, { headers: { Cookie: adminCookie } });
+        const arts = await axios.get(BASE + "/api/v1/articulos", { headers: { Cookie: adminCookie } });
+        const art = arts.data.data.find(a => a.codigo_sku === sku);
+        if (!art) { throw new Error("No se encontro el articulo creado"); }
+        req.setBody({ id: art.id });
+    - type: tests
+      code: |-
+        test("Eliminar artículo: devuelve 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("Respuesta sin error de negocio", function() {
+          expect(res.body.error).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

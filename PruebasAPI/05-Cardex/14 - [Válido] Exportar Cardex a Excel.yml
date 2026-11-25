@@ -1,0 +1,44 @@
+info:
+  name: "[Válido] Exportar Cardex a Excel"
+  type: http
+  seq: 14
+  tags:
+    - valido
+    - integracion
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/v1/cardex/exportar?formato=excel"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("supervisor@mail.cl");
+        req.setHeader("Cookie", cookie);
+    - type: tests
+      code: |-
+        test("Exportar Cardex a Excel: devuelve 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("Devuelve un archivo binario", function() {
+          expect(String(res.headers["content-type"] || "")).to.include("application/");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

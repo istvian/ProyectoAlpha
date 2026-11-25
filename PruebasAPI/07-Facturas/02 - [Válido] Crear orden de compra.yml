@@ -1,0 +1,54 @@
+info:
+  name: "[Válido] Crear orden de compra"
+  type: http
+  seq: 2
+  tags:
+    - valido
+    - integracion
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/facturas/ordenes-compra"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("finanzas@mail.cl");
+        req.setHeader("Cookie", cookie);
+        const adminCookie = await loginCookie("admin@mail.cl");
+
+        const provs = await axios.get(BASE + "/api/v1/proveedor", { headers: { Cookie: adminCookie } });
+        const arts = await axios.get(BASE + "/api/v1/articulos", { headers: { Cookie: adminCookie } });
+        const pid = provs.data.data.find(p => !p.deleted).id;
+        const aid = arts.data.data[0].id;
+        req.setBody({ numero_orden: "BRU-OC-" + Date.now(), proveedor_id: pid, detalles: [{ articulo_id: aid, cantidad_solicitada: 1, precio_unitario: "1000.00" }] });
+    - type: tests
+      code: |-
+        test("Crear orden de compra: devuelve 201", function() {
+          expect(res.status).to.equal(201);
+        });
+        test("Respuesta sin error de negocio", function() {
+          expect(res.body.error).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,40 @@
+info:
+  name: "[Válido] Login con credenciales válidas"
+  type: http
+  seq: 2
+  tags:
+    - valido
+    - integracion
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/users/login"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "correo": "admin@mail.cl",
+        "password": "Qwerty1234!"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("Login con credenciales válidas: devuelve 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("Respuesta sin error de negocio", function() {
+          expect(res.body.error).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

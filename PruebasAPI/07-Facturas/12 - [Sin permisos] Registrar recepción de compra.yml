@@ -1,0 +1,56 @@
+info:
+  name: "[Sin permisos] Registrar recepción de compra"
+  type: http
+  seq: 12
+  tags:
+    - sin-permisos
+    - seguridad
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/facturas/recepcion"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("finanzas@mail.cl");
+        req.setHeader("Cookie", cookie);
+        const adminCookie = await loginCookie("admin@mail.cl");
+
+        const provs = await axios.get(BASE + "/api/v1/proveedor", { headers: { Cookie: adminCookie } });
+        const arts = await axios.get(BASE + "/api/v1/articulos", { headers: { Cookie: adminCookie } });
+        const pid = provs.data.data.find(p => !p.deleted).id;
+        const aid = arts.data.data[0].id;
+        const ocRes = await axios.post(BASE + "/api/v1/facturas/ordenes-compra", { numero_orden: "BRU-OC-REC-" + Date.now(), proveedor_id: pid, detalles: [{ articulo_id: aid, cantidad_solicitada: 2, precio_unitario: "1000.00" }] }, { headers: { Cookie: adminCookie } });
+        const detId = ocRes.data.data.detalles[0].id;
+        req.setBody({ orden_compra_id: ocRes.data.data.id, numero_guia: "BRU-GUIA-" + Date.now(), bultos_guia: 1, bultos_recibidos: 1, detalles: [{ detalle_orden_id: detId, cantidad_guia: 2, cantidad_recibida: 2 }] });
+    - type: tests
+      code: |-
+        test("Rol sin permisos es rechazado con 403", function() {
+          expect(res.status).to.equal(403);
+        });
+        test("Mensaje de error es Sin permisos", function() {
+          expect(res.body.detail.mensaje).to.equal("Sin permisos");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

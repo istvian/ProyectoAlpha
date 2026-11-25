@@ -208,15 +208,6 @@ export function CrearOC({ onEnd }: CrearOCProps) {
   if (!isAllowed) return null;
   return (
     <div className={css.main}>
-      <div className={css.heading}>
-        <div>
-          <Title>Recepción de compras</Title>
-          <p>
-            Escanee o seleccione una Orden de Compra y verifique cada bulto
-            antes de ingresar las existencias.
-          </p>
-        </div>
-      </div>
 
       {(errorMessage || notice) && (
         <div
