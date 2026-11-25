@@ -1,0 +1,62 @@
+info:
+  name: "[Sin permisos] Aprobar recepción pendiente"
+  type: http
+  seq: 18
+  tags:
+    - sin-permisos
+    - seguridad
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/facturas/recepciones/1/aprobar"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("bodega@mail.cl");
+        req.setHeader("Cookie", cookie);
+        const adminCookie = await loginCookie("admin@mail.cl");
+        let pend = await axios.get(BASE + "/api/v1/facturas/recepciones/pendientes", { headers: { Cookie: adminCookie } });
+        if (!pend.data.data.length) {
+          const provs = await axios.get(BASE + "/api/v1/proveedor", { headers: { Cookie: adminCookie } });
+          const arts = await axios.get(BASE + "/api/v1/articulos", { headers: { Cookie: adminCookie } });
+          const pid = provs.data.data.find(p => !p.deleted).id;
+          const aid = arts.data.data[0].id;
+          const ocRes = await axios.post(BASE + "/api/v1/facturas/ordenes-compra", { numero_orden: "BRU-OC-APR-" + Date.now(), proveedor_id: pid, detalles: [{ articulo_id: aid, cantidad_solicitada: 2, precio_unitario: "1000.00" }] }, { headers: { Cookie: adminCookie } });
+          const detId = ocRes.data.data.detalles[0].id;
+          await axios.post(BASE + "/api/v1/facturas/recepcion", { orden_compra_id: ocRes.data.data.id, numero_guia: "BRU-GUIA-" + Date.now(), bultos_guia: 1, bultos_recibidos: 1, observaciones: "Discrepancia para prueba de aprobacion", detalles: [{ detalle_orden_id: detId, cantidad_guia: 2, cantidad_recibida: 1 }] }, { headers: { Cookie: adminCookie } });
+          pend = await axios.get(BASE + "/api/v1/facturas/recepciones/pendientes", { headers: { Cookie: adminCookie } });
+        }
+        const rid = pend.data.data[0].id;
+        if (!rid) { throw new Error("No hay recepciones pendientes"); }
+        req.setUrl(BASE + "/api/v1/facturas/recepciones/" + rid + "/aprobar");
+    - type: tests
+      code: |-
+        test("Rol sin permisos es rechazado con 403", function() {
+          expect(res.status).to.equal(403);
+        });
+        test("Mensaje de error es Sin permisos", function() {
+          expect(res.body.detail.mensaje).to.equal("Sin permisos");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

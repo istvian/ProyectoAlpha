@@ -18,7 +18,15 @@ test('registra un conteo físico y muestra diferencias con el historial de costo
   await expect(page.getByRole('heading', { name: 'Registrar conteo' })).toBeVisible();
 
   const articulo = page.getByRole('combobox', { name: 'Artículo' });
-  const opcion = (await articulo.locator('option').allTextContents())[1];
+  const opciones = await articulo.locator('option').allTextContents();
+  const opcion = opciones.find((texto) => {
+    const stock = Number(texto.match(/sistema: (\d+)/)?.[1] ?? 0);
+    return stock > 0;
+  });
+  if (!opcion) {
+    test.skip(true, 'No hay artículos con stock mayor a 0 para registrar el conteo');
+    return;
+  }
   const stockSistema = Number(opcion.match(/sistema: (\d+)/)?.[1] ?? 0);
   await articulo.selectOption({ label: opcion });
   await page.getByRole('spinbutton', { name: 'Cantidad contada' }).fill(String(Math.max(0, stockSistema - 1)));

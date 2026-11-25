@@ -1,0 +1,55 @@
+info:
+  name: "[Válido] Actualizar proveedor"
+  type: http
+  seq: 8
+  tags:
+    - valido
+    - integracion
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/v1/proveedor"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("finanzas@mail.cl");
+        req.setHeader("Cookie", cookie);
+        const adminCookie = await loginCookie("admin@mail.cl");
+
+        const rut = "BRU-P-" + String(Date.now()).slice(-9);
+        await axios.post(BASE + "/api/v1/proveedor", { rut: rut, razon_social: "Proveedor Bruno Patch", deleted: false }, { headers: { Cookie: adminCookie } });
+        const list = await axios.get(BASE + "/api/v1/proveedor", { headers: { Cookie: adminCookie } });
+        const prov = list.data.data.find(p => p.rut === rut && !p.deleted);
+        if (!prov) { throw new Error("No se encontro el proveedor creado"); }
+        req.setBody({ id: prov.id, rut: rut, razon_social: "Proveedor Bruno Actualizado", deleted: false });
+    - type: tests
+      code: |-
+        test("Actualizar proveedor: devuelve 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("Respuesta sin error de negocio", function() {
+          expect(res.body.error).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

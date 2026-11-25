@@ -1,0 +1,41 @@
+info:
+  name: "[Negativo] Login con credenciales inválidas"
+  type: http
+  seq: 10
+  tags:
+    - negativo
+    - publico
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/users/login"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "correo": "admin@mail.cl",
+        "password": "PasswordIncorrecta123!"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("Login rechaza credenciales incorrectas con 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("Mensaje de error de credenciales", function() {
+          expect(res.body.error).to.equal(true);
+          expect(res.body.mensaje).to.equal("Correo o contraseña incorrectos");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

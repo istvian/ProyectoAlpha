@@ -1,0 +1,36 @@
+info:
+  name: "[Inválido] Crear proveedor"
+  type: http
+  seq: 7
+  tags:
+    - invalido
+    - seguridad
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/proveedor"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        req.setHeader("Cookie", "token=eyJhbGciOiJIUzI1NiJ9.invalid.signature.bruno");
+    - type: tests
+      code: |-
+        test("Token inválido es rechazado con 401", function() {
+          expect(res.status).to.equal(401);
+        });
+        test("Mensaje de error es Token invalido", function() {
+          expect(res.body.detail.mensaje).to.equal("Token invalido");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

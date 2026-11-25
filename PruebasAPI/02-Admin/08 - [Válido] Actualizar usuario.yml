@@ -1,0 +1,52 @@
+info:
+  name: "[Válido] Actualizar usuario"
+  type: http
+  seq: 8
+  tags:
+    - valido
+    - integracion
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/v1/admin/user"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("admin@mail.cl");
+        req.setHeader("Cookie", cookie);
+        const adminCookie = await loginCookie("admin@mail.cl");
+
+        const email = "bruno_patch_" + Date.now() + "@mail.cl";
+        await axios.post(BASE + "/api/v1/admin/user", { correo: email, password: "Qwerty1234!", nombre: "Bruno Patch", enabled: true, rol_id: 5 }, { headers: { Cookie: adminCookie } });
+        req.setBody({ correo: email, password: "NuevaPass123!", nombre: "Bruno Patch Actualizado", enabled: true, rol_id: 5 });
+    - type: tests
+      code: |-
+        test("Actualizar usuario: devuelve 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("Respuesta sin error de negocio", function() {
+          expect(res.body.error).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

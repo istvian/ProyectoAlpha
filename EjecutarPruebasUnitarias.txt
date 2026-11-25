@@ -1,0 +1,2 @@
+Dentro del entorno virtual ejecutar:
+python3 -m pytest PruebasUnitarias -p no:warnings

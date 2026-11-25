@@ -8,3 +8,6 @@ tzdata
 pymongo
 reportlab
 openpyxl
+pytest
+pytest-asyncio
+locust

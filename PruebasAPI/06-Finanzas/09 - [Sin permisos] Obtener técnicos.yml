@@ -1,0 +1,44 @@
+info:
+  name: "[Sin permisos] Obtener técnicos"
+  type: http
+  seq: 9
+  tags:
+    - sin-permisos
+    - seguridad
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/v1/finanzas/tecnicos"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("bodega@mail.cl");
+        req.setHeader("Cookie", cookie);
+    - type: tests
+      code: |-
+        test("Rol sin permisos es rechazado con 403", function() {
+          expect(res.status).to.equal(403);
+        });
+        test("Mensaje de error es Sin permisos", function() {
+          expect(res.body.detail.mensaje).to.equal("Sin permisos");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
