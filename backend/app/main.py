@@ -9,16 +9,19 @@ from routes.api import api_router
 from db.db import CloseDB, SetupDB
 from tortoise.contrib.fastapi import register_tortoise
 from middlewares.logger import Logger
+from dotenv import load_dotenv
+
+load_dotenv()
 
 run_async(SetupDB())
 
 app = FastAPI(title="API Proyecto Alpha")
 
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite://db.sqlite3")
 
 register_tortoise(
     app,
-    db_url="sqlite://db.sqlite3",
-    # db_url="postgresql://postgres:xSK4B8q8BboKy95X@db.ckwvsfebfuskjsaxycaw.supabase.co:5432/postgres",
+    db_url=DATABASE_URL,
     modules={
         "models": [
             "models.user",
@@ -39,7 +42,12 @@ register_tortoise(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173", "https://proyectoalpha.stvian.app"],
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8000",
+        "http://localhost:5173",
+        "https://proyectoalpha.stvian.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

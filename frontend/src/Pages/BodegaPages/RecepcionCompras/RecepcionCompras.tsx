@@ -2,10 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Box } from "../../../Components/Box/Box";
 import { Btn } from "../../../Components/Btn/Btn";
 import { Frame } from "../../../Components/Frame/Frame";
-import { Title } from "../../../Components/Title/Title";
 import {
   AprobarRecepcion,
-  CreateOrdenCompra,
   CreateRecepcionCompra,
   GetEgresoCatalogos,
   GetOrdenesCompra,
@@ -28,14 +26,6 @@ interface CantidadesCapturadas {
   cantidadRecibida: string;
 }
 
-interface DetalleOrdenBorrador {
-  articulo_id: number;
-  sku: string;
-  nombre: string;
-  cantidad_solicitada: number;
-  precio_unitario: number;
-}
-
 export function RecepcionCompras() {
   const isAllowed = useValidateRol([Rol.bodega]);
   const [roleId, setRoleId] = useState<number | null>(null);
@@ -53,18 +43,9 @@ export function RecepcionCompras() {
   const [pendingReceipts, setPendingReceipts] = useState<RecepcionCompra[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [catalogos, setCatalogos] = useState<EgresoCatalogos | null>(null);
-  const [numeroOrden, setNumeroOrden] = useState("");
-  const [proveedorId, setProveedorId] = useState("");
-  const [articuloId, setArticuloId] = useState("");
-  const [cantidadSolicitada, setCantidadSolicitada] = useState("");
-  const [precioUnitario, setPrecioUnitario] = useState("");
-  const [detallesOrden, setDetallesOrden] = useState<DetalleOrdenBorrador[]>(
-    [],
-  );
   const [errorMessage, setErrorMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
   const canReceive = roleId === Rol.admin || roleId === Rol.bodega;
@@ -80,6 +61,12 @@ export function RecepcionCompras() {
   const availableOrders = orders.filter(
     (item) => item.estado !== "COMPLETA" && !item.recepcion_pendiente,
   );
+  useEffect(() => {
+    console.log(proveedores);
+    console.log(catalogos);
+    console.log(errorMessage);
+    console.log(notice);
+  }, []);
 
   useEffect(() => {
     if (!isAllowed) return;
@@ -155,80 +142,6 @@ export function RecepcionCompras() {
       active = false;
     };
   }, [canCreateOrder]);
-
-  function agregarDetalleOrden() {
-    const articulo = catalogos?.articulos.find(
-      (item) => String(item.id) === articuloId,
-    );
-    const cantidad = Number(cantidadSolicitada);
-    const precio = Number(precioUnitario);
-    if (
-      !articulo ||
-      !Number.isInteger(cantidad) ||
-      cantidad <= 0 ||
-      !Number.isFinite(precio) ||
-      precio <= 0
-    ) {
-      setErrorMessage(
-        "Seleccione un artículo e indique cantidad y costo válidos.",
-      );
-      return;
-    }
-    if (detallesOrden.some((detalle) => detalle.articulo_id === articulo.id)) {
-      setErrorMessage("No repita el mismo artículo en líneas separadas.");
-      return;
-    }
-    setDetallesOrden((current) => [
-      ...current,
-      {
-        articulo_id: articulo.id,
-        sku: articulo.codigo_sku ?? "",
-        nombre: articulo.nombre,
-        cantidad_solicitada: cantidad,
-        precio_unitario: precio,
-      },
-    ]);
-    setArticuloId("");
-    setCantidadSolicitada("");
-    setPrecioUnitario("");
-    setErrorMessage("");
-  }
-
-  async function crearOrden() {
-    if (!numeroOrden.trim() || !proveedorId || detallesOrden.length === 0) {
-      setErrorMessage("Indique número, proveedor y al menos un artículo.");
-      return;
-    }
-    setIsCreatingOrder(true);
-    setErrorMessage("");
-    setNotice("");
-    try {
-      const response = await CreateOrdenCompra({
-        numero_orden: numeroOrden.trim(),
-        proveedor_id: Number(proveedorId),
-        detalles: detallesOrden.map((detalle) => ({
-          articulo_id: detalle.articulo_id,
-          cantidad_solicitada: detalle.cantidad_solicitada,
-          precio_unitario: detalle.precio_unitario,
-        })),
-      });
-      if (!response || response.error || !response.data) {
-        setErrorMessage(response?.mensaje || "No se pudo crear la orden.");
-        return;
-      }
-      setNotice(`Orden ${response.data.numero_orden} creada correctamente.`);
-      setNumeroOrden("");
-      setProveedorId("");
-      setDetallesOrden([]);
-      const refreshedOrders = await GetOrdenesCompra();
-      if (refreshedOrders?.data) setOrders(refreshedOrders.data);
-    } catch (error) {
-      console.error(error);
-      setErrorMessage("Ocurrió un error inesperado al crear la orden.");
-    } finally {
-      setIsCreatingOrder(false);
-    }
-  }
 
   function selectOrder(selected: OrdenCompra | undefined) {
     setSelectedOrderId(selected?.id ?? null);
