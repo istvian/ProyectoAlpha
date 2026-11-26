@@ -4,8 +4,14 @@ from pymongo.errors import ServerSelectionTimeoutError, PyMongoError
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import logging
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
 TZ_CHILE = ZoneInfo("America/Santiago")
+
 
 # Campos que nunca deben guardarse en claro
 CAMPOS_SENSIBLES = {"password", "contraseña", "token"}
@@ -24,9 +30,7 @@ def _sanitizar(dato):
 
 
 class NoSQLDatabase:
-    def __init__(
-        self, uri: str = "mongodb://localhost:27017/", db_name: str = "ProyectoAlpha"
-    ):
+    def __init__(self, uri: str = MONGODB_URI, db_name: str = "ProyectoAlpha"):
         try:
             self.client = MongoClient(uri, serverSelectionTimeoutMS=3000)
             self.client.admin.command("ping")

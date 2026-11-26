@@ -1,0 +1,18 @@
+En el servidor VPS para correr la aplicación web se va a utilizar docker.
+
+1) Instalar Docker
+
+2) Crear la Imagen
+sudo docker build -t mi-proyecto-app .
+
+3) Ejecutar el contenedor en primer plano (opcional)
+sudo docker run --rm --name contenedor-app -p 8000:8000 mi-proyecto-app 
+
+4) Ejecutar el contenedor detached (preferida)
+sudo docker run --rm -d --name contenedor-app -p 8000:8000 mi-proyecto-app
+
+Para traer a primer plano
+sudo docker attach contenedor-app
+
+Para detach
+Ctrl+P, luego Ctrl+Q

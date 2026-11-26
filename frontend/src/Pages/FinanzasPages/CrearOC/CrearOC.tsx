@@ -1,13 +1,11 @@
 import css from "./CrearOC.module.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Btn } from "../../../Components/Btn/Btn";
-import { Title } from "../../../Components/Title/Title";
 import {
   CreateOrdenCompra,
   GetEgresoCatalogos,
   GetOrdenesCompra,
   GetProveedores,
-  GetRecepcionesPendientes,
   GetUserData,
 } from "../../../Helpers/APIConnector";
 import useValidateRol from "../../../Hooks/useValidateRol";
@@ -16,13 +14,7 @@ import {
   type EgresoCatalogos,
   type OrdenCompra,
   type Proveedor,
-  type RecepcionCompra,
 } from "../../../types/general";
-
-interface CantidadesCapturadas {
-  cantidadGuia: string;
-  cantidadRecibida: string;
-}
 
 interface DetalleOrdenBorrador {
   articulo_id: number;
@@ -39,7 +31,6 @@ export function CrearOC({ onEnd }: CrearOCProps) {
   const isAllowed = useValidateRol([Rol.bodega]);
   const [roleId, setRoleId] = useState<number | null>(null);
   const [orders, setOrders] = useState<OrdenCompra[]>([]);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [catalogos, setCatalogos] = useState<EgresoCatalogos | null>(null);
   const [numeroOrden, setNumeroOrden] = useState("");
@@ -55,18 +46,8 @@ export function CrearOC({ onEnd }: CrearOCProps) {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   const canCreateOrder = roleId === Rol.admin || roleId === Rol.finanzas;
-  const canApprove =
-    roleId === Rol.admin ||
-    roleId === Rol.finanzas ||
-    roleId === Rol.supervisor;
-  const order = useMemo(
-    () => orders.find((item) => item.id === selectedOrderId) ?? null,
-    [orders, selectedOrderId],
-  );
-  const availableOrders = orders.filter(
-    (item) => item.estado !== "COMPLETA" && !item.recepcion_pendiente,
-  );
 
+  console.log(orders);
   useEffect(() => {
     if (!isAllowed) return;
 
@@ -208,7 +189,6 @@ export function CrearOC({ onEnd }: CrearOCProps) {
   if (!isAllowed) return null;
   return (
     <div className={css.main}>
-
       {(errorMessage || notice) && (
         <div
           className={errorMessage ? css.error : css.notice}

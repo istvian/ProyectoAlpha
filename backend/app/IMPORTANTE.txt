@@ -1,0 +1,3 @@
+Desde 2024 Supabase esta priorizando usar ipv6 en sus conexiones, si el ISP tiene solo ipv4 arroja error de conexión (network is unreacheable).
+
+La solución es usar un pooler. En el archivo .env contiene el pooler

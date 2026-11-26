@@ -30,7 +30,7 @@ import { CrearOC } from "../CrearOC/CrearOC";
 import { useSearchParams } from "react-router-dom";
 
 export function FinanzasMain() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [popupAgregarDocumento, setPopupAgregarDocumento] = useState(false);
   const [popupAgregarProveedor, setPopupAgregarProveedor] = useState(false);
   const [popupCrearOC, setPopupCrearOC] = useState(false);
