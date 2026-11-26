@@ -32,7 +32,7 @@ def _sanitizar(dato):
 class NoSQLDatabase:
     def __init__(self, uri: str = MONGODB_URI, db_name: str = "ProyectoAlpha"):
         try:
-            self.client = MongoClient(uri, serverSelectionTimeoutMS=3000)
+            self.client = MongoClient(uri, serverSelectionTimeoutMS=30000)
             self.client.admin.command("ping")
         except ServerSelectionTimeoutError as e:
             raise ConnectionError(f"No se pudo conectar a MongoDB: {e}")

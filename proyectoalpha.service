@@ -1,0 +1,17 @@
+[Unit]
+Description=Proyecto Alpha
+After=network.target
+
+[Service]
+Type=simple
+User=stvian
+WorkingDirectory=/home/stvian/ProyectoAlpha/backend
+ExecStart=/home/stvian/ProyectoAlpha/backend/.venv/bin/fastapi run app/main.py
+Restart=always
+RestartSec=10
+
+EnvironmentFile=-/home/stvian/ProyectoAlpha/backend/app/.env
+
+[Install]
+WantedBy=multi-user.target
+
