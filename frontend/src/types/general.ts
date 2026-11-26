@@ -391,6 +391,21 @@ export interface Articulo {
   ubicacion: string;
 }
 
+export interface ArticuloCRUD {
+  id: number | null;
+  codigo_sku?: string | null;
+  nombre: string;
+  descripcion?: string | null;
+  categoria?: string | null;
+  ubicacion?: string | null;
+  stock_actual: number;
+  stock_minimo: number;
+  precio_lista?: number | null;
+  precio_medio_ponderado?: number;
+  especificaciones_tecnicas?: Record<string, unknown> | null;
+  ultimos_costos_compra?: unknown[] | null;
+}
+
 export interface Obra {
   id: string | null;
   codigo_obra: string;

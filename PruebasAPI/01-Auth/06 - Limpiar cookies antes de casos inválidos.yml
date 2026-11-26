@@ -1,0 +1,24 @@
+info:
+  name: "Limpiar cookies antes de casos inválidos"
+  type: http
+  seq: 6
+  tags:
+    - setup
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/v1/users/logout"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("Sesión limpia para casos inválidos", function() { expect(res.status).to.equal(200); });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

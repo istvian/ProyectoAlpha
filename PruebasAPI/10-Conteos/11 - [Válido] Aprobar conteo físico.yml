@@ -1,0 +1,59 @@
+info:
+  name: "[Válido] Aprobar conteo físico"
+  type: http
+  seq: 11
+  tags:
+    - valido
+    - integracion
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/inventario/conteos/1/aprobar"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("supervisor@mail.cl");
+        req.setHeader("Cookie", cookie);
+        let cnt = await axios.get(BASE + "/api/v1/inventario/conteos", { headers: { Cookie: cookie } });
+        let pending = cnt.data.data.find(c => c.estado === "PENDIENTE_APROBACION");
+        if (!pending) {
+          const bodegaCookie = await loginCookie("bodega@mail.cl");
+          const cat = await axios.get(BASE + "/api/v1/inventario/conteos/catalogos", { headers: { Cookie: bodegaCookie } });
+          const a = cat.data.data[0];
+          await axios.post(BASE + "/api/v1/inventario/conteos", { observaciones: "Conteo Bruno auto " + Date.now(), detalles: [{ articulo_id: a.id, stock_sistema: a.stock_actual, cantidad_contada: Math.max(0, a.stock_actual - 1) }] }, { headers: { Cookie: bodegaCookie } });
+          cnt = await axios.get(BASE + "/api/v1/inventario/conteos", { headers: { Cookie: cookie } });
+          pending = cnt.data.data.find(c => c.estado === "PENDIENTE_APROBACION");
+        }
+        if (!pending) { throw new Error("No hay conteos pendientes"); }
+        req.setUrl(BASE + "/api/v1/inventario/conteos/" + pending.id + "/aprobar");
+    - type: tests
+      code: |-
+        test("Aprobar conteo físico: devuelve 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("Respuesta sin error de negocio", function() {
+          expect(res.body.error).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

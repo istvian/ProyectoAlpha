@@ -29,6 +29,7 @@ import type {
   Proveedor,
   AdminDashboardData,
   AlertaStockMinimo,
+  ArticuloCRUD,
   RecepcionCompra,
   RecepcionCompraCreate,
   ResponseBase,
@@ -556,6 +557,7 @@ export async function GetOrdenesCompra(): Promise<ResponseBase<
     const response: ResponseBase<OrdenCompra[]> = (
       await api.get("/facturas/ordenes-compra")
     ).data;
+    console.log("Petición GET:" + BASE_URL + API_VERSION + "/facturas/ordenes-compra");
     return response;
   } catch (error) {
     console.error(error);
@@ -637,6 +639,68 @@ export async function EditarObra(formData: Obra): Promise<ResponseBase | null> {
     const url = "/obras";
     console.log("Petición POST:" + BASE_URL + API_VERSION + url);
     const response: ResponseBase = (await api.patch(url, formData)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+export async function GetArticulos(): Promise<ResponseBase<
+  ArticuloCRUD[] | []
+> | null> {
+  try {
+    const url = "/articulos";
+    console.log("Petición GET:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase<ArticuloCRUD[]> = (await api.get(url)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+export async function CreateArticulo(
+  formData: ArticuloCRUD,
+): Promise<ResponseBase | null> {
+  try {
+    console.log(formData);
+    const url = "/articulos";
+    console.log("Petición POST:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase = (await api.post(url, formData)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+export async function EditarArticulo(
+  formData: ArticuloCRUD,
+): Promise<ResponseBase | null> {
+  try {
+    console.log(formData);
+    const url = "/articulos";
+    console.log("Petición PATCH:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase = (await api.patch(url, formData)).data;
+    console.log(response);
+    return response;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+export async function EliminarArticulo(id: number): Promise<ResponseBase | null> {
+  try {
+    const url = "/articulos";
+    console.log("Petición DELETE:" + BASE_URL + API_VERSION + url);
+    const response: ResponseBase = (
+      await api.delete(url, { data: { id } })
+    ).data;
     console.log(response);
     return response;
   } catch (e) {

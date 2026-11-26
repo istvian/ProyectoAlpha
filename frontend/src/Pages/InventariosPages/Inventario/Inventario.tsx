@@ -26,6 +26,7 @@ import {
 import { StockMinimoAlertas } from "../../../Components/StockMinimoAlertas/StockMinimoAlertas";
 import { AgregarArticulo } from "../AgregarArticulo/AgregarArticulo";
 import css from "./Inventario.module.css";
+import { useNavigate } from "react-router-dom";
 
 interface FiltrosFormulario {
   codigoNombre: string;
@@ -122,6 +123,8 @@ export function Inventario() {
   const [error, setError] = useState("");
   const [errorFiltros, setErrorFiltros] = useState("");
   const [recarga, setRecarga] = useState(0);
+
+  const nav = useNavigate();
 
   useEffect(() => {
     let activo = true;
@@ -357,7 +360,11 @@ export function Inventario() {
                 <th>Stock actual</th>
                 <th>Stock mínimo</th>
                 <th>Estado</th>
+<<<<<<< HEAD
                 {puedeSolicitar && <th>Compra</th>}
+=======
+                <th>Acción</th>
+>>>>>>> origin/master
               </tr>
             </thead>
             <tbody>
@@ -374,9 +381,25 @@ export function Inventario() {
                     <td>{articulo.stock_actual}</td>
                     <td>{articulo.stock_minimo}</td>
                     <td>{etiquetaEstado(articulo.estado)}</td>
+<<<<<<< HEAD
                     {puedeSolicitar && (
                       <td><Link to={`/bodega/solicitudes?articulo=${articulo.id}`}>Solicitar compra</Link></td>
                     )}
+=======
+                    <td>
+                      {articulo.estado !== "DISPONIBLE" ? (
+                        <Btn
+                          onClick={() => {
+                            nav("/finanzas?crearOC=1");
+                          }}
+                        >
+                          Solicitar
+                        </Btn>
+                      ) : (
+                        ""
+                      )}
+                    </td>
+>>>>>>> origin/master
                   </tr>
                 ))
               ) : (

@@ -7,13 +7,18 @@ from models.rol import Rol
 from models.user import User
 from middlewares.bcript_helper import encriptar_contraseña
 from schemas.roles import Roles
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite://db.sqlite3")
 
 
 async def SetupDB():
 
     await Tortoise.init(
-        db_url="sqlite://db.sqlite3",
-        # db_url="postgresql://postgres:xSK4B8q8BboKy95X@db.ckwvsfebfuskjsaxycaw.supabase.co:5432/postgres",
+        db_url=DATABASE_URL,
         modules={
             "models": [
                 "models.user",

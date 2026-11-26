@@ -1,0 +1,55 @@
+info:
+  name: "[Sin permisos] Registrar egreso a obra"
+  type: http
+  seq: 6
+  tags:
+    - sin-permisos
+    - seguridad
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/egresos"
+  auth: inherit
+  headers:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const axios = require("axios");
+        const BASE = bru.getEnvVar("baseUrl") || "http://127.0.0.1:8000";
+        async function loginCookie(correo) {
+          const r = await axios.post(BASE + "/api/v1/users/login", { correo: correo, password: bru.getEnvVar("password") || "Qwerty1234!" });
+          const raw = r.headers["set-cookie"];
+          const sc = Array.isArray(raw) ? raw.join("; ") : String(raw || "");
+          const m = sc.match(/token=([^;]+)/);
+          if (!m) { throw new Error("No se pudo obtener token para " + correo); }
+          return "token=" + m[1];
+        }
+        const cookie = await loginCookie("finanzas@mail.cl");
+        req.setHeader("Cookie", cookie);
+        const adminCookie = await loginCookie("admin@mail.cl");
+
+        const cat = await axios.get(BASE + "/api/v1/egresos/catalogos", { headers: { Cookie: adminCookie } });
+        const art = cat.data.data.articulos.find(a => a.stock_actual > 0);
+        const obr = cat.data.data.obras[0];
+        const tec = cat.data.data.tecnicos[0];
+        if (!art || !obr || !tec) { throw new Error("Catalogos de egreso incompletos"); }
+        req.setBody({ obra_id: obr.id, tecnico_id: tec.id, detalles: [{ producto_id: art.id, cantidad: 1 }] });
+    - type: tests
+      code: |-
+        test("Rol sin permisos es rechazado con 403", function() {
+          expect(res.status).to.equal(403);
+        });
+        test("Mensaje de error es Sin permisos", function() {
+          expect(res.body.detail.mensaje).to.equal("Sin permisos");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
