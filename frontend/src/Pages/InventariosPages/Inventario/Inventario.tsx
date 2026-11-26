@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Box } from "../../../Components/Box/Box";
 import { Btn } from "../../../Components/Btn/Btn";
 import { Card } from "../../../Components/Card/Card";
@@ -26,7 +26,6 @@ import {
 import { StockMinimoAlertas } from "../../../Components/StockMinimoAlertas/StockMinimoAlertas";
 import { AgregarArticulo } from "../AgregarArticulo/AgregarArticulo";
 import css from "./Inventario.module.css";
-import { useNavigate } from "react-router-dom";
 
 interface FiltrosFormulario {
   codigoNombre: string;
@@ -99,6 +98,7 @@ function etiquetaEstado(estado: EstadoInventario): string {
 export function Inventario() {
   const rol = useRolAutorizado([Rol.supervisor, Rol.bodega]);
   const puedeSolicitar = rol === Rol.bodega || rol === Rol.admin;
+  const columnasTabla = puedeSolicitar ? 8 : 7;
   const [agregarArticulo, setAgregarArticulo] = useState(false);
   const [filtros, setFiltros] = useState<FiltrosFormulario>(filtrosIniciales);
   const [filtrosAplicados, setFiltrosAplicados] = useState<
@@ -360,17 +360,14 @@ export function Inventario() {
                 <th>Stock actual</th>
                 <th>Stock mínimo</th>
                 <th>Estado</th>
-<<<<<<< HEAD
-                {puedeSolicitar && <th>Compra</th>}
-=======
                 <th>Acción</th>
->>>>>>> origin/master
+                {puedeSolicitar && <th>Compra</th>}
               </tr>
             </thead>
             <tbody>
               {cargando ? (
                 <tr>
-                  <td colSpan={puedeSolicitar ? 7 : 6}>Cargando artículos...</td>
+                  <td colSpan={columnasTabla}>Cargando artículos...</td>
                 </tr>
               ) : articulos.length > 0 ? (
                 articulos.map((articulo) => (
@@ -381,11 +378,6 @@ export function Inventario() {
                     <td>{articulo.stock_actual}</td>
                     <td>{articulo.stock_minimo}</td>
                     <td>{etiquetaEstado(articulo.estado)}</td>
-<<<<<<< HEAD
-                    {puedeSolicitar && (
-                      <td><Link to={`/bodega/solicitudes?articulo=${articulo.id}`}>Solicitar compra</Link></td>
-                    )}
-=======
                     <td>
                       {articulo.estado !== "DISPONIBLE" ? (
                         <Btn
@@ -399,12 +391,18 @@ export function Inventario() {
                         ""
                       )}
                     </td>
->>>>>>> origin/master
+                    {puedeSolicitar && (
+                      <td>
+                        <Link to={`/bodega/solicitudes?articulo=${articulo.id}`}>
+                          Solicitar compra
+                        </Link>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={puedeSolicitar ? 7 : 6}>
+                  <td colSpan={columnasTabla}>
                     No hay artículos que coincidan con los filtros.
                   </td>
                 </tr>
