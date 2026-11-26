@@ -5,7 +5,7 @@ import { Btn } from "../Btn/Btn";
 import { Ruta } from "../Ruta/Ruta";
 import css from "./Nav.module.css";
 import { useEffect, useState } from "react";
-import { Rol, type UserData } from "../../types/general";
+import { Rol, ROLES_CONSULTA_CARDEX, type UserData } from "../../types/general";
 
 export function Nav() {
   const nav = useNavigate();
@@ -36,9 +36,14 @@ export function Nav() {
       roles: [Rol.admin, Rol.finanzas],
     },
     {
+      nombre: "Solicitar material",
+      ruta: "/tecnico/solicitudes",
+      roles: [Rol.tecnico],
+    },
+    {
       nombre: "Consultas y Cardex",
       ruta: "/cardex",
-      roles: [Rol.admin, Rol.supervisor],
+      roles: ROLES_CONSULTA_CARDEX,
     },
     { nombre: "Admin TI", ruta: "/admin", roles: [Rol.admin] },
   ];

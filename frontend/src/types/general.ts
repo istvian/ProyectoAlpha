@@ -234,20 +234,83 @@ export interface EgresoCreate {
     cantidad: number;
   }[];
 }
+
+export type EstadoSolicitudMaterial = "PENDIENTE" | "APROBADA" | "RECHAZADA";
+export type TipoSolicitudMaterial = "COMPRA_BODEGA" | "MATERIAL_TECNICO";
+
+export interface SolicitudMaterialItem {
+  id: number;
+  articulo_id: number | null;
+  codigo_sku: string | null;
+  nombre_articulo: string;
+  descripcion_articulo: string | null;
+  cantidad: number;
+}
+
+export interface SolicitudMaterial {
+  id: number;
+  tipo_solicitud: TipoSolicitudMaterial;
+  prioridad: "BAJA" | "NORMAL" | "ALTA";
+  estado: EstadoSolicitudMaterial;
+  items: SolicitudMaterialItem[];
+  obra_id: number | null;
+  obra: string | null;
+  motivo: string;
+  solicitante_id: number;
+  solicitante_nombre: string;
+  fecha_creacion: string;
+  revisado_por_id: number | null;
+  revisado_por_nombre: string | null;
+  fecha_revision: string | null;
+  comentario_revision: string | null;
+}
+
+export type SolicitudCompraItemCreate = {
+  cantidad: number;
+} & (
+  | { articulo_id: number }
+  | { nombre_articulo: string; descripcion_articulo: string }
+);
+
+export type SolicitudCompraCreate = {
+  items: SolicitudCompraItemCreate[];
+  obra_id: number | null;
+  motivo: string;
+};
+
+export interface ContextoSolicitudTecnico {
+  obras: { id: number; codigo_obra: string; nombre_obra: string }[];
+  articulos: { id: number; codigo_sku: string | null; nombre: string }[];
+}
+
+export type SolicitudTecnicoItemCreate = {
+  cantidad: number;
+} & (
+  | { articulo_id: number }
+  | { descripcion_articulo: string }
+);
+
+export type SolicitudTecnicoCreate = {
+  items: SolicitudTecnicoItemCreate[];
+  obra_id: number;
+  motivo: string;
+  prioridad: "BAJA" | "NORMAL" | "ALTA";
+};
 export interface MermaCreate {
   articulo_id: number;
   cantidad: number;
-  obra_id: number;
+  obra_id?: number;
   motivo: string;
 }
 export interface MermaRegistro {
   id: number;
+  cardex_id: number;
   articulo_id: number;
   articulo: string;
   cantidad: number;
   motivo: string;
-  obra_id: number;
-  obra: string;
+  obra_id: number | null;
+  obra: string | null;
   usuario: string;
   stock_resultante: number;
   fecha: string;
@@ -255,16 +318,20 @@ export interface MermaRegistro {
 export interface UsoInternoCreate {
   articulo_id: number;
   cantidad: number;
+  obra_id?: number;
   destino_material: string;
   responsable_solicitud: string;
 }
 export interface UsoInternoRegistro {
   id: number;
+  cardex_id: number;
   articulo_id: number;
   articulo: string;
   cantidad: number;
   destino_material: string;
   responsable_solicitud: string;
+  obra_id: number | null;
+  obra: string | null;
   stock_resultante: number;
   fecha: string;
 }
@@ -306,6 +373,13 @@ export const Rol = {
   tecnico: 5,
 } as const;
 export type Rol = (typeof Rol)[keyof typeof Rol];
+
+export const ROLES_CONSULTA_CARDEX: Rol[] = [
+  Rol.admin,
+  Rol.finanzas,
+  Rol.supervisor,
+];
+export const ROLES_EXPORTACION_CARDEX: Rol[] = [Rol.admin, Rol.supervisor];
 
 export interface Articulo {
   codigo: string;

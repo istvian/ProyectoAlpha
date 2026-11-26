@@ -145,6 +145,50 @@
   background: #d1e7dd;
 }
 
+.historial {
+  margin-top: 1.5rem;
+}
+
+.historialAyuda {
+  margin: 0 0 0.75rem;
+  color: var(--grey-color);
+}
+
+.historialLista {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.historialItem {
+  padding: 0.75rem;
+  border: 1px solid var(--input-color);
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+
+.historialDetalles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0.5rem 0 0;
+}
+
+.historialDetalles dt {
+  color: var(--grey-color);
+  font-size: 0.875rem;
+}
+
+.historialDetalles dd {
+  margin: 0;
+}
+
+.historialMotivo {
+  flex-basis: 100%;
+}
+
 @media (max-width: 640px) {
   .operationSwitch,
   .fields {

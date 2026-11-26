@@ -14,9 +14,10 @@ import {
   GetCardex,
   GetCardexFiltros,
 } from "../../../Helpers/APIConnector";
-import useValidateRol from "../../../Hooks/useValidateRol";
+import { useRolAutorizado } from "../../../Hooks/useValidateRol";
 import {
-  Rol,
+  ROLES_CONSULTA_CARDEX,
+  ROLES_EXPORTACION_CARDEX,
   type CardexConsulta,
   type CardexFiltrosConsulta,
   type CardexFiltrosRespuesta,
@@ -187,7 +188,9 @@ function filaMovimiento(movimiento: CardexMovimiento) {
 }
 
 export function CardexMain() {
-  const puedeConsultar = useValidateRol([Rol.admin, Rol.finanzas]);
+  const rol = useRolAutorizado(ROLES_CONSULTA_CARDEX);
+  const puedeConsultar = rol !== null;
+  const puedeExportar = rol !== null && ROLES_EXPORTACION_CARDEX.includes(rol);
   const topScrollbarRef = useRef<HTMLDivElement>(null);
   const tableScrollerRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -229,6 +232,7 @@ export function CardexMain() {
   }, [movimientos, cargando]);
 
   useEffect(() => {
+    if (!puedeConsultar) return;
     let activo = true;
     GetCardexFiltros()
       .then((respuesta) => {
@@ -244,9 +248,10 @@ export function CardexMain() {
     return () => {
       activo = false;
     };
-  }, []);
+  }, [puedeConsultar]);
 
   useEffect(() => {
+    if (!puedeConsultar) return;
     let activo = true;
     const consulta: CardexConsulta = {
       ...filtrosAplicados,
@@ -279,7 +284,7 @@ export function CardexMain() {
     return () => {
       activo = false;
     };
-  }, [filtrosAplicados, pagina]);
+  }, [filtrosAplicados, pagina, puedeConsultar]);
 
   function aplicarFiltros() {
     if (filtros.desde > filtros.hasta) {
@@ -363,24 +368,26 @@ export function CardexMain() {
         <div>
           <Title>Consultas y Cardex</Title>
           <p>
-            Consulta la trazabilidad de inventario y descarga reportes de
-            auditoría PDF o Excel.
+            Consulta la trazabilidad de inventario
+            {puedeExportar ? " y descarga reportes de auditoría PDF o Excel." : "."}
           </p>
         </div>
-        <div className={css.actions}>
-          <Btn
-            disabled={exportando !== null}
-            onClick={() => void descargarReporte("pdf")}
-          >
-            {exportando === "pdf" ? "Generando PDF..." : "Descargar PDF"}
-          </Btn>
-          <Btn
-            disabled={exportando !== null}
-            onClick={() => void descargarReporte("excel")}
-          >
-            {exportando === "excel" ? "Generando Excel..." : "Descargar Excel"}
-          </Btn>
-        </div>
+        {puedeExportar && (
+          <div className={css.actions}>
+            <Btn
+              disabled={exportando !== null}
+              onClick={() => void descargarReporte("pdf")}
+            >
+              {exportando === "pdf" ? "Generando PDF..." : "Descargar PDF"}
+            </Btn>
+            <Btn
+              disabled={exportando !== null}
+              onClick={() => void descargarReporte("excel")}
+            >
+              {exportando === "excel" ? "Generando Excel..." : "Descargar Excel"}
+            </Btn>
+          </div>
+        )}
       </Box>
 
       <CardContainer>

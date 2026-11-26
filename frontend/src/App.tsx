@@ -21,12 +21,16 @@ import { NotAllowed } from "./Pages/NotAllowed/NotAllowed";
 import { CardexMain } from "./Pages/CardexPages/CardexMain/CardexMain";
 import { PanelAdmin } from "./Pages/AdminPages/PanelAdmin/PanelAdmin";
 import { useSessionStore } from "./Stores/session";
-import { useEffect } from "react";
-import { RenewToken } from "./Helpers/APIConnector";
+import { useEffect, useState } from "react";
+import { GetUserData, RenewToken } from "./Helpers/APIConnector";
 import { SalidaMateriales } from "./Pages/BodegaPages/SalidaMateriales/SalidaMateriales";
 import { RecepcionCompras } from "./Pages/BodegaPages/RecepcionCompras/RecepcionCompras";
 import { ConteoInventarioPage } from "./Pages/BodegaPages/ConteoInventario/ConteoInventario";
 import { RegistroMermasConsumo } from "./Pages/BodegaPages/RegistroMermasConsumo/RegistroMermasConsumo";
+import { SolicitudesCompra } from "./Pages/BodegaPages/SolicitudesCompra/SolicitudesCompra";
+import { SolicitarMaterial } from "./Pages/Tecnico/SolicitarMaterial";
+import { BandejaSolicitudes } from "./Pages/FinanzasPages/BandejaSolicitudes/BandejaSolicitudes";
+import { Rol } from "./types/general";
 
 function ProtectedRoute() {
   const status = useIsLogin();
@@ -45,6 +49,30 @@ function PrivateLayout() {
       <Footer />
     </>
   );
+}
+
+function Inicio() {
+  const [destino, setDestino] = useState<"cargando" | "tecnico" | "general" | "error">("cargando");
+
+  useEffect(() => {
+    let activo = true;
+    GetUserData().then((usuario) => {
+      if (!activo) return;
+      if (!usuario || usuario.error) {
+        setDestino("error");
+      } else {
+        setDestino(usuario.rol_id === Rol.tecnico ? "tecnico" : "general");
+      }
+    }).catch(() => {
+      if (activo) setDestino("error");
+    });
+    return () => { activo = false; };
+  }, []);
+
+  if (destino === "cargando") return <Spinner />;
+  if (destino === "error") return <p role="alert">No se pudo verificar el rol de la sesión.</p>;
+  if (destino === "tecnico") return <Navigate to="/tecnico/solicitudes" replace />;
+  return <Main />;
 }
 
 function App() {
@@ -90,9 +118,10 @@ function App() {
             <Route element={<NotAllowed />} path="/403" />
             <Route element={<ProtectedRoute />}>
               <Route element={<PrivateLayout />}>
-                <Route element={<Main />} path="/" />
+                <Route element={<Inicio />} path="/" />
                 <Route element={<Inventario />} path="/inventario" />
                 <Route element={<FinanzasMain />} path="/finanzas" />
+                <Route element={<BandejaSolicitudes />} path="/finanzas/solicitudes" />
                 <Route element={<CardexMain />} path="/cardex" />
                 <Route element={<PanelAdmin />} path="/admin" />
                 <Route element={<Bodega />} path="/bodega" />
@@ -105,6 +134,8 @@ function App() {
                   path="/bodega/conteo"
                 />
                 <Route element={<SalidaMateriales />} path="/bodega/salida" />
+                <Route element={<SolicitudesCompra />} path="/bodega/solicitudes" />
+                <Route element={<SolicitarMaterial />} path="/tecnico/solicitudes" />
                 <Route
                   element={<RegistroMermasConsumo />}
                   path="/bodega/mermas"

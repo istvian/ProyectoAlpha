@@ -3,16 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { GetUserData } from "../Helpers/APIConnector";
 import { Rol } from "../types/general";
 
-const useValidateRol = (roles: Rol[]): boolean => {
+export const useRolAutorizado = (roles: Rol[]): Rol | null => {
   const nav = useNavigate();
-  const [status, setStatus] = useState<boolean>(false);
+  const [rolAutorizado, setRolAutorizado] = useState<Rol | null>(null);
 
   // estabilizamos la referencia del array para evitar loop en el useEffect
   const rolesKey = useMemo(() => roles.join(","), [roles]);
 
   useEffect(() => {
     let cancelled = false;
-    setStatus(false);
+    setRolAutorizado(null);
 
     GetUserData()
       .then((res) => {
@@ -25,7 +25,7 @@ const useValidateRol = (roles: Rol[]): boolean => {
         );
 
         if (res?.error || rolUsuario === undefined) {
-          setStatus(false);
+          setRolAutorizado(null);
           nav("/403");
           return;
         }
@@ -33,12 +33,12 @@ const useValidateRol = (roles: Rol[]): boolean => {
         const tieneAcceso =
           rolUsuario === Rol.admin || roles.includes(rolUsuario);
 
-        setStatus(tieneAcceso);
+        setRolAutorizado(tieneAcceso ? rolUsuario : null);
         if (!tieneAcceso) nav("/403");
       })
       .catch(() => {
         if (cancelled) return;
-        setStatus(false);
+        setRolAutorizado(null);
         nav("/403");
       });
 
@@ -47,7 +47,10 @@ const useValidateRol = (roles: Rol[]): boolean => {
     };
   }, [rolesKey, nav]);
 
-  return status;
+  return rolAutorizado;
 };
+
+const useValidateRol = (roles: Rol[]): boolean =>
+  useRolAutorizado(roles) !== null;
 
 export default useValidateRol;

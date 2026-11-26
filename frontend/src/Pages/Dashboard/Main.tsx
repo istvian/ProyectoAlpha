@@ -158,7 +158,7 @@ export function Main() {
           footer="Proveedores habilitados"
         />
       </CardContainer>
-      <StockMinimoAlertas />
+      <StockMinimoAlertas permitirSolicitud />
     </Frame>
   );
 }

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Box } from "../../../Components/Box/Box";
 import { Btn } from "../../../Components/Btn/Btn";
 import { Card } from "../../../Components/Card/Card";
@@ -13,7 +14,7 @@ import {
   GetInventario,
   GetInventarioFiltros,
 } from "../../../Helpers/APIConnector";
-import useValidateRol from "../../../Hooks/useValidateRol";
+import { useRolAutorizado } from "../../../Hooks/useValidateRol";
 import {
   Rol,
   type ArticuloInventario,
@@ -96,7 +97,8 @@ function etiquetaEstado(estado: EstadoInventario): string {
 }
 
 export function Inventario() {
-  const puedeConsultar = useValidateRol([Rol.supervisor, Rol.bodega]);
+  const rol = useRolAutorizado([Rol.supervisor, Rol.bodega]);
+  const puedeSolicitar = rol === Rol.bodega || rol === Rol.admin;
   const [agregarArticulo, setAgregarArticulo] = useState(false);
   const [filtros, setFiltros] = useState<FiltrosFormulario>(filtrosIniciales);
   const [filtrosAplicados, setFiltrosAplicados] = useState<
@@ -217,7 +219,7 @@ export function Inventario() {
     }
   }
 
-  if (!puedeConsultar) return null;
+  if (rol === null) return null;
 
   const paginasTotales = Math.max(paginacion.total_paginas, 1);
   const primerIndicePagina = Math.max(
@@ -290,7 +292,7 @@ export function Inventario() {
           footer="Disponibles en inventario"
         />
       </CardContainer>
-      <StockMinimoAlertas />
+      <StockMinimoAlertas permitirSolicitud={puedeSolicitar} />
       <Box>
         <div className={css.row}>
           <Title>Listado de artículos</Title>
@@ -358,13 +360,17 @@ export function Inventario() {
                 <th>Stock actual</th>
                 <th>Stock mínimo</th>
                 <th>Estado</th>
+<<<<<<< HEAD
+                {puedeSolicitar && <th>Compra</th>}
+=======
                 <th>Acción</th>
+>>>>>>> origin/master
               </tr>
             </thead>
             <tbody>
               {cargando ? (
                 <tr>
-                  <td colSpan={6}>Cargando artículos...</td>
+                  <td colSpan={puedeSolicitar ? 7 : 6}>Cargando artículos...</td>
                 </tr>
               ) : articulos.length > 0 ? (
                 articulos.map((articulo) => (
@@ -375,6 +381,11 @@ export function Inventario() {
                     <td>{articulo.stock_actual}</td>
                     <td>{articulo.stock_minimo}</td>
                     <td>{etiquetaEstado(articulo.estado)}</td>
+<<<<<<< HEAD
+                    {puedeSolicitar && (
+                      <td><Link to={`/bodega/solicitudes?articulo=${articulo.id}`}>Solicitar compra</Link></td>
+                    )}
+=======
                     <td>
                       {articulo.estado !== "DISPONIBLE" ? (
                         <Btn
@@ -388,11 +399,12 @@ export function Inventario() {
                         ""
                       )}
                     </td>
+>>>>>>> origin/master
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={puedeSolicitar ? 7 : 6}>
                     No hay artículos que coincidan con los filtros.
                   </td>
                 </tr>

@@ -28,6 +28,73 @@ los registros.
 Antes de iniciar el backend en producción, defina `APP_ENV=production`; así se
 omite la carga de datos demo.
 
+## Arranque y pruebas de mermas y uso interno
+
+Estos pasos son para desarrollo en Windows, desde la raíz del repositorio. Use
+datos demo o un entorno aislado: registrar una operación modifica el inventario.
+
+1. Prepare el backend e inícielo en una terminal:
+
+   ```powershell
+   py -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   Set-Location backend\app
+   python -m pip install -r requirements.txt
+   $env:APP_ENV = "development"
+   fastapi dev
+   ```
+
+   La API está en `http://127.0.0.1:8000` y su documentación en `/docs`.
+   Al iniciar desde `backend\app` se utiliza `db.sqlite3` de esa carpeta.
+2. En otra terminal, desde la raíz, prepare e inicie el frontend:
+
+   ```powershell
+   Set-Location frontend
+   npm ci
+   $env:VITE_BASE_URL = "http://127.0.0.1:8000"
+   npm run dev
+   ```
+
+   Abra la dirección indicada por Vite. Con una cuenta de prueba de Bodega o
+   Administrador, entre a Bodega > Mermas y consumo interno, registre una
+   merma o uso interno y compruebe el ID del registro, el ID del Cardex y el
+   stock del comprobante. Se puede asociar una obra activa. Consulte después
+   el movimiento con un rol autorizado. No use datos reales para esta prueba.
+
+Para ejecutar las pruebas automáticas del backend, en una terminal con el
+entorno virtual activo:
+
+```powershell
+Set-Location backend\app
+python -m unittest tests.test_mermas_routes -v
+```
+
+Para probar la interfaz y la API juntas mediante Chromium, desde la raíz y con
+el entorno virtual Python activo (con las dependencias del backend ya instaladas):
+
+```powershell
+Set-Location frontend
+npm ci
+Set-Location ..\playwright
+npm ci
+npx playwright install chromium
+npx playwright test --config mermas.config.js
+```
+
+Las pruebas integrales levantan Vite y una API de pruebas en `127.0.0.1`,
+puertos `5188` y `8027`; deben estar libres. Usan SQLite en memoria con datos
+ficticios y un inicio de sesión de prueba exclusivo de ese servidor: no prueban
+el formulario de autenticación ni modifican la base local. Verifican el
+comprobante, la obra, el reintento tras perder una respuesta y la visibilidad
+de exportación. Las pruebas del backend también cubren validaciones,
+permisos, idempotencia, rollback y protección del Cardex. El conflicto de
+stock `409` se simula; no es una prueba de carga concurrente real.
+
+La configuración y los triggers verificados corresponden a SQLite. El uso de
+PostgreSQL/Supabase requiere preparar y probar sus migraciones, protección del
+Cardex y concurrencia antes de considerarlo listo para producción. Consulte
+también el [manual técnico de despliegue](../../docs/Manual-Tecnico-de-Despliegue.md).
+
 ## Situación actual del proyecto
 
 Proyecto Alpha es un MVP web para controlar compras, inventario y movimientos de
@@ -68,6 +135,37 @@ backend en ejecución, se puede consultar y probar en `/docs`.
 Las funciones se presentan en el orden habitual del trabajo: preparar una
 compra, recibirla, controlar los materiales y revisar lo ocurrido.
 
+### API de solicitudes de material
+
+`POST /api/v1/solicitudes-material` (Bodega/Administrador) y
+`POST /api/v1/solicitudes-material/tecnico` (Técnico) reciben una cabecera y un
+arreglo obligatorio `items` no vacío. Cada ítem contiene `cantidad` entera
+positiva y un `articulo_id` del catálogo, o datos del material no catalogado.
+No se puede repetir un mismo `articulo_id` dentro de la solicitud.
+
+Ejemplo para Bodega:
+
+```json
+{
+  "obra_id": null,
+  "motivo": "Reposición",
+  "items": [
+    {"articulo_id": 1, "cantidad": 2},
+    {"nombre_articulo": "Casco", "descripcion_articulo": "Azul", "cantidad": 1}
+  ]
+}
+```
+
+Para Técnico se requiere una obra activa asignada, `prioridad` y, para cada
+material no catalogado, `descripcion_articulo` en vez de `nombre_articulo`.
+Las consultas y respuestas de aprobación/rechazo devuelven `items`; las
+decisiones siguen afectando a la solicitud completa y no generan stock,
+Cardex ni órdenes de compra. SQLite migra cada solicitud anterior a una
+cabecera con un ítem al iniciar el backend.
+
+El frontend permite agregar y quitar ítems en una solicitud y muestra la lista
+completa en el historial y en la bandeja de Finanzas.
+
 ### 1. Ingreso y permisos
 
 Cada persona inicia sesión con su cuenta. Puede cerrar la sesión y mantenerla
@@ -82,8 +180,8 @@ de su cargo:
   anota los conteos físicos.
 - **Supervisor:** revisa diferencias en las recepciones y los conteos, consulta
   los movimientos y puede descargar reportes.
-- **Técnico:** puede figurar como responsable de una obra o como la persona que
-  recibe materiales.
+- **Técnico:** puede figurar como responsable de una obra o receptor de materiales
+  y solicitar materiales para sus obras activas asignadas, sin modificar stock.
 
 ### 2. Preparar compras y mantener los datos al día
 
@@ -140,12 +238,33 @@ conciliación.
 ### 7. Consultar movimientos y descargar reportes
 
 Las entradas, entregas y ajustes quedan en el historial del inventario (también
-llamado **Cardex**). Bodega y Supervisión pueden revisar qué artículo se movió,
-en qué fecha, en qué cantidad y, cuando corresponde, a qué obra. También pueden
-filtrar la consulta por fechas, artículo, obra o tipo de movimiento.
+llamado **Cardex**). Administración, Finanzas y Supervisión pueden consultar
+el Cardex y aplicar filtros. Bodega mantiene el historial en su propia vista.
 
-El sistema muestra un resumen de los movimientos. Además, un Supervisor puede
-descargar el reporte en PDF o Excel.
+Administración y Supervisión pueden descargar el reporte en PDF o Excel;
+Finanzas y Bodega no tienen permiso de exportación.
+
+### Mermas y uso interno
+
+Bodega y Administración pueden registrar una merma o consumo interno con una
+obra activa opcional. Las cantidades son enteras. Cada operación nueva se vincula
+con su movimiento en Cardex y devuelve ambos identificadores y el saldo resultante.
+Debajo del formulario se muestran los últimos diez movimientos del tipo
+seleccionado, en solo lectura; el historial se actualiza al guardar.
+
+Los endpoints `POST /api/v1/mermas` y `POST /api/v1/usos-internos` requieren
+el encabezado `Idempotency-Key` con un UUID. Repetir la solicitud con la misma
+clave, usuario y datos devuelve la respuesta original; reutilizarla con otros
+datos o usuario devuelve `409`. El frontend conserva temporalmente la solicitud
+pendiente en la pestaña para permitir su reintento tras perder la respuesta.
+Si se cierra la pestaña, no está garantizada su recuperación.
+
+Al iniciar con una base SQLite existente, el esquema de mermas y uso interno
+se adapta conservando los registros. Los movimientos antiguos no se enlazan
+automáticamente con Cardex porque no existe una relación histórica inequívoca.
+Respalde la base antes de actualizar. Esta adaptación y los triggers existentes
+son específicos de SQLite; PostgreSQL/Supabase requiere una migración y pruebas
+propias antes de utilizarlo.
 
 ### 8. Revisar indicadores y administrar usuarios
 

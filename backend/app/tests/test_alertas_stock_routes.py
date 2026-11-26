@@ -29,7 +29,7 @@ class AlertasStockRoutesTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         await Tortoise.close_connections()
 
-    async def test_devuelve_articulos_con_stock_igual_o_inferior_al_minimo(self):
+    async def test_devuelve_articulos_con_minimo_configurado_y_stock_critico(self):
         await Articulos.create(
             codigo_sku="STOCK-BAJO",
             nombre="Stock bajo",
@@ -47,6 +47,12 @@ class AlertasStockRoutesTests(unittest.IsolatedAsyncioTestCase):
             nombre="Stock suficiente",
             stock_actual=4,
             stock_minimo=3,
+        )
+        await Articulos.create(
+            codigo_sku="STOCK-SIN-MINIMO",
+            nombre="Stock agotado sin mínimo configurado",
+            stock_actual=0,
+            stock_minimo=0,
         )
 
         respuesta = await get_alertas_stock_minimo()
@@ -67,6 +73,18 @@ class AlertasStockRoutesTests(unittest.IsolatedAsyncioTestCase):
             nombre="Stock suficiente",
             stock_actual=5,
             stock_minimo=2,
+        )
+
+        respuesta = await get_alertas_stock_minimo()
+
+        self.assertEqual(respuesta["data"], [])
+
+    async def test_no_alerta_si_el_minimo_no_esta_configurado(self):
+        await Articulos.create(
+            codigo_sku="STOCK-MINIMO-PREDETERMINADO",
+            nombre="Stock sin mínimo configurado",
+            stock_actual=0,
+            stock_minimo=0,
         )
 
         respuesta = await get_alertas_stock_minimo()

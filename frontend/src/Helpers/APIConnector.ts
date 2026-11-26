@@ -9,9 +9,11 @@ import type {
   ConteoInventario,
   ConteoInventarioArticulo,
   ConteoInventarioCreate,
+  ContextoSolicitudTecnico,
   DocumentoTributario,
   EgresoCatalogos,
   EgresoCreate,
+  EstadoSolicitudMaterial,
   FacturaCreate,
   InventarioConsulta,
   InventarioFiltrosRespuesta,
@@ -31,6 +33,10 @@ import type {
   RecepcionCompra,
   RecepcionCompraCreate,
   ResponseBase,
+  SolicitudCompraCreate,
+  SolicitudMaterial,
+  SolicitudTecnicoCreate,
+  TipoSolicitudMaterial,
   SystemLog,
   UsoInternoCreate,
   UsoInternoRegistro,
@@ -339,6 +345,70 @@ export async function GetEgresoCatalogos(): Promise<ResponseBase<EgresoCatalogos
   }
 }
 
+export async function GetMisSolicitudes(): Promise<ResponseBase<SolicitudMaterial[]>> {
+  try {
+    return (await api.get<ResponseBase<SolicitudMaterial[]>>("/solicitudes-material")).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudieron consultar las solicitudes."));
+  }
+}
+
+export async function GetSolicitudesFinanzas(
+  estado: EstadoSolicitudMaterial | "",
+  tipo: TipoSolicitudMaterial | "",
+): Promise<ResponseBase<SolicitudMaterial[]>> {
+  try {
+    return (await api.get<ResponseBase<SolicitudMaterial[]>>("/solicitudes-material/finanzas", {
+      params: { ...(estado && { estado }), ...(tipo && { tipo_solicitud: tipo }) },
+    })).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudieron consultar las solicitudes."));
+  }
+}
+
+export async function ResolverSolicitud(
+  id: number,
+  decision: "aprobar" | "rechazar",
+  comentario: string,
+): Promise<ResponseBase<SolicitudMaterial>> {
+  try {
+    return (await api.post<ResponseBase<SolicitudMaterial>>(
+      `/solicitudes-material/${id}/${decision}`,
+      { comentario_revision: comentario.trim() || null },
+    )).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudo resolver la solicitud."));
+  }
+}
+
+export async function CreateSolicitudCompra(
+  body: SolicitudCompraCreate,
+): Promise<ResponseBase<SolicitudMaterial>> {
+  try {
+    return (await api.post<ResponseBase<SolicitudMaterial>>("/solicitudes-material", body)).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudo registrar la solicitud."));
+  }
+}
+
+export async function GetContextoSolicitudTecnico(): Promise<ResponseBase<ContextoSolicitudTecnico>> {
+  try {
+    return (await api.get<ResponseBase<ContextoSolicitudTecnico>>("/solicitudes-material/tecnico/contexto")).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudieron cargar las obras y materiales."));
+  }
+}
+
+export async function CreateSolicitudTecnico(
+  body: SolicitudTecnicoCreate,
+): Promise<ResponseBase<SolicitudMaterial>> {
+  try {
+    return (await api.post<ResponseBase<SolicitudMaterial>>("/solicitudes-material/tecnico", body)).data;
+  } catch (error) {
+    throw new Error(mensajeErrorApi(error, "No se pudo registrar la solicitud."));
+  }
+}
+
 export async function CreateEgreso(
   formData: EgresoCreate,
 ): Promise<ResponseBase<{ egreso_id: number }> | null> {
@@ -374,41 +444,22 @@ export async function CreateEgreso(
 
 export async function CreateMerma(
   formData: MermaCreate,
-): Promise<ResponseBase<MermaRegistro> | null> {
-  try {
-    const response = await api.post<ResponseBase<MermaRegistro>>(
-      "/mermas",
-      formData,
-    );
-    return response.data;
-  } catch (error) {
-    console.error(error);
-    return {
-      error: true,
-      mensaje: mensajeErrorApi(error, "No se pudo registrar la merma."),
-    };
-  }
+  clave: string,
+): Promise<ResponseBase<MermaRegistro>> {
+  const response = await api.post<ResponseBase<MermaRegistro>>(
+    "/mermas", formData, { headers: { "Idempotency-Key": clave } },
+  );
+  return response.data;
 }
 
 export async function CreateUsoInterno(
   formData: UsoInternoCreate,
-): Promise<ResponseBase<UsoInternoRegistro> | null> {
-  try {
-    const response = await api.post<ResponseBase<UsoInternoRegistro>>(
-      "/usos-internos",
-      formData,
-    );
-    return response.data;
-  } catch (error) {
-    console.error(error);
-    return {
-      error: true,
-      mensaje: mensajeErrorApi(
-        error,
-        "No se pudo registrar el consumo interno.",
-      ),
-    };
-  }
+  clave: string,
+): Promise<ResponseBase<UsoInternoRegistro>> {
+  const response = await api.post<ResponseBase<UsoInternoRegistro>>(
+    "/usos-internos", formData, { headers: { "Idempotency-Key": clave } },
+  );
+  return response.data;
 }
 
 export async function GetConteoCatalogo(): Promise<ResponseBase<

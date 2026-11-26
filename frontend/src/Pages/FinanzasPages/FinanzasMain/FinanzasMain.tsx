@@ -13,6 +13,7 @@ import {
   type Proveedor,
 } from "../../../types/general";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { InputDate } from "../../../Components/InputDate/InputDate";
 import { Selector } from "../../../Components/Selector/Selector";
 import {
@@ -30,7 +31,11 @@ import { CrearOC } from "../CrearOC/CrearOC";
 import { useSearchParams } from "react-router-dom";
 
 export function FinanzasMain() {
+<<<<<<< HEAD
+  const nav = useNavigate();
+=======
   const [searchParams] = useSearchParams();
+>>>>>>> origin/master
   const [popupAgregarDocumento, setPopupAgregarDocumento] = useState(false);
   const [popupAgregarProveedor, setPopupAgregarProveedor] = useState(false);
   const [popupCrearOC, setPopupCrearOC] = useState(false);
@@ -186,6 +191,9 @@ export function FinanzasMain() {
               reportes financieros.
             </p>
           </div>
+<<<<<<< HEAD
+          <Btn onClick={() => nav("/finanzas/solicitudes")}>Solicitudes de material</Btn>
+=======
           <Btn
             onClick={() => {
               setPopupCrearOC(true);
@@ -193,6 +201,7 @@ export function FinanzasMain() {
           >
             Crear Orden de Compra
           </Btn>
+>>>>>>> origin/master
         </Box>
 
         <Popup isVisible={popupAgregarProveedor}>

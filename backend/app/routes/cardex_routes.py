@@ -19,7 +19,7 @@ from services.cardex_report_service import (
 )
 
 router = APIRouter(tags=["Cardex"])
-ROLES_LECTURA_CARDEX = (Roles.bodega, Roles.supervisor)
+ROLES_LECTURA_CARDEX = (Roles.bodega, Roles.finanzas, Roles.supervisor)
 
 
 def _filtrar_movimientos(
