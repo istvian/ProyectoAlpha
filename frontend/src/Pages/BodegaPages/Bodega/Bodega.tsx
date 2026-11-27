@@ -8,10 +8,7 @@ import { Frame } from "../../../Components/Frame/Frame";
 import { StockMinimoAlertas } from "../../../Components/StockMinimoAlertas/StockMinimoAlertas";
 import { Selector } from "../../../Components/Selector/Selector";
 import { Title } from "../../../Components/Title/Title";
-import {
-  GetCardex,
-  GetCardexResumen,
-} from "../../../Helpers/APIConnector";
+import { GetCardex, GetCardexResumen } from "../../../Helpers/APIConnector";
 import useValidateRol from "../../../Hooks/useValidateRol";
 import {
   Rol,
@@ -21,6 +18,7 @@ import {
   type CardexTipoMovimiento,
 } from "../../../types/general";
 import css from "./Bodega.module.css";
+import { Spinner } from "../../../Components/Spinner/Spinner";
 
 const CANTIDAD_POR_PAGINA = 10;
 
@@ -52,10 +50,7 @@ function formatoFecha(fecha: string): string {
   }).format(valor);
 }
 
-function crearConsulta(
-  filtros: FiltrosCardex,
-  pagina: number,
-): CardexConsulta {
+function crearConsulta(filtros: FiltrosCardex, pagina: number): CardexConsulta {
   return {
     pagina,
     cantidad: CANTIDAD_POR_PAGINA,
@@ -182,6 +177,7 @@ export function Bodega() {
     totalMovimientos,
   );
 
+  if (!isAllowed) return <Spinner />;
   return (
     <Frame>
       <Box
@@ -324,8 +320,8 @@ export function Bodega() {
             firstOption="Todas las operaciones"
           />
           <div className={css.btns}>
-          <Btn onClick={aplicarFiltros}>Buscar</Btn>
-          <Btn onClick={limpiarFiltros}>Limpiar</Btn>
+            <Btn onClick={aplicarFiltros}>Buscar</Btn>
+            <Btn onClick={limpiarFiltros}>Limpiar</Btn>
           </div>
         </div>
 

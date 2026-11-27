@@ -23,7 +23,7 @@ export function Nav() {
     {
       nombre: "Inventario y artículos",
       ruta: "/inventario",
-      roles: [Rol.admin, Rol.bodega, Rol.supervisor],
+      roles: [Rol.admin, Rol.bodega, Rol.supervisor, Rol.finanzas],
     },
     {
       nombre: "Operaciones de bodega",

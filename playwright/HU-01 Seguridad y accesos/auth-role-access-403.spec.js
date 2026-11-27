@@ -6,9 +6,9 @@ const roles = ['admin', 'finanzas', 'supervisor', 'bodega', 'tecnico'];
 
 const routes = [
   { path: '/', allowed: ['admin', 'finanzas', 'supervisor', 'bodega', 'tecnico'] },
-  { path: '/inventario', allowed: ['supervisor', 'admin', 'bodega'] },
+  { path: '/inventario', allowed: ['supervisor', 'admin', 'bodega', 'finanzas'] },
   { path: '/finanzas', allowed: ['finanzas', 'admin'] },
-  { path: '/cardex', allowed: ['bodega', 'finanzas', 'admin'] },
+  { path: '/cardex', allowed: ['admin', 'finanzas', 'supervisor'] },
   { path: '/admin', allowed: ['admin'] },
   { path: '/bodega', allowed: ['bodega', 'admin'] },
   { path: '/bodega/recepcion', allowed: ['bodega', 'admin'] },

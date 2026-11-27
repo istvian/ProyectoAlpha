@@ -96,7 +96,7 @@ function etiquetaEstado(estado: EstadoInventario): string {
 }
 
 export function Inventario() {
-  const rol = useRolAutorizado([Rol.supervisor, Rol.bodega]);
+  const rol = useRolAutorizado([Rol.supervisor, Rol.bodega, Rol.finanzas]);
   const puedeSolicitar = rol === Rol.bodega || rol === Rol.admin;
   const columnasTabla = puedeSolicitar ? 8 : 7;
   const [agregarArticulo, setAgregarArticulo] = useState(false);
