@@ -369,7 +369,9 @@ export function CardexMain() {
           <Title>Consultas y Cardex</Title>
           <p>
             Consulta la trazabilidad de inventario
-            {puedeExportar ? " y descarga reportes de auditoría PDF o Excel." : "."}
+            {puedeExportar
+              ? " y descarga reportes de auditoría PDF o Excel."
+              : "."}
           </p>
         </div>
         {puedeExportar && (
@@ -384,7 +386,9 @@ export function CardexMain() {
               disabled={exportando !== null}
               onClick={() => void descargarReporte("excel")}
             >
-              {exportando === "excel" ? "Generando Excel..." : "Descargar Excel"}
+              {exportando === "excel"
+                ? "Generando Excel..."
+                : "Descargar Excel"}
             </Btn>
           </div>
         )}

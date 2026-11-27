@@ -17,6 +17,7 @@ import {
   GetUserList,
   UpdateUser,
 } from "../../../Helpers/APIConnector";
+import { Spinner } from "../../../Components/Spinner/Spinner";
 
 export function PanelAdmin() {
   const BASE_USUARIO: UserData = {
@@ -125,321 +126,315 @@ export function PanelAdmin() {
       });
     }
   }
-
-  if (useValidateRol([Rol.admin]))
-    return (
-      <Frame>
-        <Popup isVisible={showPopup}>
-          <Title>{isEdit ? "Editar" : "Crear"} usuario</Title>
-          <InputText
-            label="Correo electrónico"
-            placeholder="Ingrese correo electrónico"
-            onChange={(text) => {
-              setUser((prev) => ({ ...prev, correo: text }));
+  const validated = useValidateRol([Rol.admin]);
+  if (!validated) return <Spinner />;
+  return (
+    <Frame>
+      <Popup isVisible={showPopup}>
+        <Title>{isEdit ? "Editar" : "Crear"} usuario</Title>
+        <InputText
+          label="Correo electrónico"
+          placeholder="Ingrese correo electrónico"
+          onChange={(text) => {
+            setUser((prev) => ({ ...prev, correo: text }));
+          }}
+          value={user.correo}
+        />
+        <InputText
+          label="Nombre"
+          placeholder="Ingrese nombre del trabajador"
+          onChange={(text) => {
+            setUser((prev) => ({ ...prev, nombre: text }));
+          }}
+          value={user.nombre}
+        />
+        {isEdit ? (
+          <p>Si ingresa una contraseña sobreescribira a la anterior</p>
+        ) : (
+          ""
+        )}
+        <InputText
+          label="Contraseña"
+          placeholder="Ingrese contraseña del trabajador"
+          onChange={(text) => {
+            setUser((prev) => ({ ...prev, password: text }));
+          }}
+          value={user.password || ""}
+        />
+        <Selector
+          title="Rol"
+          data={user.rol_id}
+          setValue={(value) => {
+            setUser((prev) => ({ ...prev, rol_id: value }));
+          }}
+          options={[
+            "Administrador",
+            "Bodega",
+            "Finanzas",
+            "Supervisor",
+            "Técnico",
+          ]}
+          firstOption="Selecciona un rol"
+        />
+        <Selector
+          title="Estado"
+          data={user.enabled ? 1 : 2}
+          setValue={(value) => {
+            setUser((prev) => ({
+              ...prev,
+              enabled: value == 1 ? true : false,
+            }));
+          }}
+          options={["Activo", "Suspendido"]}
+          firstOption="Selecciona un estado"
+        />
+        <div className={css.row}>
+          <Btn
+            onClick={() => {
+              setshowPopup(false);
+              setUser({ ...BASE_USUARIO });
             }}
-            value={user.correo}
-          />
-          <InputText
-            label="Nombre"
-            placeholder="Ingrese nombre del trabajador"
-            onChange={(text) => {
-              setUser((prev) => ({ ...prev, nombre: text }));
+            warning
+          >
+            Cancelar
+          </Btn>
+          <Btn
+            onClick={() => {
+              HandleSaveOrEdit();
             }}
-            value={user.nombre}
-          />
-          {isEdit ? (
-            <p>Si ingresa una contraseña sobreescribira a la anterior</p>
-          ) : (
-            ""
-          )}
-          <InputText
-            label="Contraseña"
-            placeholder="Ingrese contraseña del trabajador"
-            onChange={(text) => {
-              setUser((prev) => ({ ...prev, password: text }));
+          >
+            {isEdit ? "Guardar usuario" : "Crear usuario"}
+          </Btn>
+        </div>
+      </Popup>
+      <Box
+        style={{
+          flexFlow: "row nowrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div>
+          <Title>Panel Admin TI</Title>
+          <p>
+            Administra usuarios, asigna roles y consulta la actividad del
+            sistema.
+          </p>
+        </div>
+        <div className={css.actions}>
+          <Btn
+            onClick={() => {
+              setshowPopup(true);
+              setIsEdit(false);
             }}
-            value={user.password || ""}
+          >
+            Crear nuevo usuario
+          </Btn>
+        </div>
+      </Box>
+      <CardContainer>
+        <Card
+          title="Usuarios registrados"
+          content={usersList.length + " usuarios"}
+          footer={`${usersList.filter((item) => item.enabled).length} activos - ${usersList.filter((item) => !item.enabled).length} suspendido`}
+        />
+        <Card
+          title="Roles disponibles"
+          content={`${new Set(usersList.map((item) => item.rol)).size} roles`}
+          footer="Permisos según perfíl de acceso"
+        />
+        <Card
+          title="Actividad de hoy"
+          content={`${logs.length} eventos`}
+          footer={`Último registro: ${new Date(logs[0]?.fecha_local).toLocaleString("es-CL")}`}
+        />
+      </CardContainer>
+      <Box>
+        <div className={css.row}>
+          <Title>Gestión de usuarios</Title>
+          <p className={css.resumen}>Administra datos, estados y accesos</p>
+        </div>
+        <div className={css.filters}>
+          <InputText
+            label="Buscar usuario"
+            onChange={(text) => {
+              setSearchQuery(text);
+            }}
+            placeholder="Nombre o correo electrónico"
+            value={searchQuery}
           />
           <Selector
             title="Rol"
-            data={user.rol_id}
+            data={rolQuery}
             setValue={(value) => {
-              setUser((prev) => ({ ...prev, rol_id: value }));
+              setRolQuery(value);
             }}
-            options={[
-              "Administrador",
-              "Bodega",
-              "Finanzas",
-              "Supervisor",
-              "Técnico",
-            ]}
+            options={ROLES_OPTIONS}
             firstOption="Selecciona un rol"
           />
           <Selector
             title="Estado"
-            data={user.enabled ? 1 : 2}
+            data={statusQuery}
             setValue={(value) => {
-              setUser((prev) => ({
-                ...prev,
-                enabled: value == 1 ? true : false,
-              }));
+              setStatusQuery(value);
             }}
             options={["Activo", "Suspendido"]}
             firstOption="Selecciona un estado"
           />
-          <div className={css.row}>
+          <div className={css.btns}>
             <Btn
               onClick={() => {
-                setshowPopup(false);
-                setUser({ ...BASE_USUARIO });
+                HandleSearch();
               }}
-              warning
             >
-              Cancelar
+              Buscar
             </Btn>
             <Btn
               onClick={() => {
-                HandleSaveOrEdit();
+                HandleClear();
               }}
             >
-              {isEdit ? "Guardar usuario" : "Crear usuario"}
+              Limpiar
             </Btn>
           </div>
-        </Popup>
-        <Box
-          style={{
-            flexFlow: "row nowrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <Title>Panel Admin TI</Title>
-            <p>
-              Administra usuarios, asigna roles y consulta la actividad del
-              sistema.
-            </p>
-          </div>
-          <div className={css.actions}>
-            <Btn
-              onClick={() => {
-                setshowPopup(true);
-                setIsEdit(false);
-              }}
-            >
-              Crear nuevo usuario
-            </Btn>
-          </div>
-        </Box>
-        <CardContainer>
-          <Card
-            title="Usuarios registrados"
-            content={usersList.length + " usuarios"}
-            footer={`${usersList.filter((item) => item.enabled).length} activos - ${usersList.filter((item) => !item.enabled).length} suspendido`}
-          />
-          <Card
-            title="Roles disponibles"
-            content={`${new Set(usersList.map((item) => item.rol)).size} roles`}
-            footer="Permisos según perfíl de acceso"
-          />
-          <Card
-            title="Actividad de hoy"
-            content={`${logs.length} eventos`}
-            footer={`Último registro: ${new Date(logs[0]?.fecha_local).toLocaleString("es-CL")}`}
-          />
-        </CardContainer>
-        <Box>
+        </div>
+        <div className={css.rolContainer}>
+          <span className={css.rolCount}>
+            Administrador:
+            {filteredUsers.filter((item) => item.rol_id == Rol.admin).length}
+          </span>
+          <span className={css.rolCount}>
+            Finanzas:{" "}
+            {filteredUsers.filter((item) => item.rol_id == Rol.finanzas).length}
+          </span>
+          <span className={css.rolCount}>
+            Bodeguero:{" "}
+            {filteredUsers.filter((item) => item.rol_id === Rol.bodega).length}
+          </span>
+          <span className={css.rolCount}>
+            Supervisor:{" "}
+            {
+              filteredUsers.filter((item) => item.rol_id == Rol.supervisor)
+                .length
+            }
+          </span>
+        </div>
+        <div className={css.tableContainer}>
+          <table className={css.table}>
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Correo electrónico</th>
+                <th>Rol asignado</th>
+                <th>Estado</th>
+                <th>Fecha de creación</th>
+                <th>Administración</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers?.map((item) => {
+                return (
+                  <tr key={item.correo}>
+                    <td>{item.nombre}</td>
+                    <td>{item.correo}</td>
+                    <td>{item.rol}</td>
+                    <td>{item.enabled ? "Activo" : "Suspendido"}</td>
+                    <td>
+                      {new Date(item?.created || "").toLocaleString("es-CL")}
+                    </td>
+                    <td>
+                      <Btn
+                        onClick={() => {
+                          setIsEdit(true);
+                          setshowPopup(true);
+                          setUser(item);
+                        }}
+                      >
+                        Modificar
+                      </Btn>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
           <div className={css.row}>
-            <Title>Gestión de usuarios</Title>
-            <p className={css.resumen}>Administra datos, estados y accesos</p>
-          </div>
-          <div className={css.filters}>
-            <InputText
-              label="Buscar usuario"
-              onChange={(text) => {
-                setSearchQuery(text);
-              }}
-              placeholder="Nombre o correo electrónico"
-              value={searchQuery}
-            />
-            <Selector
-              title="Rol"
-              data={rolQuery}
-              setValue={(value) => {
-                setRolQuery(value);
-              }}
-              options={ROLES_OPTIONS}
-              firstOption="Selecciona un rol"
-            />
-            <Selector
-              title="Estado"
-              data={statusQuery}
-              setValue={(value) => {
-                setStatusQuery(value);
-              }}
-              options={["Activo", "Suspendido"]}
-              firstOption="Selecciona un estado"
-            />
-            <div className={css.btns}>
-              <Btn
-                onClick={() => {
-                  HandleSearch();
-                }}
-              >
-                Buscar
-              </Btn>
-              <Btn
-                onClick={() => {
-                  HandleClear();
-                }}
-              >
-                Limpiar
-              </Btn>
-            </div>
-          </div>
-          <div className={css.rolContainer}>
-            <span className={css.rolCount}>
-              Administrador:
-              {filteredUsers.filter((item) => item.rol_id == Rol.admin).length}
-            </span>
-            <span className={css.rolCount}>
-              Finanzas:{" "}
-              {
-                filteredUsers.filter((item) => item.rol_id == Rol.finanzas)
-                  .length
-              }
-            </span>
-            <span className={css.rolCount}>
-              Bodeguero:{" "}
-              {
-                filteredUsers.filter((item) => item.rol_id === Rol.bodega)
-                  .length
-              }
-            </span>
-            <span className={css.rolCount}>
-              Supervisor:{" "}
-              {
-                filteredUsers.filter((item) => item.rol_id == Rol.supervisor)
-                  .length
-              }
-            </span>
-          </div>
-          <div className={css.tableContainer}>
-            <table className={css.table}>
-              <thead>
-                <tr>
-                  <th>Usuario</th>
-                  <th>Correo electrónico</th>
-                  <th>Rol asignado</th>
-                  <th>Estado</th>
-                  <th>Fecha de creación</th>
-                  <th>Administración</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers?.map((item) => {
-                  return (
-                    <tr key={item.correo}>
-                      <td>{item.nombre}</td>
-                      <td>{item.correo}</td>
-                      <td>{item.rol}</td>
-                      <td>{item.enabled ? "Activo" : "Suspendido"}</td>
-                      <td>
-                        {new Date(item?.created || "").toLocaleString("es-CL")}
-                      </td>
-                      <td>
-                        <Btn
-                          onClick={() => {
-                            setIsEdit(true);
-                            setshowPopup(true);
-                            setUser(item);
-                          }}
-                        >
-                          Modificar
-                        </Btn>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div className={css.row}>
-              <p className={css.resumen}>
-                Mostrando {filteredUsers.length} de {usersList.length} usuarios
-              </p>
-            </div>
-          </div>
-        </Box>
-        <Box>
-          <div className={css.row}>
-            <Title>Logs del sistema</Title>
             <p className={css.resumen}>
-              Auditoría de accesos y cambios administrativos. Registros de sólo
-              lectura, sin edición ni eliminación
+              Mostrando {filteredUsers.length} de {usersList.length} usuarios
             </p>
           </div>
-          <div className={css.tableContainer}>
-            <table className={css.table}>
-              <thead>
-                <tr>
-                  <th>Fecha/hora</th>
-                  <th>Usuario que ejecuta</th>
-                  <th>Evento y detalle</th>
-                  <th>Resultado</th>
-                  <th>IP / origen</th>
-                  <th>Consulta</th>
-                  <th>Ruta</th>
-                  <th>Query</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((item) => {
-                  return (
-                    <tr key={item._id}>
-                      <td>
-                        {new Date(item.fecha_local).toLocaleString("es-CL")}
-                      </td>
-                      <td>{item.usuario}</td>
-                      <td>{item.evento}</td>
-                      <td>{item.resultado}</td>
-                      <td>{item.ipOrigen}</td>
-                      <td>{item.consulta.method}</td>
-                      <td>{item.consulta.path}</td>
-                      <td>{item.consulta.query}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div className={css.row}>
-              <p className={css.resumen}>
-                Actualizado a las {new Date().toLocaleTimeString("es-CL")}
+        </div>
+      </Box>
+      <Box>
+        <div className={css.row}>
+          <Title>Logs del sistema</Title>
+          <p className={css.resumen}>
+            Auditoría de accesos y cambios administrativos. Registros de sólo
+            lectura, sin edición ni eliminación
+          </p>
+        </div>
+        <div className={css.tableContainer}>
+          <table className={css.table}>
+            <thead>
+              <tr>
+                <th>Fecha/hora</th>
+                <th>Usuario que ejecuta</th>
+                <th>Evento y detalle</th>
+                <th>Resultado</th>
+                <th>IP / origen</th>
+                <th>Consulta</th>
+                <th>Ruta</th>
+                <th>Query</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((item) => {
+                return (
+                  <tr key={item._id}>
+                    <td>
+                      {new Date(item.fecha_local).toLocaleString("es-CL")}
+                    </td>
+                    <td>{item.usuario}</td>
+                    <td>{item.evento}</td>
+                    <td>{item.resultado}</td>
+                    <td>{item.ipOrigen}</td>
+                    <td>{item.consulta.method}</td>
+                    <td>{item.consulta.path}</td>
+                    <td>{item.consulta.query}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div className={css.row}>
+            <p className={css.resumen}>
+              Actualizado a las {new Date().toLocaleTimeString("es-CL")}
+            </p>
+            <div className={css.navegacion}>
+              <p className={css.resumen}>20 por página</p>
+              <p
+                className={css.btn}
+                onClick={() => {
+                  if (paginaLog > 1) {
+                    setPaginaLog((prev) => prev - 1);
+                  }
+                }}
+              >
+                Anterior
               </p>
-              <div className={css.navegacion}>
-                <p className={css.resumen}>20 por página</p>
-                <p
-                  className={css.btn}
-                  onClick={() => {
-                    if (paginaLog > 1) {
-                      setPaginaLog((prev) => prev - 1);
-                    }
-                  }}
-                >
-                  Anterior
-                </p>
-                <p className={css.btnActive}>{paginaLog}</p>
-                <p
-                  className={css.btn}
-                  onClick={() => {
-                    setPaginaLog((prev) => prev + 1);
-                  }}
-                >
-                  Siguiente
-                </p>
-              </div>
+              <p className={css.btnActive}>{paginaLog}</p>
+              <p
+                className={css.btn}
+                onClick={() => {
+                  setPaginaLog((prev) => prev + 1);
+                }}
+              >
+                Siguiente
+              </p>
             </div>
           </div>
-        </Box>
-      </Frame>
-    );
+        </div>
+      </Box>
+    </Frame>
+  );
 }

@@ -9,21 +9,23 @@ async function loginComoBodega(page) {
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
   await page.waitForURL((url) => !url.pathname.endsWith('/login'));
   await page.goto('http://127.0.0.1:5173/bodega/mermas');
-  await expect(page.getByRole('heading', { name: 'Mermas y consumo interno' })).toBeDefined();
+  await expect(page.getByRole('heading', { name: 'Mermas y consumo interno' })).toBeVisible();
 }
 
 async function completarMerma(page, motivo) {
   await page.getByRole('button', { name: 'Registrar una merma' }).click();
 
   const articulo = page.getByRole('combobox', { name: 'Artículo' });
+  await expect.poll(async () => {
+    const opciones = await articulo.locator('option:not([disabled])').allTextContents();
+    return opciones.filter((texto) => /stock: \d+/.test(texto)).length;
+  }).toBeGreaterThan(0);
   const opciones = await articulo.locator('option:not([disabled])').allTextContents();
-  const elegido = opciones[opciones.length - 1];
+  const elegido = opciones.filter((texto) => /stock: \d+/.test(texto)).at(-1) ?? opciones[opciones.length - 1];
   await articulo.selectOption({ label: elegido });
   const sku = elegido.match(/\(([^)]+)\)/)?.[1] ?? '';
 
   await page.getByRole('spinbutton', { name: /Cantidad/ }).fill('1');
-  const obra = page.getByRole('combobox', { name: 'Obra relacionada' });
-  await obra.selectOption({ label: (await obra.locator('option').allTextContents())[1] });
   if (motivo) {
     await page.getByRole('textbox', { name: /Motivo \/ Justificación/ }).fill(motivo);
   }
@@ -48,7 +50,7 @@ test('registra la merma en el Cardex categorizada como Merma', async ({ page }) 
   const sku = await completarMerma(page, motivo);
 
   await page.getByRole('button', { name: 'Guardar merma' }).click();
-  await expect(page.getByRole('status')).toContainText('Merma registrada; existencias y Cardex actualizados.');
+  await expect(page.getByRole('status').filter({ hasText: 'Merma registrada' })).toContainText('Merma registrada; existencias y Cardex actualizados.');
 
   await page.goto('http://127.0.0.1:5173/bodega');
   await expect(page.getByRole('heading', { name: 'Historial de movimientos' })).toBeVisible();

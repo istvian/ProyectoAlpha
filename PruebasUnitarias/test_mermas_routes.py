@@ -1,4 +1,5 @@
 from decimal import Decimal
+from uuid import uuid4
 import pytest
 
 from fastapi import HTTPException
@@ -63,6 +64,7 @@ async def test_registra_merma_y_no_descontara_stock_insuficiente(db):
     respuesta = await registrar_merma(
         MermaCreateSchema(articulo_id=articulo.id, cantidad=3, obra_id=obra.id, motivo="  Empaque dañado  "),
         request,
+        uuid4(),
     )
 
     assert respuesta["data"]["motivo"] == "Empaque dañado"
@@ -76,6 +78,7 @@ async def test_registra_merma_y_no_descontara_stock_insuficiente(db):
         await registrar_merma(
             MermaCreateSchema(articulo_id=articulo.id, cantidad=6, obra_id=obra.id, motivo="Rotura"),
             request,
+            uuid4(),
         )
 
     assert error.value.status_code == 400
@@ -97,6 +100,7 @@ async def test_registra_uso_interno_y_actualiza_stock_y_cardex(db):
             responsable_solicitud="Jefe de bodega",
         ),
         crear_solicitud(usuario.correo),
+        uuid4(),
     )
 
     assert respuesta["data"]["stock_resultante"] == 4
